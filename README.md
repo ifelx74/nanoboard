@@ -17,7 +17,6 @@ This Turborepo includes the following packages and apps:
 ### Apps and Packages
 
 - `web`: a React and [Vite](https://vite.dev) TypeScript app
-- `@repo/ui`: a stub component library shared by the `web` app
 - `@repo/eslint-config`: shared ESLint configuration
 - `@repo/typescript-config`: shared `tsconfig.json` files
 
