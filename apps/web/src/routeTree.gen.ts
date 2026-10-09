@@ -9,50 +9,165 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppProjectProjectIdIndexRouteImport } from './routes/_app/project/$projectId/index'
+import { Route as AppProjectProjectIdBoardRouteImport } from './routes/_app/project/$projectId/board'
+import { Route as AppProjectProjectIdCalendarRouteImport } from './routes/_app/project/$projectId/calendar'
+import { Route as AppProjectProjectIdListRouteImport } from './routes/_app/project/$projectId/list'
 
-const IndexRoute = IndexRouteImport.update({
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProjectProjectIdIndexRoute =
+  AppProjectProjectIdIndexRouteImport.update({
+    id: '/project/$projectId/',
+    path: '/project/$projectId/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppProjectProjectIdBoardRoute =
+  AppProjectProjectIdBoardRouteImport.update({
+    id: '/project/$projectId/board',
+    path: '/project/$projectId/board',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppProjectProjectIdCalendarRoute =
+  AppProjectProjectIdCalendarRouteImport.update({
+    id: '/project/$projectId/calendar',
+    path: '/project/$projectId/calendar',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppProjectProjectIdListRoute = AppProjectProjectIdListRouteImport.update({
+  id: '/project/$projectId/list',
+  path: '/project/$projectId/list',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
+  '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
+  '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
+  '/project/$projectId/list': typeof AppProjectProjectIdListRoute
+  '/project/$projectId/': typeof AppProjectProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
+  '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
+  '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
+  '/project/$projectId/list': typeof AppProjectProjectIdListRoute
+  '/project/$projectId': typeof AppProjectProjectIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/_app/': typeof AppIndexRoute
+  '/_app/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
+  '/_app/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
+  '/_app/project/$projectId/list': typeof AppProjectProjectIdListRoute
+  '/_app/project/$projectId/': typeof AppProjectProjectIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/project/$projectId/board'
+    | '/project/$projectId/calendar'
+    | '/project/$projectId/list'
+    | '/project/$projectId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/project/$projectId/board'
+    | '/project/$projectId/calendar'
+    | '/project/$projectId/list'
+    | '/project/$projectId'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/_app/'
+    | '/_app/project/$projectId/board'
+    | '/_app/project/$projectId/calendar'
+    | '/_app/project/$projectId/list'
+    | '/_app/project/$projectId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/project/$projectId/': {
+      id: '/_app/project/$projectId/'
+      path: '/project/$projectId'
+      fullPath: '/project/$projectId/'
+      preLoaderRoute: typeof AppProjectProjectIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/project/$projectId/board': {
+      id: '/_app/project/$projectId/board'
+      path: '/project/$projectId/board'
+      fullPath: '/project/$projectId/board'
+      preLoaderRoute: typeof AppProjectProjectIdBoardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/project/$projectId/calendar': {
+      id: '/_app/project/$projectId/calendar'
+      path: '/project/$projectId/calendar'
+      fullPath: '/project/$projectId/calendar'
+      preLoaderRoute: typeof AppProjectProjectIdCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/project/$projectId/list': {
+      id: '/_app/project/$projectId/list'
+      path: '/project/$projectId/list'
+      fullPath: '/project/$projectId/list'
+      preLoaderRoute: typeof AppProjectProjectIdListRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
+  AppProjectProjectIdBoardRoute: typeof AppProjectProjectIdBoardRoute
+  AppProjectProjectIdCalendarRoute: typeof AppProjectProjectIdCalendarRoute
+  AppProjectProjectIdListRoute: typeof AppProjectProjectIdListRoute
+  AppProjectProjectIdIndexRoute: typeof AppProjectProjectIdIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
+  AppProjectProjectIdBoardRoute: AppProjectProjectIdBoardRoute,
+  AppProjectProjectIdCalendarRoute: AppProjectProjectIdCalendarRoute,
+  AppProjectProjectIdListRoute: AppProjectProjectIdListRoute,
+  AppProjectProjectIdIndexRoute: AppProjectProjectIdIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
