@@ -1,16 +1,31 @@
+import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
-import { Button } from "./components/ui/button";
+import "@/index.css";
+import { routeTree } from "./routeTree.gen";
 
-const App = () => (
-  <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-4">
-    <Button variant="default">Default</Button>
-    <Button variant="outline">Outline</Button>
-    <Button variant="secondary">Secondary</Button>
-    <Button variant="ghost">Ghost</Button>
-    <Button variant="destructive">Destructive</Button>
-    <Button variant="link">Link</Button>
-  </div>
-);
+const router = createRouter({
+  routeTree,
+  defaultPreload: "intent",
+  defaultPreloadStaleTime: 0,
+});
 
-createRoot(document.getElementById("app")!).render(<App />);
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
+
+function App() {
+  return <RouterProvider router={router} />;
+}
+
+const rootElement = document.getElementById("app") as HTMLElement;
+if (!rootElement.innerHTML) {
+  const root = createRoot(rootElement);
+  root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
