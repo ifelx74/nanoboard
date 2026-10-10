@@ -243,6 +243,78 @@ export async function deleteTask(id: string): Promise<void> {
   await db.tasks.delete(id);
 }
 
+export interface ReorderItem {
+  id: string;
+  position: number;
+  status?: ColumnSlug;
+}
+
+/**
+ * Dense reorder write (the drag-and-drop drop handler calls exactly
+ * this). Caller passes the new order; every item gets its position
+ * (and, when `status` is present, its synced `status` + `columnId`).
+ * Unique ids, integer positions, project-local columns, and
+ * project membership are enforced; the write is one transaction.
+ */
+export async function reorderTasks(
+  projectId: string,
+  items: ReorderItem[],
+): Promise<void> {
+  const ids = items.map((item) => item.id);
+  if (new Set(ids).size !== ids.length) {
+    throw new Error("Task IDs must be unique.");
+  }
+  for (const item of items) {
+    if (!Number.isInteger(item.position) || item.position < 0) {
+      throw new Error("Positions must be integers at or above 0.");
+    }
+  }
+
+  const columns = await db.columns
+    .where("projectId")
+    .equals(projectId)
+    .toArray();
+  const columnBySlug = new Map(columns.map((column) => [column.slug, column]));
+  for (const item of items) {
+    if (item.status !== undefined && !columnBySlug.has(item.status)) {
+      throw new Error(`Unknown column "${item.status}" in this project.`);
+    }
+  }
+
+  const existing = await db.tasks.where("id").anyOf(ids).toArray();
+  if (existing.length !== ids.length) {
+    throw new Error("Tasks must belong to the requested project.");
+  }
+  for (const task of existing) {
+    if (task.projectId !== projectId) {
+      throw new Error("Tasks must belong to the requested project.");
+    }
+  }
+
+  const now = Date.now();
+  await db.transaction("rw", db.tasks, async () => {
+    for (const item of items) {
+      if (item.status === undefined) {
+        await db.tasks.update(item.id, {
+          position: item.position,
+          updatedAt: now,
+        });
+      } else {
+        const column = columnBySlug.get(item.status);
+        if (!column) {
+          throw new Error(`Unknown column "${item.status}" in this project.`);
+        }
+        await db.tasks.update(item.id, {
+          position: item.position,
+          status: item.status,
+          columnId: column.id,
+          updatedAt: now,
+        });
+      }
+    }
+  });
+}
+
 /**
  * Same-column copy with optional validated rename. Copies
  * description/priority/dueDate; mints fresh id, number, position, and
