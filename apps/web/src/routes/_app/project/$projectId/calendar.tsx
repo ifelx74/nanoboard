@@ -1,13 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { ProjectLayout } from "@/components/common/project-layout";
+import TaskDrawer from "@/components/task/task-drawer";
 import { getProjectTasks } from "@/lib/db/queries";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/calendar")({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>): { task?: string } => ({
+    task: typeof search.task === "string" ? search.task : undefined,
+  }),
 });
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -33,10 +37,28 @@ const calendarSkeletonKeys = Array.from(
 
 function RouteComponent() {
   const { projectId } = Route.useParams();
+  const { task: selectedTaskId } = Route.useSearch();
+  const navigate = useNavigate();
   const [offset, setOffset] = useState(0);
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
   const now = new Date();
   const view = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+
+  function openTask(taskId: string) {
+    void navigate({
+      to: "/project/$projectId/calendar",
+      params: { projectId },
+      search: { task: taskId },
+    });
+  }
+
+  function closeTask() {
+    void navigate({
+      to: "/project/$projectId/calendar",
+      params: { projectId },
+      search: {},
+    });
+  }
 
   if (tasks === undefined) {
     return (
@@ -49,6 +71,12 @@ function RouteComponent() {
             ))}
           </div>
         </div>
+        <TaskDrawer
+          projectId={projectId}
+          taskId={selectedTaskId}
+          onClose={closeTask}
+          onSelectTask={openTask}
+        />
       </ProjectLayout>
     );
   }
@@ -136,7 +164,8 @@ function RouteComponent() {
                       {dayTasks.slice(0, 2).map((task) => (
                         <span
                           key={task.id}
-                          className="truncate rounded-md bg-muted px-1.5 py-0.5 text-xs"
+                          onClick={() => openTask(task.id)}
+                          className="cursor-pointer truncate rounded-md bg-muted px-1.5 py-0.5 text-xs hover:bg-muted/70"
                         >
                           {task.title}
                         </span>
@@ -154,6 +183,12 @@ function RouteComponent() {
           })}
         </div>
       </div>
+      <TaskDrawer
+        projectId={projectId}
+        taskId={selectedTaskId}
+        onClose={closeTask}
+        onSelectTask={openTask}
+      />
     </ProjectLayout>
   );
 }

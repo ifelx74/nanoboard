@@ -10,13 +10,12 @@ import type {
   TaskPriority,
 } from "./schema";
 
-/**
- * Single data seam for routes. Async Dexie reads so consumers subscribe
- * via `useLiveQuery`, plus granular Kaneo-mirrored task mutations
- * (one function per field — no patch objects).
- */
 export function getProject(projectId: string): Promise<Project | undefined> {
   return db.projects.get(projectId);
+}
+
+export function getTask(id: string): Promise<Task | undefined> {
+  return db.tasks.get(id);
 }
 
 export function getProjectColumns(projectId: string): Promise<Column[]> {

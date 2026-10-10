@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProjectLayout } from "@/components/common/project-layout";
+import TaskDrawer from "@/components/task/task-drawer";
 import {
   QUICK_ADD_TITLE_MAX,
   QUICK_ADD_TITLE_MIN,
@@ -14,6 +15,9 @@ import type { Task } from "@/lib/db/schema";
 
 export const Route = createFileRoute("/_app/project/$projectId/board")({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>): { task?: string } => ({
+    task: typeof search.task === "string" ? search.task : undefined,
+  }),
 });
 
 const skeletonColumnKeys = ["skeleton-col-0", "skeleton-col-1", "skeleton-col-2", "skeleton-col-3"];
@@ -50,6 +54,8 @@ function BoardSkeleton() {
 
 function RouteComponent() {
   const { projectId } = Route.useParams();
+  const { task: selectedTaskId } = Route.useSearch();
+  const navigate = useNavigate();
   const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
   const [addingColumnId, setAddingColumnId] = useState<string | null>(null);
@@ -70,8 +76,30 @@ function RouteComponent() {
     return (
       <ProjectLayout projectId={projectId} activeView="board">
         <BoardSkeleton />
+        <TaskDrawer
+          projectId={projectId}
+          taskId={selectedTaskId}
+          onClose={closeTask}
+          onSelectTask={openTask}
+        />
       </ProjectLayout>
     );
+  }
+
+  function openTask(taskId: string) {
+    void navigate({
+      to: "/project/$projectId/board",
+      params: { projectId },
+      search: { task: taskId },
+    });
+  }
+
+  function closeTask() {
+    void navigate({
+      to: "/project/$projectId/board",
+      params: { projectId },
+      search: {},
+    });
   }
 
   const canSave =
@@ -138,7 +166,12 @@ function RouteComponent() {
                 {columnTasks.map((task) => (
                   <article
                     key={task.id}
-                    className="rounded-lg border border-border/80 bg-card p-2.5 shadow-sm/5"
+                    onClick={() => openTask(task.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") openTask(task.id);
+                    }}
+                    tabIndex={0}
+                    className="cursor-pointer rounded-lg border border-border/80 bg-card p-2.5 shadow-sm/5"
                   >
                     <p className="text-sm">{task.title}</p>
                     {task.dueDate && (
@@ -213,6 +246,12 @@ function RouteComponent() {
           );
         })}
       </div>
+      <TaskDrawer
+        projectId={projectId}
+        taskId={selectedTaskId}
+        onClose={closeTask}
+        onSelectTask={openTask}
+      />
     </ProjectLayout>
   );
 }

@@ -1,11 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ProjectLayout } from "@/components/common/project-layout";
+import TaskDrawer from "@/components/task/task-drawer";
 import { getProjectTasks } from "@/lib/db/queries";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/list")({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>): { task?: string } => ({
+    task: typeof search.task === "string" ? search.task : undefined,
+  }),
 });
 
 const priorityStyles: Record<string, string> = {
@@ -40,12 +44,36 @@ function ListSkeleton() {
 
 function RouteComponent() {
   const { projectId } = Route.useParams();
+  const { task: selectedTaskId } = Route.useSearch();
+  const navigate = useNavigate();
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+
+  function openTask(taskId: string) {
+    void navigate({
+      to: "/project/$projectId/list",
+      params: { projectId },
+      search: { task: taskId },
+    });
+  }
+
+  function closeTask() {
+    void navigate({
+      to: "/project/$projectId/list",
+      params: { projectId },
+      search: {},
+    });
+  }
 
   if (tasks === undefined) {
     return (
       <ProjectLayout projectId={projectId} activeView="list">
         <ListSkeleton />
+        <TaskDrawer
+          projectId={projectId}
+          taskId={selectedTaskId}
+          onClose={closeTask}
+          onSelectTask={openTask}
+        />
       </ProjectLayout>
     );
   }
@@ -76,7 +104,8 @@ function RouteComponent() {
                 tasks.map((task) => (
                 <tr
                   key={task.id}
-                  className="border-b border-border/50 last:border-0 hover:bg-muted/30"
+                  onClick={() => openTask(task.id)}
+                  className="cursor-pointer border-b border-border/50 last:border-0 hover:bg-muted/30"
                 >
                   <td className="px-3 py-2">{task.title}</td>
                   <td className="px-3 py-2 text-muted-foreground">
@@ -103,6 +132,12 @@ function RouteComponent() {
           </table>
         </div>
       </div>
+      <TaskDrawer
+        projectId={projectId}
+        taskId={selectedTaskId}
+        onClose={closeTask}
+        onSelectTask={openTask}
+      />
     </ProjectLayout>
   );
 }
