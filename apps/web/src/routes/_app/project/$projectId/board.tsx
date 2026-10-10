@@ -1,8 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { ProjectLayout } from "@/components/common/project-layout";
-import { getProjectColumns, getProjectTasks } from "@/lib/db/queries";
+import {
+  QUICK_ADD_TITLE_MAX,
+  QUICK_ADD_TITLE_MIN,
+  createTask,
+  getProjectColumns,
+  getProjectTasks,
+} from "@/lib/db/queries";
 import type { Task } from "@/lib/db/schema";
 
 export const Route = createFileRoute("/_app/project/$projectId/board")({
@@ -12,8 +19,6 @@ export const Route = createFileRoute("/_app/project/$projectId/board")({
 const skeletonColumnKeys = ["skeleton-col-0", "skeleton-col-1", "skeleton-col-2", "skeleton-col-3"];
 const skeletonCardKeys = ["skeleton-card-0", "skeleton-card-1", "skeleton-card-2"];
 
-// Loading skeleton mirrors Kaneo's board skeleton, adapted to this board's
-// column chrome: pulsed header plus pulsed card blocks per column.
 function BoardSkeleton() {
   return (
     <div className="flex h-full gap-3 overflow-x-auto p-4" aria-hidden="true">
@@ -47,6 +52,19 @@ function RouteComponent() {
   const { projectId } = Route.useParams();
   const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+  const [addingColumnId, setAddingColumnId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const addButtonRefs = useRef(new Map<string, HTMLButtonElement | null>());
+  const prevAddingRef = useRef<string | null>(null);
+
+  // Return focus to the column's Add button when its quick-add form closes.
+  useEffect(() => {
+    if (prevAddingRef.current !== null && addingColumnId === null) {
+      addButtonRefs.current.get(prevAddingRef.current)?.focus();
+    }
+    prevAddingRef.current = addingColumnId;
+  }, [addingColumnId]);
 
   if (columns === undefined || tasks === undefined) {
     return (
@@ -54,6 +72,33 @@ function RouteComponent() {
         <BoardSkeleton />
       </ProjectLayout>
     );
+  }
+
+  const canSave =
+    draft.trim().length >= QUICK_ADD_TITLE_MIN && !saving;
+
+  function openAdd(columnId: string) {
+    setAddingColumnId(columnId);
+    setDraft("");
+  }
+
+  function cancelAdd() {
+    setAddingColumnId(null);
+    setDraft("");
+  }
+
+  async function saveTask(columnId: string) {
+    const title = draft.trim();
+    if (title.length < QUICK_ADD_TITLE_MIN || saving) return;
+    setSaving(true);
+    try {
+      await createTask({ projectId, columnId, title });
+      setDraft("");
+    } catch (error) {
+      console.error("Failed to create task", error);
+    } finally {
+      setSaving(false);
+    }
   }
 
   const tasksByColumn = new Map<string, Task[]>();
@@ -102,13 +147,68 @@ function RouteComponent() {
                   </p>
                 )}
               </div>
-              <button
-                type="button"
-                className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              >
-                <Plus className="size-4" aria-hidden="true" />
-                Add task
-              </button>
+              {addingColumnId === column.id ? (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void saveTask(column.id);
+                  }}
+                  className="flex flex-col gap-1.5"
+                >
+                  <input
+                    autoFocus
+                    value={draft}
+                    maxLength={QUICK_ADD_TITLE_MAX}
+                    placeholder="Task title"
+                    aria-label={`New task title in ${column.name}`}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") cancelAdd();
+                    }}
+                    onBlur={() => {
+                      if (
+                        draft.trim().length >= QUICK_ADD_TITLE_MIN &&
+                        !saving
+                      ) {
+                        void saveTask(column.id);
+                      } else if (!saving) {
+                        cancelAdd();
+                      }
+                    }}
+                    className="h-8 rounded-lg border border-border/80 bg-card px-2 text-sm outline-none placeholder:text-muted-foreground focus:border-ring"
+                  />
+                  <div className="flex gap-1.5">
+                    <button
+                      type="submit"
+                      disabled={!canSave}
+                      onMouseDown={(event) => event.preventDefault()}
+                      className="h-7 rounded-lg bg-primary px-2.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelAdd}
+                      onMouseDown={(event) => event.preventDefault()}
+                      className="h-7 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button
+                  ref={(element) => {
+                    addButtonRefs.current.set(column.id, element);
+                  }}
+                  type="button"
+                  onClick={() => openAdd(column.id)}
+                  className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                  Add task
+                </button>
+              )}
             </section>
           );
         })}
