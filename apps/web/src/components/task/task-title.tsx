@@ -10,10 +10,26 @@ import { toast } from "@/lib/toast";
 export default function TaskTitle({ task }: { task: Task }) {
   const [value, setValue] = useState(task.title);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<string | null>(null);
+  const taskRef = useRef(task);
+  taskRef.current = task;
+
+  function persist(next: string) {
+    updateTaskTitle(taskRef.current.id, next).catch((error: unknown) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update title",
+      );
+    });
+  }
 
   useEffect(
     () => () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      const pending = pendingRef.current;
+      pendingRef.current = null;
+      if (pending !== null && pending !== taskRef.current.title) {
+        persist(pending);
+      }
     },
     [],
   );
@@ -27,14 +43,13 @@ export default function TaskTitle({ task }: { task: Task }) {
       trimmed.length > QUICK_ADD_TITLE_MAX ||
       trimmed === task.title
     ) {
+      pendingRef.current = null;
       return;
     }
+    pendingRef.current = trimmed;
     timerRef.current = setTimeout(() => {
-      updateTaskTitle(task.id, trimmed).catch((error: unknown) => {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to update title",
-        );
-      });
+      pendingRef.current = null;
+      persist(trimmed);
     }, 800);
   }
 

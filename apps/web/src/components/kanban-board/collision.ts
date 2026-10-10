@@ -3,6 +3,7 @@ import {
   type DroppableContainer,
   closestCorners,
 } from "@dnd-kit/core";
+import { findLaneId } from "./locate";
 
 // Matches the board's `gap-3` lane spacing.
 const COLUMN_GAP = 12;
@@ -12,14 +13,6 @@ type LaneData = {
   taskIds?: string[];
 };
 
-/**
- * Pointer-based collision (mirrors Kaneo's board collision detection).
- * `closestCenter` flaps while a hover preview reorders the DOM under a
- * steady pointer (over A → preview moves A → over B → …), which feeds
- * setState back into itself. Scoping to the pointer's column first and
- * then to pointer-Y containment keeps `over` stable, so the preview
- * converges instead of oscillating.
- */
 export const boardCollisionDetection: CollisionDetection = (args) => {
   const {
     pointerCoordinates: pointer,
@@ -28,20 +21,19 @@ export const boardCollisionDetection: CollisionDetection = (args) => {
   } = args;
   if (!pointer) return closestCorners(args);
 
-  let column: DroppableContainer | undefined;
-  let columnDistance = COLUMN_GAP;
+  const lanes: { id: string; rect: { top: number; bottom: number; left: number; right: number } }[] = [];
+  const byId = new Map<string, DroppableContainer>();
   for (const container of droppableContainers) {
     if ((container.data.current as LaneData | undefined)?.type !== "column") {
       continue;
     }
     const rect = droppableRects.get(container.id);
-    if (!rect || pointer.y < rect.top || pointer.y > rect.bottom) continue;
-    const distance = Math.max(rect.left - pointer.x, pointer.x - rect.right, 0);
-    if (distance < columnDistance) {
-      column = container;
-      columnDistance = distance;
-    }
+    if (!rect) continue;
+    lanes.push({ id: String(container.id), rect });
+    byId.set(String(container.id), container);
   }
+  const laneId = findLaneId(lanes, pointer, COLUMN_GAP);
+  const column = laneId ? byId.get(laneId) : undefined;
   const columnRect = column && droppableRects.get(column.id);
   if (!column || !columnRect) return [];
 

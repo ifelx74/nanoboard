@@ -3,16 +3,24 @@
 // milliseconds; due dates stay `yyyy-mm-dd` strings so board/list/calendar
 // grouping works unchanged. Start dates arrive in v2.
 
-export type TaskPriority =
-  | "no-priority"
-  | "low"
-  | "medium"
-  | "high"
-  | "urgent";
+export const TASK_PRIORITIES = [
+  "no-priority",
+  "low",
+  "medium",
+  "high",
+  "urgent",
+] as const;
+
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
 declare const columnSlugBrand: unique symbol;
 /** Stable column identity; branded so slugs can't mix with display names. */
 export type ColumnSlug = string & { readonly [columnSlugBrand]: true };
+
+/** Central brand assertion: the single place a plain string becomes a slug. */
+export function columnSlug(value: string): ColumnSlug {
+  return value as ColumnSlug;
+}
 
 declare const dueDateBrand: unique symbol;
 /** Calendar-day string in `yyyy-mm-dd` form. */
@@ -68,8 +76,8 @@ export const DEFAULT_COLUMNS: {
   position: number;
   isFinal: boolean;
 }[] = [
-  { name: "To Do", slug: "to-do" as ColumnSlug, position: 0, isFinal: false },
-  { name: "In Progress", slug: "in-progress" as ColumnSlug, position: 1, isFinal: false },
-  { name: "In Review", slug: "in-review" as ColumnSlug, position: 2, isFinal: false },
-  { name: "Done", slug: "done" as ColumnSlug, position: 3, isFinal: true },
+  { name: "To Do", slug: columnSlug("to-do"), position: 0, isFinal: false },
+  { name: "In Progress", slug: columnSlug("in-progress"), position: 1, isFinal: false },
+  { name: "In Review", slug: columnSlug("in-review"), position: 2, isFinal: false },
+  { name: "Done", slug: columnSlug("done"), position: 3, isFinal: true },
 ];

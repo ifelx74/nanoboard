@@ -15,8 +15,6 @@ export const Route = createFileRoute("/_app/project/$projectId/board")({
 const skeletonColumnKeys = ["skeleton-col-0", "skeleton-col-1", "skeleton-col-2", "skeleton-col-3"];
 const skeletonCardKeys = ["skeleton-card-0", "skeleton-card-1", "skeleton-card-2"];
 
-// Loading skeleton mirrors Kaneo's board skeleton, adapted to this board's
-// column chrome: pulsed header plus pulsed card blocks per column.
 function BoardSkeleton() {
   return (
     <div className="flex h-full gap-3 overflow-x-auto p-4" aria-hidden="true">

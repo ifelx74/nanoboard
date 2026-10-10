@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetPanel, SheetPopup } from "@/components/ui/sheet";
 import {
   duplicateTask,
-  getProject,
   getProjectColumns,
   getTask,
 } from "@/lib/db/queries";
@@ -66,7 +65,6 @@ export default function TaskDrawer({
     () => (currentTaskId ? getTask(currentTaskId) : undefined),
     [currentTaskId],
   );
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
   const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
 
   async function handleDuplicate() {
@@ -74,7 +72,6 @@ export default function TaskDrawer({
     setDuplicating(true);
     try {
       const id = await duplicateTask(task.id);
-      toast.success("Task duplicated");
       onSelectTask(id);
     } catch (error) {
       toast.error(
@@ -97,12 +94,7 @@ export default function TaskDrawer({
         showCloseButton={false}
         className="w-full sm:max-w-lg"
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-border bg-background px-4 py-2.5">
-          <span className="text-sm font-medium text-muted-foreground">
-            {project && task
-              ? `${project.slug}-${task.number}`
-              : "Task"}
-          </span>
+        <div className="flex shrink-0 items-center justify-end border-b border-border bg-background px-4 py-2.5">
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"

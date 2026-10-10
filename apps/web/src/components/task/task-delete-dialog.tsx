@@ -32,7 +32,6 @@ export default function TaskDeleteDialog({
     setPending(true);
     try {
       await deleteTask(taskId);
-      toast.success("Task deleted");
       onOpenChange(false);
       onDeleted();
     } catch (error) {

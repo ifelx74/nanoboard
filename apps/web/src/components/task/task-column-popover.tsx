@@ -1,14 +1,7 @@
-import { Check } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { moveTaskToColumn } from "@/lib/db/queries";
 import type { Column, Task } from "@/lib/db/schema";
 import { toast } from "@/lib/toast";
+import TaskOptionPopover from "./task-option-popover";
 
 export default function TaskColumnPopover({
   task,
@@ -19,42 +12,33 @@ export default function TaskColumnPopover({
   columns: Column[];
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-
-  async function handleColumnChange(columnId: string) {
+  async function handleColumnChange(columnId: string): Promise<boolean> {
+    if (columnId === task.columnId) {
+      return true;
+    }
     const column = columns.find((candidate) => candidate.id === columnId);
-    if (!column) return;
+    if (!column) return false;
     try {
       await moveTaskToColumn(task.id, column.slug);
-      setOpen(false);
+      return true;
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to move task",
       );
+      return false;
     }
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-48 p-0" align="start">
-        <div>
-          {columns.map((column) => (
-            <Button
-              key={column.id}
-              variant="ghost"
-              size="sm"
-              className="h-8 w-full justify-start gap-2 rounded-none px-2 first:rounded-t-md last:rounded-b-md"
-              onClick={() => void handleColumnChange(column.id)}
-            >
-              <span className="text-sm">{column.name}</span>
-              {task.columnId === column.id && (
-                <Check className="ml-auto h-4 w-4" />
-              )}
-            </Button>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <TaskOptionPopover
+      options={columns.map((column) => ({
+        key: column.id,
+        label: <span className="text-sm">{column.name}</span>,
+      }))}
+      selectedKey={task.columnId}
+      onSelect={handleColumnChange}
+    >
+      {children}
+    </TaskOptionPopover>
   );
 }

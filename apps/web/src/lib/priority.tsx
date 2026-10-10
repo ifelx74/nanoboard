@@ -5,6 +5,14 @@ import {
   CircleAlert,
   Minus,
 } from "lucide-react";
+import type { TaskPriority } from "@/lib/db/schema";
+
+export function priorityLabel(priority: TaskPriority): string {
+  return priority
+    .split("-")
+    .map((word) => word[0]?.toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 export function getPriorityIcon(priority: string) {
   switch (priority) {

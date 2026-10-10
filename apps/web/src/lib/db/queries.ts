@@ -9,6 +9,7 @@ import type {
   Task,
   TaskPriority,
 } from "./schema";
+import { TASK_PRIORITIES } from "./schema";
 
 export function getProject(projectId: string): Promise<Project | undefined> {
   return db.projects.get(projectId);
@@ -37,14 +38,6 @@ export function countProjectTasks(projectId: string): Promise<number> {
 export const QUICK_ADD_TITLE_MIN = 3;
 export const QUICK_ADD_TITLE_MAX = 256;
 
-const VALID_PRIORITIES: readonly TaskPriority[] = [
-  "no-priority",
-  "low",
-  "medium",
-  "high",
-  "urgent",
-];
-
 const DUE_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 function assertValidTitle(title: string): string {
@@ -61,9 +54,9 @@ function assertValidTitle(title: string): string {
 }
 
 function assertValidPriority(priority: TaskPriority): void {
-  if (!VALID_PRIORITIES.includes(priority)) {
+  if (!TASK_PRIORITIES.includes(priority)) {
     throw new Error(
-      `Invalid priority "${priority}". Valid values: ${VALID_PRIORITIES.join(", ")}.`,
+      `Invalid priority "${priority}". Valid values: ${TASK_PRIORITIES.join(", ")}.`,
     );
   }
 }

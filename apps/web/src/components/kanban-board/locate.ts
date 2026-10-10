@@ -7,7 +7,41 @@ export interface Pointer {
 
 export interface DropTarget {
   overId: string;
-  insertAfter?: boolean;
+  /** Pointer-resolved before/after; "auto" defers to the default rule. */
+  placeAfter: boolean | "auto";
+}
+
+export interface LaneRect {
+  id: string;
+  rect: { top: number; bottom: number; left: number; right: number };
+}
+
+/**
+ * Shared lane picker: nearest lane containing the pointer's Y band,
+ * ties broken by horizontal distance. Used by both the pointer locator
+ * below and the dnd-kit collision handler so the two can never disagree
+ * on which lane owns a point.
+ */
+export function findLaneId(
+  lanes: LaneRect[],
+  pointer: Pointer,
+  gap: number,
+): string | null {
+  let laneId: string | null = null;
+  let laneDistance = gap;
+  for (const lane of lanes) {
+    if (pointer.y < lane.rect.top || pointer.y > lane.rect.bottom) continue;
+    const distance = Math.max(
+      lane.rect.left - pointer.x,
+      pointer.x - lane.rect.right,
+      0,
+    );
+    if (distance < laneDistance) {
+      laneId = lane.id;
+      laneDistance = distance;
+    }
+  }
+  return laneId;
 }
 
 /**
@@ -23,19 +57,14 @@ export function locateFromPointer(
   activeId: string,
   pointer: Pointer,
 ): DropTarget | null {
-  let laneId: string | null = null;
-  let laneDistance = 12;
-  for (const column of columns) {
-    const el = laneEls.get(column.id);
-    if (!el) continue;
-    const rect = el.getBoundingClientRect();
-    if (pointer.y < rect.top || pointer.y > rect.bottom) continue;
-    const distance = Math.max(rect.left - pointer.x, pointer.x - rect.right, 0);
-    if (distance < laneDistance) {
-      laneId = column.id;
-      laneDistance = distance;
-    }
-  }
+  const laneId = findLaneId(
+    columns.flatMap((column) => {
+      const el = laneEls.get(column.id);
+      return el ? [{ id: column.id, rect: el.getBoundingClientRect() }] : [];
+    }),
+    pointer,
+    12,
+  );
   if (!laneId) return null;
 
   const laneEl = laneEls.get(laneId);
@@ -52,8 +81,8 @@ export function locateFromPointer(
     const distance = Math.abs(centerY - pointer.y);
     if (distance < bestDistance) {
       bestDistance = distance;
-      best = { overId: id, insertAfter: pointer.y > centerY };
+      best = { overId: id, placeAfter: pointer.y > centerY };
     }
   }
-  return best ?? { overId: laneId };
+  return best ?? { overId: laneId, placeAfter: "auto" as const };
 }

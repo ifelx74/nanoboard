@@ -11,20 +11,12 @@ export interface MoveResult {
   dirty: MoveDirtyItem[];
 }
 
-/**
- * Pure board-move computation (mirrors Kaneo's move-task core, minus
- * immer and server-only concerns). Removes the active task from its
- * column, inserts it at the hovered position in the destination column,
- * renumbers touched columns dense 0..n, and returns only the rows whose
- * position or column changed. Used for hover preview AND the drop write,
- * so preview and commit can never disagree.
- */
 export function computeMove(
   grouping: Map<string, Task[]>,
   columns: Column[],
   activeId: string,
   overId: string,
-  insertAfterTarget?: boolean,
+  placeAfter: boolean | "auto" = "auto",
 ): MoveResult | null {
   const sourceColumnId = findColumnId(grouping, activeId);
   const destination =
@@ -58,9 +50,11 @@ export function computeMove(
       : to.findIndex((candidate) => candidate.id === overId);
   if (index === -1) index = to.length;
   if (overId !== destination.id) {
-    if (insertAfterTarget !== undefined) {
-      index += insertAfterTarget ? 1 : 0;
-    } else if (sourceColumnId !== destination.id || sourceIndex <= index) {
+    if (placeAfter === "auto") {
+      if (sourceColumnId !== destination.id || sourceIndex <= index) {
+        index += 1;
+      }
+    } else if (placeAfter) {
       index += 1;
     }
   }
