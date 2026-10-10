@@ -1,11 +1,13 @@
 import Dexie, { type Table } from "dexie";
-import type { Column, Project, Task } from "./schema";
-import { seedDatabase } from "./seed";
+import type { Column, Label, Project, Task, TaskLabel } from "./schema";
+import { buildLabelSeedRows, seedDatabase } from "./seed";
 
 export class NanoboardDB extends Dexie {
   projects!: Table<Project, string>;
   columns!: Table<Column, string>;
   tasks!: Table<Task, string>;
+  labels!: Table<Label, string>;
+  taskLabels!: Table<TaskLabel, [string, string]>;
 
   constructor(name = "nanoboard") {
     super(name);
@@ -19,6 +21,27 @@ export class NanoboardDB extends Dexie {
       tasks:
         "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
     });
+    // v3: label palette per project plus the assignment join. The compound
+    // primary key makes re-attaching an existing pair a no-op. `populate`
+    // only fires on fresh creation, so the upgrade backfills the default
+    // palette for pre-existing profiles.
+    this.version(3)
+      .stores({
+        projects: "&id, slug, position",
+        columns: "&id, projectId, [projectId+position]",
+        tasks:
+          "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
+        labels: "&id, projectId, &[projectId+name]",
+        taskLabels: "&[taskId+labelId], taskId, labelId",
+      })
+      .upgrade(async (tx) => {
+        const projects = await tx.table("projects").toArray();
+        const { labels } = buildLabelSeedRows(
+          projects.map((p: { id: string }) => p.id),
+          Date.now(),
+        );
+        await tx.table("labels").bulkAdd(labels);
+      });
     this.on("populate", () => seedDatabase(this));
   }
 }

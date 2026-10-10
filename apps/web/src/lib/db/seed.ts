@@ -4,8 +4,10 @@ import { DEFAULT_PROJECT_ICON, columnSlug } from "./schema";
 import type {
   Column,
   DueDateString,
+  Label,
   Project,
   Task,
+  TaskLabel,
 } from "./schema";
 
 /** Minimal surface seed routines need; the connection module satisfies this. */
@@ -13,12 +15,16 @@ export interface SeedableDb {
   projects: Table<Project, string>;
   columns: Table<Column, string>;
   tasks: Table<Task, string>;
+  labels: Table<Label, string>;
+  taskLabels: Table<TaskLabel, [string, string]>;
 }
 
 export interface SeedRows {
   projects: Project[];
   columns: Column[];
   tasks: Task[];
+  labels: Label[];
+  taskLabels: TaskLabel[];
 }
 
 function isoDaysFromNow(days: number): DueDateString {
@@ -81,26 +87,102 @@ export function buildSeedRows(now: number = Date.now()): SeedRows {
     { id: "t-8", projectId: "p-mobile", columnId: "c-mob-done", status: columnSlug("done"), title: "Release 1.2 to TestFlight", description: "", position: 0, number: 4, priority: "medium", createdAt: now, updatedAt: now },
   ];
 
-  return { projects, columns, tasks };
+  return { projects, columns, tasks, ...buildLabelSeedRows(["p-website", "p-mobile"], now, true) };
+}
+
+/**
+ * Default palette per project plus a few assignments, so label UI has real
+ * data from first boot. Shared by fresh seeds and the v3 upgrade backfill
+ * (which passes existing project ids but no task assignments — there are no
+ * tasks worth guessing labels for on upgrade).
+ */
+export function buildLabelSeedRows(
+  projectIds: string[],
+  now: number = Date.now(),
+  withAssignments = false,
+): { labels: Label[]; taskLabels: TaskLabel[] } {
+  const labels: Label[] = [];
+  for (const projectId of projectIds) {
+    for (const entry of paletteEntries(projectId)) {
+      labels.push({
+        id: labelId(projectId, entry.name),
+        projectId,
+        ...entry,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  const taskLabels: TaskLabel[] = withAssignments
+    ? [
+        { taskId: "t-1", labelId: labelId("p-website", "design") },
+        { taskId: "t-3", labelId: labelId("p-website", "feature") },
+        { taskId: "t-4", labelId: labelId("p-website", "docs") },
+        { taskId: "t-9", labelId: labelId("p-mobile", "crash") },
+        { taskId: "t-6", labelId: labelId("p-mobile", "sync") },
+        { taskId: "t-8", labelId: labelId("p-mobile", "release") },
+      ]
+    : [];
+
+  return { labels, taskLabels };
+}
+
+function paletteEntries(projectId: string): { name: string; color: string }[] {
+  if (projectId === "p-mobile") {
+    return [
+      { name: "crash", color: "red" },
+      { name: "sync", color: "teal" },
+      { name: "release", color: "yellow" },
+    ];
+  }
+  return [
+    { name: "bug", color: "red" },
+    { name: "feature", color: "green" },
+    ...(projectId === "p-website" ? [{ name: "design", color: "purple" }] : []),
+    { name: "docs", color: "gray" },
+  ];
+}
+
+function labelId(projectId: string, name: string): string {
+  const short =
+    projectId === "p-website"
+      ? "web"
+      : projectId === "p-mobile"
+        ? "mob"
+        : projectId;
+  return `l-${short}-${name}`;
+}
+
+async function addSeedRows(db: SeedableDb, rows: SeedRows): Promise<void> {
+  await db.projects.bulkAdd(rows.projects);
+  await db.columns.bulkAdd(rows.columns);
+  await db.tasks.bulkAdd(rows.tasks);
+  await db.labels.bulkAdd(rows.labels);
+  await db.taskLabels.bulkAdd(rows.taskLabels);
 }
 
 /** Runs inside the `populate` transaction on first database creation only. */
 export async function seedDatabase(db: SeedableDb): Promise<void> {
-  const { projects, columns, tasks } = buildSeedRows();
-  await db.projects.bulkAdd(projects);
-  await db.columns.bulkAdd(columns);
-  await db.tasks.bulkAdd(tasks);
+  await addSeedRows(db, buildSeedRows());
 }
 
 /** Dev-only reset: clears all rows and restores seed content. No UI calls this. */
 export async function resetToSeed(db: Dexie & SeedableDb): Promise<void> {
-  await db.transaction("rw", db.projects, db.columns, db.tasks, async () => {
-    await db.tasks.clear();
-    await db.columns.clear();
-    await db.projects.clear();
-    const { projects, columns, tasks } = buildSeedRows();
-    await db.projects.bulkAdd(projects);
-    await db.columns.bulkAdd(columns);
-    await db.tasks.bulkAdd(tasks);
-  });
+  await db.transaction(
+    "rw",
+    db.projects,
+    db.columns,
+    db.tasks,
+    db.labels,
+    db.taskLabels,
+    async () => {
+      await db.taskLabels.clear();
+      await db.tasks.clear();
+      await db.labels.clear();
+      await db.columns.clear();
+      await db.projects.clear();
+      await addSeedRows(db, buildSeedRows());
+    },
+  );
 }

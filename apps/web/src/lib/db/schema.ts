@@ -68,6 +68,23 @@ export interface Task {
   updatedAt: number;
 }
 
+export interface Label {
+  id: string;
+  /** Palette scope: labels belong to exactly one project. */
+  projectId: string;
+  name: string;
+  /** One of the LABEL_COLORS values. */
+  color: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface TaskLabel {
+  /** Assignment join; the compound key makes re-attach a store-level no-op. */
+  taskId: string;
+  labelId: string;
+}
+
 export const DEFAULT_PROJECT_ICON = "Layout";
 
 export const DEFAULT_COLUMNS: {
