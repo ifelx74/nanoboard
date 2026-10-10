@@ -23,6 +23,14 @@ export function formatDayRange(start: Date, end: Date): string {
   return `${format(start, "MMM d")} – ${format(end, "MMM d")}`;
 }
 
+/** Kaneo's short drawer date: "Jan 5", no year. */
+export function formatDateShort(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 /** Parses a `yyyy-mm-dd` day string as a local date (no UTC shift). */
 export function parseLocalDate(isoDate: DueDateString | StartDateString): Date {
   return parseDayString(isoDate);

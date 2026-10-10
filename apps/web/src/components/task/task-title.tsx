@@ -61,7 +61,7 @@ export default function TaskTitle({ task }: { task: Task }) {
       placeholder="Task title"
       aria-label="Task title"
       onChange={(event) => handleChange(event.target.value)}
-      className="block h-auto w-full appearance-none border-0 bg-transparent p-0 text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground"
+      className="block h-auto w-full appearance-none border-0 bg-transparent p-0 font-heading text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground outline-none placeholder:text-foreground/45"
     />
   );
 }

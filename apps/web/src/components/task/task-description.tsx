@@ -29,16 +29,13 @@ export default function TaskDescription({ task }: { task: Task }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium text-muted-foreground">
-        Description
-      </span>
       <textarea
         value={value}
         rows={6}
         placeholder="Add a description"
         aria-label="Task description"
         onChange={(event) => setValue(event.target.value)}
-        className="w-full resize-y rounded-lg border border-border/80 bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-ring"
+        className="w-full resize-y border-0 bg-transparent p-0 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
       />
       {dirty && (
         <div className="flex gap-1.5">
