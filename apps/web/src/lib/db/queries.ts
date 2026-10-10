@@ -8,6 +8,7 @@ import type {
   DueDateString,
   Label,
   Project,
+  StartDateString,
   Task,
   TaskPriority,
 } from "./schema";
@@ -63,12 +64,10 @@ function assertValidPriority(priority: TaskPriority): void {
   }
 }
 
-function assertValidDueDate(dueDate: DueDateString): void {
-  const match = DUE_DATE_PATTERN.exec(dueDate);
+function assertValidDayDate(value: string, field: string): void {
+  const match = DUE_DATE_PATTERN.exec(value);
   if (!match) {
-    throw new Error(
-      `Invalid due date "${dueDate}". Expected yyyy-mm-dd.`,
-    );
+    throw new Error(`Invalid ${field} "${value}". Expected yyyy-mm-dd.`);
   }
   const year = Number(match[1]);
   const month = Number(match[2]);
@@ -79,7 +78,33 @@ function assertValidDueDate(dueDate: DueDateString): void {
     probe.getUTCMonth() !== month - 1 ||
     probe.getUTCDate() !== day
   ) {
-    throw new Error(`Invalid due date "${dueDate}". Not a real calendar date.`);
+    throw new Error(`Invalid ${field} "${value}". Not a real calendar date.`);
+  }
+}
+
+function assertValidDueDate(dueDate: DueDateString): void {
+  assertValidDayDate(dueDate, "due date");
+}
+
+function assertValidStartDate(startDate: StartDateString): void {
+  assertValidDayDate(startDate, "start date");
+}
+
+/**
+ * Mirrors Kaneo's `validateDateRange`: a start after the due date is
+ * rejected, never swapped or clamped. Day strings compare
+ * lexicographically in yyyy-mm-dd form.
+ */
+function assertValidDateRange(
+  startDate: StartDateString | undefined,
+  dueDate: DueDateString | undefined,
+): void {
+  if (
+    startDate !== undefined &&
+    dueDate !== undefined &&
+    String(startDate) > String(dueDate)
+  ) {
+    throw new Error("Start date cannot be after due date.");
   }
 }
 
@@ -111,6 +136,7 @@ export interface CreateTaskInput {
   title: string;
   description?: string;
   priority?: TaskPriority;
+  startDate?: StartDateString | null;
   dueDate?: DueDateString | null;
   labelIds?: string[];
 }
@@ -118,19 +144,27 @@ export interface CreateTaskInput {
 /**
  * Task creation write, from the title-only quick-add to the create dialog's
  * full write. The extra fields are all optional: description defaults to "",
- * priority to "no-priority", dueDate to absent, labels to none. Allocates `position`
+ * priority to "no-priority", dates to absent, labels to none. Allocates `position`
  * (one past the last task in the destination column, read off the ordered
  * compound index) and `number` (project counter + 1) atomically in one
  * transaction that also bumps `project.lastTaskNumber` and attaches labels.
- * Throws on invalid titles or missing column/project; callers pre-guard the
- * title so the throw is unreachable defense-in-depth. Returns the new task id.
+ * Throws on invalid titles, malformed dates, a start after the due date, or
+ * missing column/project; callers pre-guard the title so the throw is
+ * unreachable defense-in-depth. Returns the new task id.
  */
 export async function createTask(input: CreateTaskInput): Promise<string> {
   const title = assertValidTitle(input.title);
   if (input.priority !== undefined) assertValidPriority(input.priority);
+  if (input.startDate !== undefined && input.startDate !== null) {
+    assertValidStartDate(input.startDate);
+  }
   if (input.dueDate !== undefined && input.dueDate !== null) {
     assertValidDueDate(input.dueDate);
   }
+  assertValidDateRange(
+    input.startDate ?? undefined,
+    input.dueDate ?? undefined,
+  );
   const now = Date.now();
   const id = createId();
 
@@ -178,6 +212,7 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
         position,
         number,
         priority: input.priority ?? "no-priority",
+        startDate: input.startDate ?? undefined,
         dueDate: input.dueDate ?? undefined,
         createdAt: now,
         updatedAt: now,
@@ -220,15 +255,39 @@ export async function updateTaskPriority(
 }
 
 /**
- * A string sets the due date, `null` clears it. The `undefined` write
- * deletes the property from the stored row.
+ * A string sets the start date, `null` clears it. Rejects a start after the
+ * task's current due date, mirroring Kaneo's range validation.
+ */
+export async function updateTaskStartDate(
+  id: string,
+  startDate: StartDateString | null,
+): Promise<void> {
+  if (startDate !== null) assertValidStartDate(startDate);
+  const existing = await requireTask(id);
+  assertValidDateRange(
+    startDate ?? undefined,
+    existing.dueDate,
+  );
+  await db.tasks.update(id, {
+    startDate: startDate ?? undefined,
+    updatedAt: Date.now(),
+  });
+}
+
+/**
+ * A string sets the due date, `null` clears it. Rejects a due before the
+ * task's current start date, mirroring Kaneo's range validation.
  */
 export async function updateTaskDueDate(
   id: string,
   dueDate: DueDateString | null,
 ): Promise<void> {
   if (dueDate !== null) assertValidDueDate(dueDate);
-  await requireTask(id);
+  const existing = await requireTask(id);
+  assertValidDateRange(
+    existing.startDate,
+    dueDate ?? undefined,
+  );
   await db.tasks.update(id, { dueDate: dueDate ?? undefined, updatedAt: Date.now() });
 }
 
@@ -351,7 +410,7 @@ export async function reorderTasks(
 
 /**
  * Same-column copy with optional validated rename. Copies
- * description/priority/dueDate; mints fresh id, number, position, and
+ * description/priority/startDate/dueDate; mints fresh id, number, position, and
  * timestamps. Throws on missing source.
  */
 export async function duplicateTask(
@@ -389,6 +448,7 @@ export async function duplicateTask(
       position,
       number,
       priority: source.priority,
+      startDate: source.startDate,
       dueDate: source.dueDate,
       createdAt: now,
       updatedAt: now,

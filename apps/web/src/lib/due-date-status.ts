@@ -1,4 +1,5 @@
-import type { DueDateString } from "@/lib/db/schema";
+import { format } from "date-fns";
+import type { DueDateString, StartDateString } from "@/lib/db/schema";
 
 export type DueDateStatus =
   | "overdue"
@@ -6,10 +7,25 @@ export type DueDateStatus =
   | "far-future"
   | "no-due-date";
 
+/** Formats a local date as a `yyyy-mm-dd` day string (no UTC shift). */
+export function toDayString(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 /** Parses a `yyyy-mm-dd` day string as a local date (no UTC shift). */
-export function parseLocalDate(isoDate: DueDateString): Date {
+export function parseDayString(isoDate: string): Date {
   const [year, month, day] = isoDate.split("-").map(Number);
-  return new Date(year, month - 1, day);
+  return new Date(year, (month ?? 1) - 1, day);
+}
+
+/** Kaneo's bar/overflow range label, even for single-day bars. */
+export function formatDayRange(start: Date, end: Date): string {
+  return `${format(start, "MMM d")} – ${format(end, "MMM d")}`;
+}
+
+/** Parses a `yyyy-mm-dd` day string as a local date (no UTC shift). */
+export function parseLocalDate(isoDate: DueDateString | StartDateString): Date {
+  return parseDayString(isoDate);
 }
 
 export function getDueDateStatus(

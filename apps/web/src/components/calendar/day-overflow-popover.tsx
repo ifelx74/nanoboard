@@ -5,6 +5,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatDayRange } from "@/lib/due-date-status";
 import type { CalendarTask } from "./calendar-task-bar";
 
 type DayOverflowPopoverProps = {
@@ -55,7 +56,7 @@ export default function DayOverflowPopover({
                   {task.title}
                 </span>
                 <span className="w-full truncate text-[11px] text-muted-foreground">
-                  Due {format(task.scheduleStart, "MMM d")}
+                  {formatDayRange(task.scheduleStart, task.scheduleEnd)}
                 </span>
               </button>
             ))}

@@ -7,9 +7,9 @@ import CalendarToolbar from "@/components/calendar/calendar-toolbar";
 import MonthGrid from "@/components/calendar/month-grid";
 import type { CalendarTask } from "@/components/calendar/calendar-task-bar";
 import { buildMonthWeeks } from "@/components/calendar/month-grid-model";
+import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import TaskDrawer from "@/components/task/task-drawer";
 import { getProjectTasks } from "@/lib/db/queries";
-import type { DueDateString, Task } from "@/lib/db/schema";
 import { parseLocalDate } from "@/lib/due-date-status";
 
 export const Route = createFileRoute("/_app/project/$projectId/calendar")({
@@ -52,29 +52,41 @@ function RouteComponent() {
   const [visibleMonth, setVisibleMonth] = useState(() =>
     startOfMonth(new Date()),
   );
+  const [weekStartsOn, setWeekStartsOn] = useWeekStartsOn();
 
-  // v1 tasks carry a due date only, so every bar is a single day. A future
-  // startDate would feed scheduleStart here for spanning bars.
+  // Kaneo's schedule normalizer: start ?? due feeds the bar's first day,
+  // due ?? start its last; both-null tasks are excluded and a reversed range
+  // is swapped, never dropped.
   const scheduledTasks: CalendarTask[] = useMemo(
     () =>
-      (tasks ?? [])
-        .filter(
-          (task): task is Task & { dueDate: DueDateString } =>
-            task.dueDate !== undefined,
-        )
-        .map((task) => ({
-          id: task.id,
-          title: task.title,
-          status: task.status,
-          scheduleStart: parseLocalDate(task.dueDate),
-          scheduleEnd: parseLocalDate(task.dueDate),
-        })),
+      (tasks ?? []).flatMap((task) => {
+        const start = task.startDate
+          ? parseLocalDate(task.startDate)
+          : undefined;
+        const end = task.dueDate ? parseLocalDate(task.dueDate) : undefined;
+        const scheduleStart = start ?? end;
+        const scheduleEnd = end ?? start;
+        if (!scheduleStart || !scheduleEnd) return [];
+        const earlier =
+          scheduleStart <= scheduleEnd ? scheduleStart : scheduleEnd;
+        const later = scheduleStart <= scheduleEnd ? scheduleEnd : scheduleStart;
+        return [
+          {
+            id: task.id,
+            title: task.title,
+            status: task.status,
+            scheduleStart: earlier,
+            scheduleEnd: later,
+          },
+        ];
+      }),
     [tasks],
   );
 
-  // Sunday-first, matching the previous view. A Monday-first preference
-  // (Kaneo's weekStartsOn) is parked alongside startDate.
-  const weeks = useMemo(() => buildMonthWeeks(visibleMonth, 0), [visibleMonth]);
+  const weeks = useMemo(
+    () => buildMonthWeeks(visibleMonth, weekStartsOn),
+    [visibleMonth, weekStartsOn],
+  );
 
   function openTask(taskId: string) {
     void navigate({
@@ -129,6 +141,8 @@ function RouteComponent() {
             setVisibleMonth((current) => addMonths(current, 1))
           }
           onToday={() => setVisibleMonth(startOfMonth(new Date()))}
+          weekStartsOn={weekStartsOn}
+          onWeekStartsOnChange={setWeekStartsOn}
         />
         <MonthGrid
           weeks={weeks}

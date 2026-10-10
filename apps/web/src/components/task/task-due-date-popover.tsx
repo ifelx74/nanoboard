@@ -9,15 +9,19 @@ import {
 } from "@/components/ui/popover";
 import { updateTaskDueDate } from "@/lib/db/queries";
 import type { DueDateString, Task } from "@/lib/db/schema";
+import { parseDayString, toDayString } from "@/lib/due-date-status";
 import { toast } from "@/lib/toast";
 
 function toISODate(date: Date): DueDateString {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` as DueDateString;
+  return toDayString(date) as DueDateString;
 }
 
 function parseDueDate(dueDate: DueDateString): Date {
-  const [year, month, day] = dueDate.split("-").map(Number);
-  return new Date(year, (month ?? 1) - 1, day);
+  return parseDayString(dueDate);
+}
+
+function parseStartDate(startDate: NonNullable<Task["startDate"]>): Date {
+  return parseDayString(startDate);
 }
 
 export default function TaskDueDatePopover({
@@ -48,6 +52,9 @@ export default function TaskDueDatePopover({
           mode="single"
           selected={task.dueDate ? parseDueDate(task.dueDate) : undefined}
           onSelect={(date) => void handleDateChange(date)}
+          disabled={
+            task.startDate ? { before: parseStartDate(task.startDate) } : undefined
+          }
           className="w-full bg-popover"
         />
         {task.dueDate && (

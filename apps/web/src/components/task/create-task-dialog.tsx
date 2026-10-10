@@ -33,8 +33,9 @@ import {
   getProjectLabels,
 } from "@/lib/db/queries";
 import type { Column, DueDateString, TaskPriority } from "@/lib/db/schema";
-import { TASK_PRIORITIES } from "@/lib/db/schema";
+import { TASK_PRIORITIES, startDate as startDateString } from "@/lib/db/schema";
 import { getColumnIcon } from "@/lib/column";
+import { toDayString } from "@/lib/due-date-status";
 import { LABEL_COLORS, resolveLabelColor } from "@/lib/label-color";
 import type { LabelColorValue } from "@/lib/label-color";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
@@ -42,7 +43,7 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 function toISODate(date: Date): DueDateString {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` as DueDateString;
+  return toDayString(date) as DueDateString;
 }
 
 function formatMedium(date: Date): string {
@@ -66,9 +67,9 @@ function LabelDot({ color }: { color: string }) {
 }
 
 /**
- * Kaneo's create-task modal, adapted: plain textarea description, no start
- * date / assignee / project picker / custom fields / uploads (unimplemented
- * features). Labels stage as local ids; the palette entry is created
+ * Kaneo's create-task modal, adapted: plain textarea description, no assignee
+ * / project picker / custom fields / uploads (unimplemented features).
+ * Labels stage as local ids; the palette entry is created
  * immediately on color pick and attached at submit — Kaneo's semantics.
  */
 export default function CreateTaskDialog({
@@ -88,6 +89,7 @@ export default function CreateTaskDialog({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("no-priority");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [createMore, setCreateMore] = useState(false);
@@ -95,6 +97,7 @@ export default function CreateTaskDialog({
   const [discardOpen, setDiscardOpen] = useState(false);
 
   const [priorityOpen, setPriorityOpen] = useState(false);
+  const [startDateOpen, setStartDateOpen] = useState(false);
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [labelsStep, setLabelsStep] = useState<LabelsStep>("select");
@@ -124,6 +127,7 @@ export default function CreateTaskDialog({
     title.trim() ||
       description.trim() ||
       priority !== "no-priority" ||
+      startDate ||
       dueDate ||
       labelIds.length > 0,
   );
@@ -162,6 +166,7 @@ export default function CreateTaskDialog({
     setTitle("");
     setDescription("");
     setPriority("no-priority");
+    setStartDate(undefined);
     setDueDate(undefined);
     setLabelIds([]);
     setLabelsStep("select");
@@ -181,6 +186,7 @@ export default function CreateTaskDialog({
         title: title.trim(),
         description: description.trim(),
         priority,
+        startDate: startDate ? startDateString(toISODate(startDate)) : undefined,
         dueDate: dueDate ? toISODate(dueDate) : undefined,
         labelIds,
       });
@@ -291,6 +297,49 @@ export default function CreateTaskDialog({
                 {getColumnIcon(column.slug, column.isFinal)}
                 {column.name}
               </div>
+
+              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent/50",
+                      startDate
+                        ? "bg-accent/30 text-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    <span>
+                      {startDate ? formatMedium(startDate) : "Start date"}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={(date) => {
+                      setStartDate(date);
+                      if (date) setStartDateOpen(false);
+                    }}
+                    className="w-full bg-popover"
+                  />
+                  {startDate && (
+                    <div className="border-t border-border p-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() => setStartDate(undefined)}
+                      >
+                        Clear start date
+                      </Button>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
 
               <Popover open={priorityOpen} onOpenChange={setPriorityOpen}>
                 <PopoverTrigger asChild>

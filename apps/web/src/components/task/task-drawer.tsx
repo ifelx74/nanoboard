@@ -17,6 +17,7 @@ import TaskDescription from "./task-description";
 import TaskDueDatePopover from "./task-due-date-popover";
 import TaskLabelsPopover from "./task-labels-popover";
 import TaskPriorityPopover from "./task-priority-popover";
+import TaskStartDatePopover from "./task-start-date-popover";
 import TaskTitle from "./task-title";
 
 function PropertyRow({
@@ -178,6 +179,17 @@ export default function TaskDrawer({
                       {task.priority.replace("-", " ")}
                     </Button>
                   </TaskPriorityPopover>
+                </PropertyRow>
+                <PropertyRow label="Start date">
+                  <TaskStartDatePopover task={task}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 justify-start font-normal"
+                    >
+                      {task.startDate ?? "No start date"}
+                    </Button>
+                  </TaskStartDatePopover>
                 </PropertyRow>
                 <PropertyRow label="Due date">
                   <TaskDueDatePopover task={task}>

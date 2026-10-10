@@ -25,6 +25,10 @@ export class NanoboardDB extends Dexie {
     // primary key makes re-attaching an existing pair a no-op. `populate`
     // only fires on fresh creation, so the upgrade backfills the default
     // palette for pre-existing profiles.
+    //
+    // startDate needs no version bump or upgrade: it is an unindexed
+    // optional property (Kaneo likewise carries no startDate-only index),
+    // so pre-existing rows simply read it as absent.
     this.version(3)
       .stores({
         projects: "&id, slug, position",

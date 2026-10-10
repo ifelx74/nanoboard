@@ -1,7 +1,7 @@
 // Client-side data shapes.
 // (no workspace, auth/session, or user references). Timestamps are epoch
-// milliseconds; due dates stay `yyyy-mm-dd` strings so board/list/calendar
-// grouping works unchanged. Start dates arrive in v2.
+// milliseconds; start/due dates stay `yyyy-mm-dd` strings so board/list/calendar
+// grouping works unchanged.
 
 export const TASK_PRIORITIES = [
   "no-priority",
@@ -25,6 +25,15 @@ export function columnSlug(value: string): ColumnSlug {
 declare const dueDateBrand: unique symbol;
 /** Calendar-day string in `yyyy-mm-dd` form. */
 export type DueDateString = string & { readonly [dueDateBrand]: true };
+
+declare const startDateBrand: unique symbol;
+/** Calendar-day string in `yyyy-mm-dd` form; never after the task's dueDate. */
+export type StartDateString = string & { readonly [startDateBrand]: true };
+
+/** Central brand assertion: the single place a plain string becomes a start date. */
+export function startDate(value: string): StartDateString {
+  return value as StartDateString;
+}
 
 export interface Project {
   id: string;
@@ -62,6 +71,8 @@ export interface Task {
   /** Per-project sequential number, allocated from project.lastTaskNumber. */
   number: number;
   priority: TaskPriority;
+  /** ISO date string (yyyy-mm-dd) */
+  startDate?: StartDateString;
   /** ISO date string (yyyy-mm-dd) */
   dueDate?: DueDateString;
   createdAt: number;

@@ -1,6 +1,6 @@
 import type Dexie from "dexie";
 import type { Table } from "dexie";
-import { DEFAULT_PROJECT_ICON, columnSlug } from "./schema";
+import { DEFAULT_PROJECT_ICON, columnSlug, startDate } from "./schema";
 import type {
   Column,
   DueDateString,
@@ -78,8 +78,8 @@ export function buildSeedRows(now: number = Date.now()): SeedRows {
   const tasks: Task[] = [
     { id: "t-1", projectId: "p-website", columnId: "c-web-todo", status: columnSlug("to-do"), title: "Draft new homepage copy", description: "", position: 0, number: 1, priority: "medium", dueDate: isoDaysFromNow(2), createdAt: now, updatedAt: now },
     { id: "t-2", projectId: "p-website", columnId: "c-web-todo", status: columnSlug("to-do"), title: "Collect brand assets", description: "", position: 1, number: 2, priority: "low", createdAt: now, updatedAt: now },
-    { id: "t-3", projectId: "p-website", columnId: "c-web-progress", status: columnSlug("in-progress"), title: "Build pricing section", description: "", position: 0, number: 3, priority: "high", dueDate: isoDaysFromNow(0), createdAt: now, updatedAt: now },
-    { id: "t-4", projectId: "p-website", columnId: "c-web-review", status: columnSlug("in-review"), title: "Migrate blog posts", description: "", position: 0, number: 4, priority: "medium", dueDate: isoDaysFromNow(5), createdAt: now, updatedAt: now },
+    { id: "t-3", projectId: "p-website", columnId: "c-web-progress", status: columnSlug("in-progress"), title: "Build pricing section", description: "", position: 0, number: 3, priority: "high", startDate: startDate(isoDaysFromNow(-2)), dueDate: isoDaysFromNow(0), createdAt: now, updatedAt: now },
+    { id: "t-4", projectId: "p-website", columnId: "c-web-review", status: columnSlug("in-review"), title: "Migrate blog posts", description: "", position: 0, number: 4, priority: "medium", startDate: startDate(isoDaysFromNow(1)), dueDate: isoDaysFromNow(5), createdAt: now, updatedAt: now },
     { id: "t-5", projectId: "p-website", columnId: "c-web-done", status: columnSlug("done"), title: "Set up staging deploy", description: "", position: 0, number: 5, priority: "low", createdAt: now, updatedAt: now },
     { id: "t-6", projectId: "p-mobile", columnId: "c-mob-todo", status: columnSlug("to-do"), title: "Design offline sync flow", description: "", position: 0, number: 1, priority: "urgent", dueDate: isoDaysFromNow(3), createdAt: now, updatedAt: now },
     { id: "t-7", projectId: "p-mobile", columnId: "c-mob-progress", status: columnSlug("in-progress"), title: "Implement push notifications", description: "", position: 0, number: 2, priority: "high", dueDate: isoDaysFromNow(1), createdAt: now, updatedAt: now },

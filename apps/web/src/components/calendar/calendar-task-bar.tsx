@@ -1,6 +1,6 @@
 import type { JSX } from "react";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { formatDayRange } from "@/lib/due-date-status";
 import type { PackableTask, WeekSegment } from "./month-grid-model";
 
 export type CalendarTask = PackableTask & {
@@ -43,8 +43,9 @@ export default function CalendarTaskBar({
     continuesAfter,
   } = segment;
 
-  // v1 tasks carry a due date only, so every bar is a single day.
-  const dayLabel = format(task.scheduleStart, "MMM d");
+  // Kaneo always labels the bar with the full range, even for single-day
+  // bars ("Jan 5 – Jan 5").
+  const range = formatDayRange(task.scheduleStart, task.scheduleEnd);
 
   return (
     <button
@@ -54,8 +55,8 @@ export default function CalendarTaskBar({
         // Row 1 holds the date numbers, so lanes start at row 2.
         gridRow: lane + 2,
       }}
-      title={`${task.title} · ${dayLabel}`}
-      aria-label={`${task.title}, due ${dayLabel}`}
+      title={`${task.title} · ${range}`}
+      aria-label={`${task.title}, ${range}`}
       data-task-status={task.status}
       onClick={() => onOpenTask(task.id)}
       className={cn(
