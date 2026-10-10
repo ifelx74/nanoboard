@@ -11,3 +11,6 @@ server/dist
 public/dist
 
 examples/
+
+# Local issues tracker
+.scratch/
