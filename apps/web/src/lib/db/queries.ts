@@ -1,11 +1,19 @@
 import { createId } from "@paralleldrive/cuid2";
 import Dexie from "dexie";
 import { db } from "./db";
-import type { Column, Project, Task } from "./schema";
+import type {
+  Column,
+  ColumnSlug,
+  DueDateString,
+  Project,
+  Task,
+  TaskPriority,
+} from "./schema";
 
 /**
  * Single data seam for routes. Async Dexie reads so consumers subscribe
- * via `useLiveQuery`, plus the quick-add write path.
+ * via `useLiveQuery`, plus granular Kaneo-mirrored task mutations
+ * (one function per field — no patch objects).
  */
 export function getProject(projectId: string): Promise<Project | undefined> {
   return db.projects.get(projectId);
@@ -30,6 +38,79 @@ export function countProjectTasks(projectId: string): Promise<number> {
 export const QUICK_ADD_TITLE_MIN = 3;
 export const QUICK_ADD_TITLE_MAX = 256;
 
+const VALID_PRIORITIES: readonly TaskPriority[] = [
+  "no-priority",
+  "low",
+  "medium",
+  "high",
+  "urgent",
+];
+
+const DUE_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function assertValidTitle(title: string): string {
+  const trimmed = title.trim();
+  if (
+    trimmed.length < QUICK_ADD_TITLE_MIN ||
+    trimmed.length > QUICK_ADD_TITLE_MAX
+  ) {
+    throw new Error(
+      `Title must be ${QUICK_ADD_TITLE_MIN}–${QUICK_ADD_TITLE_MAX} characters after trimming.`,
+    );
+  }
+  return trimmed;
+}
+
+function assertValidPriority(priority: TaskPriority): void {
+  if (!VALID_PRIORITIES.includes(priority)) {
+    throw new Error(
+      `Invalid priority "${priority}". Valid values: ${VALID_PRIORITIES.join(", ")}.`,
+    );
+  }
+}
+
+function assertValidDueDate(dueDate: DueDateString): void {
+  const match = DUE_DATE_PATTERN.exec(dueDate);
+  if (!match) {
+    throw new Error(
+      `Invalid due date "${dueDate}". Expected yyyy-mm-dd.`,
+    );
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (
+    probe.getUTCFullYear() !== year ||
+    probe.getUTCMonth() !== month - 1 ||
+    probe.getUTCDate() !== day
+  ) {
+    throw new Error(`Invalid due date "${dueDate}". Not a real calendar date.`);
+  }
+}
+
+async function requireTask(id: string): Promise<Task> {
+  const task = await db.tasks.get(id);
+  if (!task) {
+    throw new Error("Task not found.");
+  }
+  return task;
+}
+
+async function nextColumnPosition(
+  projectId: string,
+  columnId: string,
+): Promise<number> {
+  const lastSibling = await db.tasks
+    .where("[projectId+columnId+position]")
+    .between(
+      [projectId, columnId, Dexie.minKey],
+      [projectId, columnId, Dexie.maxKey],
+    )
+    .last();
+  return lastSibling ? lastSibling.position + 1 : 0;
+}
+
 export interface CreateTaskInput {
   projectId: string;
   columnId: string;
@@ -45,16 +126,7 @@ export interface CreateTaskInput {
  * defense-in-depth. Returns the new task id.
  */
 export async function createTask(input: CreateTaskInput): Promise<string> {
-  const title = input.title.trim();
-  if (
-    title.length < QUICK_ADD_TITLE_MIN ||
-    title.length > QUICK_ADD_TITLE_MAX
-  ) {
-    throw new Error(
-      `Title must be ${QUICK_ADD_TITLE_MIN}–${QUICK_ADD_TITLE_MAX} characters after trimming.`,
-    );
-  }
-
+  const title = assertValidTitle(input.title);
   const now = Date.now();
   const id = createId();
 
@@ -68,14 +140,7 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
       throw new Error("Project not found.");
     }
 
-    const lastSibling = await db.tasks
-      .where("[projectId+columnId+position]")
-      .between(
-        [input.projectId, input.columnId, Dexie.minKey],
-        [input.projectId, input.columnId, Dexie.maxKey],
-      )
-      .last();
-    const position = lastSibling ? lastSibling.position + 1 : 0;
+    const position = await nextColumnPosition(input.projectId, input.columnId);
     const number = project.lastTaskNumber + 1;
 
     await db.tasks.add({
@@ -92,6 +157,138 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
       updatedAt: now,
     });
     await db.projects.update(input.projectId, {
+      lastTaskNumber: number,
+      updatedAt: now,
+    });
+  });
+
+  return id;
+}
+
+export async function updateTaskTitle(id: string, title: string): Promise<void> {
+  const trimmed = assertValidTitle(title);
+  const existing = await requireTask(id);
+  if (existing.title === trimmed) return;
+  await db.tasks.update(id, { title: trimmed, updatedAt: Date.now() });
+}
+
+export async function updateTaskDescription(
+  id: string,
+  description: string,
+): Promise<void> {
+  await requireTask(id);
+  await db.tasks.update(id, { description, updatedAt: Date.now() });
+}
+
+export async function updateTaskPriority(
+  id: string,
+  priority: TaskPriority,
+): Promise<void> {
+  assertValidPriority(priority);
+  await requireTask(id);
+  await db.tasks.update(id, { priority, updatedAt: Date.now() });
+}
+
+/**
+ * A string sets the due date, `null` clears it. The `undefined` write
+ * deletes the property from the stored row.
+ */
+export async function updateTaskDueDate(
+  id: string,
+  dueDate: DueDateString | null,
+): Promise<void> {
+  if (dueDate !== null) assertValidDueDate(dueDate);
+  await requireTask(id);
+  await db.tasks.update(id, { dueDate: dueDate ?? undefined, updatedAt: Date.now() });
+}
+
+/**
+ * Same-project column move primitive (the future drag-and-drop drop
+ * handler calls exactly this). Resolves the column by slug, syncs
+ * `status` + `columnId`, appends `max+1`. Throws on missing task or
+ * unknown slug.
+ */
+export async function moveTaskToColumn(
+  id: string,
+  slug: ColumnSlug,
+): Promise<void> {
+  await db.transaction("rw", db.tasks, db.columns, async () => {
+    const task = await db.tasks.get(id);
+    if (!task) {
+      throw new Error("Task not found.");
+    }
+    const destination = await db.columns
+      .where("projectId")
+      .equals(task.projectId)
+      .filter((candidate) => candidate.slug === slug)
+      .first();
+    if (!destination) {
+      throw new Error(`Unknown column "${slug}" in this project.`);
+    }
+    const position = await nextColumnPosition(task.projectId, destination.id);
+    await db.tasks.update(id, {
+      columnId: destination.id,
+      status: destination.slug,
+      position,
+      updatedAt: Date.now(),
+    });
+  });
+}
+
+/**
+ * Hard delete. Position gaps stay, the project counter never rewinds —
+ * ticket numbers stay historically unique. Throws on missing task.
+ */
+export async function deleteTask(id: string): Promise<void> {
+  await requireTask(id);
+  await db.tasks.delete(id);
+}
+
+/**
+ * Same-column copy with optional validated rename. Copies
+ * description/priority/dueDate; mints fresh id, number, position, and
+ * timestamps. Throws on missing source.
+ */
+export async function duplicateTask(
+  sourceId: string,
+  title?: string,
+): Promise<string> {
+  const trimmed = title === undefined ? undefined : assertValidTitle(title);
+  const now = Date.now();
+  const id = createId();
+
+  await db.transaction("rw", db.tasks, db.projects, db.columns, async () => {
+    const source = await db.tasks.get(sourceId);
+    if (!source) {
+      throw new Error("Task not found.");
+    }
+    const column = await db.columns.get(source.columnId);
+    if (!column || column.projectId !== source.projectId) {
+      throw new Error("Source column not found in this project.");
+    }
+    const project = await db.projects.get(source.projectId);
+    if (!project) {
+      throw new Error("Project not found.");
+    }
+
+    const position = await nextColumnPosition(source.projectId, source.columnId);
+    const number = project.lastTaskNumber + 1;
+
+    await db.tasks.add({
+      id,
+      projectId: source.projectId,
+      columnId: source.columnId,
+      status: source.status,
+      title: trimmed ?? source.title,
+      description: source.description,
+      position,
+      number,
+      priority: source.priority,
+      dueDate: source.dueDate,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.projects.update(source.projectId, {
       lastTaskNumber: number,
       updatedAt: now,
     });
