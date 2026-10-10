@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { CalendarDays, List, SquareKanban } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
 import type { ReactNode } from "react";
 import {
   Breadcrumb,
@@ -16,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Layout from "@/components/common/layout";
-import { getProject } from "@/lib/mock";
+import { getProject } from "@/lib/db/queries";
 import { cn } from "@/lib/utils";
 
 export type ProjectView = "board" | "calendar" | "list";
@@ -39,7 +40,7 @@ export function ProjectLayout({
   children,
 }: ProjectLayoutProps) {
   const navigate = useNavigate();
-  const project = getProject(projectId);
+  const project = useLiveQuery(() => getProject(projectId), [projectId]);
 
   return (
     <>
