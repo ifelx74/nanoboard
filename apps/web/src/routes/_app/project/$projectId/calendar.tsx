@@ -69,6 +69,11 @@ function RouteComponent() {
   return (
     <ProjectLayout projectId={projectId} activeView="calendar">
       <div className="flex h-full flex-col gap-3 p-4">
+        {tasks.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            No tasks in this project yet
+          </p>
+        )}
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-medium">{monthLabel}</h2>
           <div className="ml-auto flex items-center gap-1">

@@ -1,11 +1,11 @@
 import { createId } from "@paralleldrive/cuid2";
+import Dexie from "dexie";
 import { db } from "./db";
 import type { Column, Project, Task } from "./schema";
 
 /**
- * Single data seam for routes. Async Dexie reads with mock-compatible
- * names/shapes so consumers subscribe via `useLiveQuery`, plus the
- * quick-add write path (ticket 04).
+ * Single data seam for routes. Async Dexie reads so consumers subscribe
+ * via `useLiveQuery`, plus the quick-add write path.
  */
 export function getProject(projectId: string): Promise<Project | undefined> {
   return db.projects.get(projectId);
@@ -13,10 +13,6 @@ export function getProject(projectId: string): Promise<Project | undefined> {
 
 export function getProjectColumns(projectId: string): Promise<Column[]> {
   return db.columns.where("projectId").equals(projectId).sortBy("position");
-}
-
-export function getColumnTasks(columnId: string): Promise<Task[]> {
-  return db.tasks.where("columnId").equals(columnId).sortBy("position");
 }
 
 export function getProjectTasks(projectId: string): Promise<Task[]> {
@@ -27,8 +23,8 @@ export function getProjects(): Promise<Project[]> {
   return db.projects.orderBy("position").toArray();
 }
 
-export function getAllTasks(): Promise<Task[]> {
-  return db.tasks.toArray();
+export function countProjectTasks(projectId: string): Promise<number> {
+  return db.tasks.where("projectId").equals(projectId).count();
 }
 
 export const QUICK_ADD_TITLE_MIN = 3;
@@ -41,11 +37,12 @@ export interface CreateTaskInput {
 }
 
 /**
- * Title-only quick-add write. Allocates `position` (max in the destination
- * column + 1) and `number` (project counter + 1) atomically in one
- * transaction that also bumps `project.lastTaskNumber`. Throws on invalid
- * titles or missing column/project; callers pre-guard the title so the
- * throw is unreachable defense-in-depth. Returns the new task id.
+ * Title-only quick-add write. Allocates `position` (one past the last task
+ * in the destination column, read off the ordered compound index) and
+ * `number` (project counter + 1) atomically in one transaction that also
+ * bumps `project.lastTaskNumber`. Throws on invalid titles or missing
+ * column/project; callers pre-guard the title so the throw is unreachable
+ * defense-in-depth. Returns the new task id.
  */
 export async function createTask(input: CreateTaskInput): Promise<string> {
   const title = input.title.trim();
@@ -71,14 +68,14 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
       throw new Error("Project not found.");
     }
 
-    const siblings = await db.tasks
-      .where("[projectId+columnId]")
-      .equals([input.projectId, input.columnId])
-      .toArray();
-    const position =
-      siblings.length === 0
-        ? 0
-        : Math.max(...siblings.map((task) => task.position)) + 1;
+    const lastSibling = await db.tasks
+      .where("[projectId+columnId+position]")
+      .between(
+        [input.projectId, input.columnId, Dexie.minKey],
+        [input.projectId, input.columnId, Dexie.maxKey],
+      )
+      .last();
+    const position = lastSibling ? lastSibling.position + 1 : 0;
     const number = project.lastTaskNumber + 1;
 
     await db.tasks.add({

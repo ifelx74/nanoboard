@@ -63,7 +63,17 @@ function RouteComponent() {
               </tr>
             </thead>
             <tbody>
-              {tasks.map((task) => (
+              {tasks.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-3 py-6 text-center text-sm text-muted-foreground"
+                  >
+                    No tasks in this project
+                  </td>
+                </tr>
+              ) : (
+                tasks.map((task) => (
                 <tr
                   key={task.id}
                   className="border-b border-border/50 last:border-0 hover:bg-muted/30"
@@ -87,7 +97,8 @@ function RouteComponent() {
                     )}
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

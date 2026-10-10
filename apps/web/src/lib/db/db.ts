@@ -9,13 +9,16 @@ export class NanoboardDB extends Dexie {
 
   constructor(name = "nanoboard") {
     super(name);
-    this.version(1).stores({
+    // v2: per-project task numbers are store-enforced unique and column
+    // contents carry an ordered compound index, so position allocation and
+    // ordering read straight off the index. v1 profile data migrates
+    // automatically (seed numbers already satisfy uniqueness).
+    this.version(2).stores({
       projects: "&id, slug, position",
       columns: "&id, projectId, [projectId+position]",
       tasks:
-        "&id, projectId, columnId, status, dueDate, [projectId+columnId], [projectId+number]",
+        "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
     });
-    // Reserved upgrade slot for v2 index/field additions.
     this.on("populate", () => seedDatabase(this));
   }
 }

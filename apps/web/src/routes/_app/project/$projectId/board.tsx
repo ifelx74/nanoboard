@@ -75,7 +75,9 @@ function RouteComponent() {
   }
 
   const canSave =
-    draft.trim().length >= QUICK_ADD_TITLE_MIN && !saving;
+    draft.trim().length >= QUICK_ADD_TITLE_MIN &&
+    draft.trim().length <= QUICK_ADD_TITLE_MAX &&
+    !saving;
 
   function openAdd(columnId: string) {
     setAddingColumnId(columnId);
@@ -89,7 +91,12 @@ function RouteComponent() {
 
   async function saveTask(columnId: string) {
     const title = draft.trim();
-    if (title.length < QUICK_ADD_TITLE_MIN || saving) return;
+    if (
+      title.length < QUICK_ADD_TITLE_MIN ||
+      title.length > QUICK_ADD_TITLE_MAX ||
+      saving
+    )
+      return;
     setSaving(true);
     try {
       await createTask({ projectId, columnId, title });
@@ -166,14 +173,7 @@ function RouteComponent() {
                       if (event.key === "Escape") cancelAdd();
                     }}
                     onBlur={() => {
-                      if (
-                        draft.trim().length >= QUICK_ADD_TITLE_MIN &&
-                        !saving
-                      ) {
-                        void saveTask(column.id);
-                      } else if (!saving) {
-                        cancelAdd();
-                      }
+                      if (!saving) cancelAdd();
                     }}
                     className="h-8 rounded-lg border border-border/80 bg-card px-2 text-sm outline-none placeholder:text-muted-foreground focus:border-ring"
                   />
