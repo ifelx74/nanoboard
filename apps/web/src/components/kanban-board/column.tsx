@@ -7,7 +7,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { format } from "date-fns";
 import { Calendar, CalendarClock, CalendarX, Plus } from "lucide-react";
-import { QUICK_ADD_TITLE_MAX } from "@/lib/db/queries";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { getColumnIcon } from "@/lib/column";
 import {
@@ -173,15 +172,7 @@ export default function BoardColumn({
   disabled,
   justDraggedRef,
   onOpenTask,
-  adding,
-  draft,
-  canSave,
-  saving,
-  addButtonRefs,
-  onOpenAdd,
-  onCancelAdd,
-  onDraftChange,
-  onSaveTask,
+  onCreateTask,
   registerLaneRef,
 }: {
   column: Column;
@@ -191,15 +182,7 @@ export default function BoardColumn({
   disabled: boolean;
   justDraggedRef: React.RefObject<boolean>;
   onOpenTask: (taskId: string) => void;
-  adding: boolean;
-  draft: string;
-  canSave: boolean;
-  saving: boolean;
-  addButtonRefs: React.RefObject<Map<string, HTMLButtonElement | null>>;
-  onOpenAdd: (columnId: string) => void;
-  onCancelAdd: () => void;
-  onDraftChange: (value: string) => void;
-  onSaveTask: (columnId: string) => void;
+  onCreateTask: (columnId: string) => void;
   registerLaneRef: (columnId: string, element: HTMLElement | null) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -230,7 +213,7 @@ export default function BoardColumn({
         </div>
         <button
           type="button"
-          onClick={() => onOpenAdd(column.id)}
+          onClick={() => onCreateTask(column.id)}
           title={`Add task to ${column.name}`}
           aria-label={`Add task to ${column.name}`}
           className="flex shrink-0 items-center rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-accent/50"
@@ -261,61 +244,6 @@ export default function BoardColumn({
           </p>
         )}
       </div>
-      {adding ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void onSaveTask(column.id);
-          }}
-          className="flex flex-col gap-1.5"
-        >
-          <input
-            autoFocus
-            value={draft}
-            maxLength={QUICK_ADD_TITLE_MAX}
-            placeholder="Task title"
-            aria-label={`New task title in ${column.name}`}
-            onChange={(event) => onDraftChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") onCancelAdd();
-            }}
-            onBlur={() => {
-              if (!saving) onCancelAdd();
-            }}
-            className="h-8 rounded-lg border border-border/80 bg-card px-2 text-sm outline-none placeholder:text-muted-foreground focus:border-ring"
-          />
-          <div className="flex gap-1.5">
-            <button
-              type="submit"
-              disabled={!canSave}
-              onMouseDown={(event) => event.preventDefault()}
-              className="h-7 rounded-lg bg-primary px-2.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-            >
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={onCancelAdd}
-              onMouseDown={(event) => event.preventDefault()}
-              className="h-7 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button
-          ref={(element) => {
-            addButtonRefs.current?.set(column.id, element);
-          }}
-          type="button"
-          onClick={() => onOpenAdd(column.id)}
-          className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          <Plus className="size-4" aria-hidden="true" />
-          Add task
-        </button>
-      )}
     </section>
   );
 }

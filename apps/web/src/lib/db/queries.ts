@@ -109,52 +109,88 @@ export interface CreateTaskInput {
   projectId: string;
   columnId: string;
   title: string;
+  description?: string;
+  priority?: TaskPriority;
+  dueDate?: DueDateString | null;
+  labelIds?: string[];
 }
 
 /**
- * Title-only quick-add write. Allocates `position` (one past the last task
- * in the destination column, read off the ordered compound index) and
- * `number` (project counter + 1) atomically in one transaction that also
- * bumps `project.lastTaskNumber`. Throws on invalid titles or missing
- * column/project; callers pre-guard the title so the throw is unreachable
- * defense-in-depth. Returns the new task id.
+ * Task creation write, from the title-only quick-add to the create dialog's
+ * full write. The extra fields are all optional: description defaults to "",
+ * priority to "no-priority", dueDate to absent, labels to none. Allocates `position`
+ * (one past the last task in the destination column, read off the ordered
+ * compound index) and `number` (project counter + 1) atomically in one
+ * transaction that also bumps `project.lastTaskNumber` and attaches labels.
+ * Throws on invalid titles or missing column/project; callers pre-guard the
+ * title so the throw is unreachable defense-in-depth. Returns the new task id.
  */
 export async function createTask(input: CreateTaskInput): Promise<string> {
   const title = assertValidTitle(input.title);
+  if (input.priority !== undefined) assertValidPriority(input.priority);
+  if (input.dueDate !== undefined && input.dueDate !== null) {
+    assertValidDueDate(input.dueDate);
+  }
   const now = Date.now();
   const id = createId();
 
-  await db.transaction("rw", db.tasks, db.projects, db.columns, async () => {
-    const column = await db.columns.get(input.columnId);
-    if (!column || column.projectId !== input.projectId) {
-      throw new Error("Destination column not found in this project.");
-    }
-    const project = await db.projects.get(input.projectId);
-    if (!project) {
-      throw new Error("Project not found.");
-    }
+  await db.transaction(
+    "rw",
+    db.tasks,
+    db.projects,
+    db.columns,
+    db.taskLabels,
+    db.labels,
+    async () => {
+      const column = await db.columns.get(input.columnId);
+      if (!column || column.projectId !== input.projectId) {
+        throw new Error("Destination column not found in this project.");
+      }
+      const project = await db.projects.get(input.projectId);
+      if (!project) {
+        throw new Error("Project not found.");
+      }
 
-    const position = await nextColumnPosition(input.projectId, input.columnId);
-    const number = project.lastTaskNumber + 1;
+      const labelIds = [...new Set(input.labelIds ?? [])];
+      if (labelIds.length > 0) {
+        const labels = await db.labels.bulkGet(labelIds);
+        for (let i = 0; i < labelIds.length; i++) {
+          const label = labels[i];
+          if (!label) {
+            throw new Error("Label not found.");
+          }
+          if (label.projectId !== input.projectId) {
+            throw new Error("Label and task must belong to the same project.");
+          }
+        }
+      }
 
-    await db.tasks.add({
-      id,
-      projectId: input.projectId,
-      columnId: input.columnId,
-      status: column.slug,
-      title,
-      description: "",
-      position,
-      number,
-      priority: "no-priority",
-      createdAt: now,
-      updatedAt: now,
-    });
-    await db.projects.update(input.projectId, {
-      lastTaskNumber: number,
-      updatedAt: now,
-    });
-  });
+      const position = await nextColumnPosition(input.projectId, input.columnId);
+      const number = project.lastTaskNumber + 1;
+
+      await db.tasks.add({
+        id,
+        projectId: input.projectId,
+        columnId: input.columnId,
+        status: column.slug,
+        title,
+        description: input.description ?? "",
+        position,
+        number,
+        priority: input.priority ?? "no-priority",
+        dueDate: input.dueDate ?? undefined,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await db.projects.update(input.projectId, {
+        lastTaskNumber: number,
+        updatedAt: now,
+      });
+      for (const labelId of labelIds) {
+        await db.taskLabels.put({ taskId: id, labelId });
+      }
+    },
+  );
 
   return id;
 }

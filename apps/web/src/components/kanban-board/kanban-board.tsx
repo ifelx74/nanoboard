@@ -14,15 +14,11 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  QUICK_ADD_TITLE_MAX,
-  QUICK_ADD_TITLE_MIN,
-  createTask,
-  reorderTasks,
-} from "@/lib/db/queries";
+import { reorderTasks } from "@/lib/db/queries";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { toast } from "@/lib/toast";
 import BoardColumn, { TaskCardView } from "./column";
+import CreateTaskDialog from "@/components/task/create-task-dialog";
 import BoardFilterBar from "./board-filter-bar";
 import { filterGrouping } from "./board-filter-model";
 import { useBoardLabelFilter } from "./use-board-label-filter";
@@ -97,11 +93,7 @@ export default function KanbanBoard({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [preview, setPreview] = useState<Map<string, Task[]> | null>(null);
   const [writing, setWriting] = useState(false);
-  const [addingColumnId, setAddingColumnId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
-  const [saving, setSaving] = useState(false);
-  const addButtonRefs = useRef(new Map<string, HTMLButtonElement | null>());
-  const prevAddingRef = useRef<string | null>(null);
+  const [createColumnId, setCreateColumnId] = useState<string | null>(null);
   const justDraggedRef = useRef(false);
   const laneEls = useRef(new Map<string, HTMLElement | null>());
   const pointerRef = useRef<Pointer | null>(null);
@@ -122,14 +114,6 @@ export default function KanbanBoard({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-
-  // Return focus to the column's Add button when its quick-add form closes.
-  useEffect(() => {
-    if (prevAddingRef.current !== null && addingColumnId === null) {
-      addButtonRefs.current.get(prevAddingRef.current)?.focus();
-    }
-    prevAddingRef.current = addingColumnId;
-  }, [addingColumnId]);
 
   // Track the live pointer while dragging. Placement derives from these
   // coordinates (not dnd-kit's `over` identity), so a steady pointer
@@ -291,39 +275,8 @@ export default function KanbanBoard({
     }
   }
 
-  const canSave =
-    draft.trim().length >= QUICK_ADD_TITLE_MIN &&
-    draft.trim().length <= QUICK_ADD_TITLE_MAX &&
-    !saving;
-
-  function openAdd(columnId: string) {
-    setAddingColumnId(columnId);
-    setDraft("");
-  }
-
-  function cancelAdd() {
-    setAddingColumnId(null);
-    setDraft("");
-  }
-
-  async function saveTask(columnId: string) {
-    const title = draft.trim();
-    if (
-      title.length < QUICK_ADD_TITLE_MIN ||
-      title.length > QUICK_ADD_TITLE_MAX ||
-      saving
-    )
-      return;
-    setSaving(true);
-    try {
-      await createTask({ projectId, columnId, title });
-      setDraft("");
-    } catch (error) {
-      console.error("Failed to create task", error);
-    } finally {
-      setSaving(false);
-    }
-  }
+  const createColumn =
+    columns.find((column) => column.id === createColumnId) ?? null;
 
   const activeTask = activeId
     ? (tasks.find((task) => task.id === activeId) ?? null)
@@ -354,22 +307,23 @@ export default function KanbanBoard({
               labelsByTask={labelsByTask}
               filterActive={selected !== null}
               disabled={disableDragDrop}
-            justDraggedRef={justDraggedRef}
-            onOpenTask={onOpenTask}
-            adding={addingColumnId === column.id}
-            draft={draft}
-            canSave={canSave}
-            saving={saving}
-            addButtonRefs={addButtonRefs}
-            onOpenAdd={openAdd}
-            onCancelAdd={cancelAdd}
-            onDraftChange={setDraft}
-            onSaveTask={saveTask}
-            registerLaneRef={registerLaneRef}
-          />
-        ))}
+              justDraggedRef={justDraggedRef}
+              onOpenTask={onOpenTask}
+              onCreateTask={setCreateColumnId}
+              registerLaneRef={registerLaneRef}
+            />
+          ))}
         </div>
       </div>
+      {createColumn && (
+        <CreateTaskDialog
+          key={createColumn.id}
+          projectId={projectId}
+          column={createColumn}
+          open
+          onClose={() => setCreateColumnId(null)}
+        />
+      )}
       <DragOverlay dropAnimation={dropAnimation}>
         {activeTask ? (
           <div className="transform rotate-1 scale-[1.03] shadow-lg">
