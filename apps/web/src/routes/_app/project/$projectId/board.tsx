@@ -84,6 +84,7 @@ function RouteComponent() {
   return (
     <ProjectLayout projectId={projectId} activeView="board">
       <KanbanBoard
+        key={projectId}
         projectId={projectId}
         columns={columns}
         tasks={tasks}
