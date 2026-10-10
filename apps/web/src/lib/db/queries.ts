@@ -61,7 +61,7 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
   const now = Date.now();
   const id = createId();
 
-  await db.transaction("rw", db.tasks, db.projects, async () => {
+  await db.transaction("rw", db.tasks, db.projects, db.columns, async () => {
     const column = await db.columns.get(input.columnId);
     if (!column || column.projectId !== input.projectId) {
       throw new Error("Destination column not found in this project.");
