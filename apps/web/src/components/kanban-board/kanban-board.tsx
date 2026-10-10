@@ -23,6 +23,9 @@ import {
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { toast } from "@/lib/toast";
 import BoardColumn, { TaskCardView } from "./column";
+import BoardFilterBar from "./board-filter-bar";
+import { filterGrouping } from "./board-filter-model";
+import { useBoardLabelFilter } from "./use-board-label-filter";
 import { boardCollisionDetection } from "./collision";
 import { type DropTarget, type Pointer, locateFromPointer } from "./locate";
 import { computeMove } from "./move";
@@ -141,7 +144,17 @@ export default function KanbanBoard({
   }, [activeId]);
 
   const liveGrouping = useMemo(() => groupTasks(tasks), [tasks]);
-  const shownGrouping = preview ?? liveGrouping;
+
+  // Labels filter: render-only. Drag math, drop writes, and the echo
+  // handoff all stay on the full order so hidden tasks keep their places.
+  // A held preview carries the full order too and is intersected here, so
+  // filtered-out tasks never flash mid-drag.
+  const { selected, toggle, clear } = useBoardLabelFilter(projectId);
+  const shownGrouping = useMemo(
+    () =>
+      filterGrouping(preview ?? liveGrouping, labelsByTask, selected),
+    [preview, liveGrouping, labelsByTask, selected],
+  );
 
   // Release a held drop preview once live data echoes the same order,
   // so the handoff is seamless
@@ -325,14 +338,22 @@ export default function KanbanBoard({
       onDragEnd={(event) => void handleDragEnd(event)}
       onDragCancel={resetDrag}
     >
-      <div className="flex h-full gap-3 overflow-x-auto p-4">
-        {columns.map((column) => (
-          <BoardColumn
-            key={column.id}
-            column={column}
-            tasks={shownGrouping.get(column.id) ?? []}
-            labelsByTask={labelsByTask}
-            disabled={disableDragDrop}
+      <div className="flex h-full min-h-0 flex-col">
+        <BoardFilterBar
+          projectId={projectId}
+          selected={selected}
+          onToggle={toggle}
+          onClear={clear}
+        />
+        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-4 pt-3">
+          {columns.map((column) => (
+            <BoardColumn
+              key={column.id}
+              column={column}
+              tasks={shownGrouping.get(column.id) ?? []}
+              labelsByTask={labelsByTask}
+              filterActive={selected !== null}
+              disabled={disableDragDrop}
             justDraggedRef={justDraggedRef}
             onOpenTask={onOpenTask}
             adding={addingColumnId === column.id}
@@ -347,6 +368,7 @@ export default function KanbanBoard({
             registerLaneRef={registerLaneRef}
           />
         ))}
+        </div>
       </div>
       <DragOverlay dropAnimation={dropAnimation}>
         {activeTask ? (

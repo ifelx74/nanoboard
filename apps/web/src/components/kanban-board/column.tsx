@@ -85,6 +85,7 @@ export default function BoardColumn({
   column,
   tasks,
   labelsByTask,
+  filterActive,
   disabled,
   justDraggedRef,
   onOpenTask,
@@ -102,6 +103,7 @@ export default function BoardColumn({
   column: Column;
   tasks: Task[];
   labelsByTask: Map<string, Label[]>;
+  filterActive: boolean;
   disabled: boolean;
   justDraggedRef: React.RefObject<boolean>;
   onOpenTask: (taskId: string) => void;
@@ -153,7 +155,9 @@ export default function BoardColumn({
           ))}
         </SortableContext>
         {tasks.length === 0 && (
-          <p className="px-1.5 py-1 text-xs text-muted-foreground">No tasks</p>
+          <p className="px-1.5 py-1 text-xs text-muted-foreground">
+            {filterActive ? "No matching tasks" : "No tasks"}
+          </p>
         )}
       </div>
       {adding ? (
