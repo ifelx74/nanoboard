@@ -21,3 +21,11 @@ export function getColumnTasks(columnId: string): Promise<Task[]> {
 export function getProjectTasks(projectId: string): Promise<Task[]> {
   return db.tasks.where("projectId").equals(projectId).toArray();
 }
+
+export function getProjects(): Promise<Project[]> {
+  return db.projects.orderBy("position").toArray();
+}
+
+export function getAllTasks(): Promise<Task[]> {
+  return db.tasks.toArray();
+}

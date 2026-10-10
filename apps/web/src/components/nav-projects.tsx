@@ -6,7 +6,8 @@ import {
   List,
   SquareKanban,
 } from "lucide-react";
-import { useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { useEffect, useState } from "react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -18,7 +19,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { mockProjects } from "@/lib/mock";
+import { getProjects } from "@/lib/db/queries";
 import { cn } from "@/lib/utils";
 
 const projectViews = [
@@ -48,9 +49,22 @@ export function NavProjects() {
     select: (location) => location.pathname.replace(/\/+$/, ""),
   });
   const { projectId: activeProjectId } = useParams({ strict: false });
+  const projects = useLiveQuery(() => getProjects(), []);
   const [expandedIds, setExpandedIds] = useState<string[]>(
-    activeProjectId ? [activeProjectId] : [mockProjects[0]?.id ?? ""],
+    activeProjectId ? [activeProjectId] : [],
   );
+
+  useEffect(() => {
+    if (
+      !activeProjectId &&
+      expandedIds.length === 0 &&
+      projects &&
+      projects.length > 0
+    ) {
+      const first = projects[0];
+      if (first) setExpandedIds([first.id]);
+    }
+  }, [activeProjectId, expandedIds.length, projects]);
 
   function toggleProject(id: string) {
     setExpandedIds((prev) =>
@@ -63,7 +77,7 @@ export function NavProjects() {
       <SidebarGroupLabel>Projects</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu className="gap-0.5">
-          {mockProjects.map((project) => {
+          {(projects ?? []).map((project) => {
             const expanded = expandedIds.includes(project.id);
             const isActiveProject = activeProjectId === project.id;
             return (

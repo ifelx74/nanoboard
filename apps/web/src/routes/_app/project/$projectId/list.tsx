@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useLiveQuery } from "dexie-react-hooks";
 import { ProjectLayout } from "@/components/common/project-layout";
-import { getProjectTasks, type MockTask } from "@/lib/mock";
+import { getProjectTasks } from "@/lib/db/queries";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/list")({
@@ -14,9 +15,40 @@ const priorityStyles: Record<string, string> = {
   urgent: "bg-destructive text-destructive-foreground",
 };
 
+const skeletonRowKeys = ["skeleton-row-0", "skeleton-row-1", "skeleton-row-2", "skeleton-row-3"];
+
+function ListSkeleton() {
+  return (
+    <div className="h-full overflow-y-auto p-4" aria-hidden="true">
+      <div className="overflow-hidden rounded-xl border border-border/80">
+        <div className="flex flex-col">
+          {skeletonRowKeys.map((key) => (
+            <div
+              key={key}
+              className="flex items-center gap-3 border-b border-border/50 px-3 py-2.5 last:border-0"
+            >
+              <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-5 w-16 animate-pulse rounded-md bg-muted" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RouteComponent() {
   const { projectId } = Route.useParams();
-  const tasks = getProjectTasks(projectId);
+  const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+
+  if (tasks === undefined) {
+    return (
+      <ProjectLayout projectId={projectId} activeView="list">
+        <ListSkeleton />
+      </ProjectLayout>
+    );
+  }
 
   return (
     <ProjectLayout projectId={projectId} activeView="list">
@@ -31,7 +63,7 @@ function RouteComponent() {
               </tr>
             </thead>
             <tbody>
-              {tasks.map((task: MockTask) => (
+              {tasks.map((task) => (
                 <tr
                   key={task.id}
                   className="border-b border-border/50 last:border-0 hover:bg-muted/30"
@@ -41,7 +73,7 @@ function RouteComponent() {
                     {task.dueDate ?? "—"}
                   </td>
                   <td className="px-3 py-2">
-                    {task.priority ? (
+                    {task.priority !== "no-priority" ? (
                       <span
                         className={cn(
                           "inline-flex rounded-md px-1.5 py-0.5 text-xs font-medium capitalize",

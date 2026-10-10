@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { ProjectLayout } from "@/components/common/project-layout";
-import { getProjectTasks } from "@/lib/mock";
+import { getProjectTasks } from "@/lib/db/queries";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/calendar")({
@@ -25,12 +26,33 @@ function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+const calendarSkeletonKeys = Array.from(
+  { length: 35 },
+  (_, i) => `skeleton-cell-${i}`,
+);
+
 function RouteComponent() {
   const { projectId } = Route.useParams();
   const [offset, setOffset] = useState(0);
+  const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
   const now = new Date();
   const view = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-  const tasks = getProjectTasks(projectId);
+
+  if (tasks === undefined) {
+    return (
+      <ProjectLayout projectId={projectId} activeView="calendar">
+        <div className="flex h-full flex-col gap-3 p-4" aria-hidden="true">
+          <div className="h-5 w-36 animate-pulse rounded bg-muted" />
+          <div className="grid flex-1 grid-cols-7 gap-px overflow-hidden rounded-xl border border-border/80 bg-border/50">
+            {calendarSkeletonKeys.map((key) => (
+              <div key={key} className="min-h-20 animate-pulse bg-muted/40" />
+            ))}
+          </div>
+        </div>
+      </ProjectLayout>
+    );
+  }
+
   const byDate = new Map<string, typeof tasks>();
   for (const task of tasks) {
     if (!task.dueDate) continue;
