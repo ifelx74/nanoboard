@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { Copy, Trash2, X } from "lucide-react";
+import { Copy, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetPanel, SheetPopup } from "@/components/ui/sheet";
@@ -7,12 +7,15 @@ import {
   duplicateTask,
   getProjectColumns,
   getTask,
+  getTaskLabels,
 } from "@/lib/db/queries";
+import { resolveLabelColor } from "@/lib/label-color";
 import { toast } from "@/lib/toast";
 import TaskColumnPopover from "./task-column-popover";
 import TaskDeleteDialog from "./task-delete-dialog";
 import TaskDescription from "./task-description";
 import TaskDueDatePopover from "./task-due-date-popover";
+import TaskLabelsPopover from "./task-labels-popover";
 import TaskPriorityPopover from "./task-priority-popover";
 import TaskTitle from "./task-title";
 
@@ -66,6 +69,10 @@ export default function TaskDrawer({
     [currentTaskId],
   );
   const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
+  const taskLabels = useLiveQuery(
+    () => (currentTaskId ? getTaskLabels(currentTaskId) : undefined),
+    [currentTaskId],
+  );
 
   async function handleDuplicate() {
     if (!task || duplicating) return;
@@ -139,7 +146,7 @@ export default function TaskDrawer({
         )}
 
         <SheetPanel>
-          {!task || !columns ? (
+          {!task || !columns || !taskLabels ? (
             <div className="flex flex-col gap-3" aria-hidden="true">
               <div className="h-8 w-3/4 animate-pulse rounded bg-muted" />
               <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
@@ -182,6 +189,38 @@ export default function TaskDrawer({
                       {task.dueDate ?? "No due date"}
                     </Button>
                   </TaskDueDatePopover>
+                </PropertyRow>
+                <PropertyRow label="Labels">
+                  <TaskLabelsPopover task={task}>
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                      {taskLabels.map((label) => (
+                        <span
+                          key={label.id}
+                          className="flex max-w-28 items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[10px] transition-colors hover:bg-accent/50"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{
+                              backgroundColor: resolveLabelColor(label.color),
+                            }}
+                          />
+                          <span className="truncate">{label.name}</span>
+                        </span>
+                      ))}
+                      {taskLabels.length === 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          No labels
+                        </span>
+                      )}
+                      <span
+                        aria-hidden="true"
+                        className="flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:bg-accent/50"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </TaskLabelsPopover>
                 </PropertyRow>
               </div>
               <TaskDescription task={task} />
