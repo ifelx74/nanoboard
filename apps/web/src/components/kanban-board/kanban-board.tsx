@@ -20,7 +20,7 @@ import {
   createTask,
   reorderTasks,
 } from "@/lib/db/queries";
-import type { Column, Task } from "@/lib/db/schema";
+import type { Column, Label, Task } from "@/lib/db/schema";
 import { toast } from "@/lib/toast";
 import BoardColumn, { TaskCardView } from "./column";
 import { boardCollisionDetection } from "./collision";
@@ -80,12 +80,14 @@ export default function KanbanBoard({
   projectId,
   columns,
   tasks,
+  labelsByTask,
   onOpenTask,
   disableDragDrop = false,
 }: {
   projectId: string;
   columns: Column[];
   tasks: Task[];
+  labelsByTask: Map<string, Label[]>;
   onOpenTask: (taskId: string) => void;
   disableDragDrop?: boolean;
 }) {
@@ -329,6 +331,7 @@ export default function KanbanBoard({
             key={column.id}
             column={column}
             tasks={shownGrouping.get(column.id) ?? []}
+            labelsByTask={labelsByTask}
             disabled={disableDragDrop}
             justDraggedRef={justDraggedRef}
             onOpenTask={onOpenTask}
@@ -349,7 +352,7 @@ export default function KanbanBoard({
         {activeTask ? (
           <div className="transform rotate-1 scale-[1.03] shadow-lg">
             <div className="rounded-lg ring-2 ring-ring/35">
-              <TaskCardView task={activeTask} />
+              <TaskCardView task={activeTask} labels={labelsByTask.get(activeTask.id)} />
             </div>
           </div>
         ) : null}

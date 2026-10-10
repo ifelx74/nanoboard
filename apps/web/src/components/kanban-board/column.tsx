@@ -7,13 +7,16 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Plus } from "lucide-react";
 import { QUICK_ADD_TITLE_MAX } from "@/lib/db/queries";
-import type { Column, Task } from "@/lib/db/schema";
+import type { Column, Label, Task } from "@/lib/db/schema";
+import { TaskLabels } from "@/components/task/task-labels";
 
 export function TaskCardView({
   task,
+  labels,
   dimmed,
 }: {
   task: Task;
+  labels?: Label[];
   dimmed?: boolean;
 }) {
   return (
@@ -21,6 +24,11 @@ export function TaskCardView({
       className={`rounded-lg border border-border/80 bg-card p-2.5 shadow-sm/5 ${dimmed ? "opacity-40" : ""}`}
     >
       <p className="text-sm">{task.title}</p>
+      {labels && labels.length > 0 && (
+        <div className="mt-1.5">
+          <TaskLabels labels={labels} />
+        </div>
+      )}
       {task.dueDate && (
         <p className="mt-1.5 text-xs text-muted-foreground">
           Due {task.dueDate}
@@ -32,11 +40,13 @@ export function TaskCardView({
 
 function SortableTaskCard({
   task,
+  labels,
   disabled,
   justDraggedRef,
   onOpen,
 }: {
   task: Task;
+  labels?: Label[];
   disabled: boolean;
   justDraggedRef: React.RefObject<boolean>;
   onOpen: (taskId: string) => void;
@@ -66,7 +76,7 @@ function SortableTaskCard({
       tabIndex={0}
       className="cursor-pointer touch-none outline-none"
     >
-      <TaskCardView task={task} dimmed={isDragging} />
+      <TaskCardView task={task} labels={labels} dimmed={isDragging} />
     </div>
   );
 }
@@ -74,6 +84,7 @@ function SortableTaskCard({
 export default function BoardColumn({
   column,
   tasks,
+  labelsByTask,
   disabled,
   justDraggedRef,
   onOpenTask,
@@ -90,6 +101,7 @@ export default function BoardColumn({
 }: {
   column: Column;
   tasks: Task[];
+  labelsByTask: Map<string, Label[]>;
   disabled: boolean;
   justDraggedRef: React.RefObject<boolean>;
   onOpenTask: (taskId: string) => void;
@@ -133,6 +145,7 @@ export default function BoardColumn({
             <SortableTaskCard
               key={task.id}
               task={task}
+              labels={labelsByTask.get(task.id)}
               disabled={disabled}
               justDraggedRef={justDraggedRef}
               onOpen={onOpenTask}

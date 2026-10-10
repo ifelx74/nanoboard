@@ -421,9 +421,52 @@ export function getProjectLabels(projectId: string): Promise<Label[]> {
 
 export async function getTaskLabels(taskId: string): Promise<Label[]> {
   const joins = await db.taskLabels.where("taskId").equals(taskId).toArray();
-  if (joins.length === 0) return [];
-  const labels = await db.labels.bulkGet(joins.map((join) => join.labelId));
-  return labels.filter((label): label is Label => label !== undefined);
+  return resolveLabels(joins.map((join) => join.labelId));
+}
+
+/**
+ * Project-wide assignment map backing board chips (and the ticket-5
+ * filter): one live subscription instead of one per card. Tasks without
+ * labels are absent from the map.
+ */
+export async function getProjectTaskLabels(
+  projectId: string,
+): Promise<Map<string, Label[]>> {
+  const tasks = await db.tasks.where("projectId").equals(projectId).toArray();
+  if (tasks.length === 0) return new Map();
+  const joins = await db.taskLabels
+    .where("taskId")
+    .anyOf(tasks.map((task) => task.id))
+    .toArray();
+  if (joins.length === 0) return new Map();
+  const byId = await resolveLabelMap([
+    ...new Set(joins.map((join) => join.labelId)),
+  ]);
+  const byTask = new Map<string, Label[]>();
+  for (const join of joins) {
+    const label = byId.get(join.labelId);
+    if (!label) continue;
+    const list = byTask.get(join.taskId) ?? [];
+    list.push(label);
+    byTask.set(join.taskId, list);
+  }
+  return byTask;
+}
+
+async function resolveLabels(labelIds: string[]): Promise<Label[]> {
+  return [...(await resolveLabelMap(labelIds)).values()];
+}
+
+async function resolveLabelMap(
+  labelIds: string[],
+): Promise<Map<string, Label>> {
+  if (labelIds.length === 0) return new Map();
+  const labels = await db.labels.bulkGet(labelIds);
+  return new Map(
+    labels
+      .filter((label): label is Label => label !== undefined)
+      .map((label) => [label.id, label]),
+  );
 }
 
 export async function createLabel(
