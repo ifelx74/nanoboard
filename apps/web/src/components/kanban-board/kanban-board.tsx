@@ -374,7 +374,14 @@ export default function KanbanBoard({
         {activeTask ? (
           <div className="transform rotate-1 scale-[1.03] shadow-lg">
             <div className="rounded-lg ring-2 ring-ring/35">
-              <TaskCardView task={activeTask} labels={labelsByTask.get(activeTask.id)} />
+              <TaskCardView
+                task={activeTask}
+                labels={labelsByTask.get(activeTask.id)}
+                isFinal={
+                  columns.find((column) => column.id === activeTask.columnId)
+                    ?.isFinal ?? false
+                }
+              />
             </div>
           </div>
         ) : null}

@@ -9,6 +9,8 @@ import type { CalendarTask } from "@/components/calendar/calendar-task-bar";
 import { buildMonthWeeks } from "@/components/calendar/month-grid-model";
 import TaskDrawer from "@/components/task/task-drawer";
 import { getProjectTasks } from "@/lib/db/queries";
+import type { DueDateString, Task } from "@/lib/db/schema";
+import { parseLocalDate } from "@/lib/due-date-status";
 
 export const Route = createFileRoute("/_app/project/$projectId/calendar")({
   component: RouteComponent,
@@ -21,11 +23,6 @@ export const Route = createFileRoute("/_app/project/$projectId/calendar")({
 // anything past the cap surfaces as a per-day overflow hint.
 const MAX_LANES_DESKTOP = 3;
 const MAX_LANES_MOBILE = 2;
-
-function parseLocalDate(isoDate: string): Date {
-  const [year, month, day] = isoDate.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
 
 /** Mirrors Kaneo's desktop/mobile lane cap without a viewport hook. */
 function useMaxLanes(): number {
@@ -61,13 +58,16 @@ function RouteComponent() {
   const scheduledTasks: CalendarTask[] = useMemo(
     () =>
       (tasks ?? [])
-        .filter((task) => task.dueDate)
+        .filter(
+          (task): task is Task & { dueDate: DueDateString } =>
+            task.dueDate !== undefined,
+        )
         .map((task) => ({
           id: task.id,
           title: task.title,
           status: task.status,
-          scheduleStart: parseLocalDate(task.dueDate as string),
-          scheduleEnd: parseLocalDate(task.dueDate as string),
+          scheduleStart: parseLocalDate(task.dueDate),
+          scheduleEnd: parseLocalDate(task.dueDate),
         })),
     [tasks],
   );
