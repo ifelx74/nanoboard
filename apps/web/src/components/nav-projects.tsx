@@ -1,133 +1,190 @@
-import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import {
-  CalendarDays,
   ChevronRight,
   Folder,
-  List,
-  SquareKanban,
+  MoreHorizontal,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { getProjects } from "@/lib/db/queries";
+import CreateProjectDialog from "@/components/project/create-project-dialog";
+import ProjectDeleteDialog from "@/components/project/project-delete-dialog";
+import { ProjectProgress } from "@/components/project/project-progress";
+import { getProjectStats, getProjects } from "@/lib/db/queries";
+import type { Project } from "@/lib/db/schema";
+import { getProjectIcon } from "@/lib/project-icons";
 import { cn } from "@/lib/utils";
 
-const projectViews = [
-  {
-    key: "board",
-    title: "Board",
-    icon: SquareKanban,
-    to: "/project/$projectId/board" as const,
-  },
-  {
-    key: "calendar",
-    title: "Calendar",
-    icon: CalendarDays,
-    to: "/project/$projectId/calendar" as const,
-  },
-  {
-    key: "list",
-    title: "List",
-    icon: List,
-    to: "/project/$projectId/list" as const,
-  },
-];
-
-export function NavProjects() {
+function ProjectRow({
+  project,
+  isActive,
+  onDeleted,
+}: {
+  project: Project;
+  isActive: boolean;
+  onDeleted: (projectId: string) => void;
+}) {
   const navigate = useNavigate();
-  const pathname = useLocation({
-    select: (location) => location.pathname.replace(/\/+$/, ""),
-  });
-  const { projectId: activeProjectId } = useParams({ strict: false });
-  const projects = useLiveQuery(() => getProjects(), []);
-  const [expandedIds, setExpandedIds] = useState<string[]>(
-    activeProjectId ? [activeProjectId] : [],
-  );
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const stats = useLiveQuery(() => getProjectStats(project.id), [project.id]);
+  const ProjectIcon = getProjectIcon(project.icon);
 
-  useEffect(() => {
-    if (
-      !activeProjectId &&
-      expandedIds.length === 0 &&
-      projects &&
-      projects.length > 0
-    ) {
-      const first = projects[0];
-      if (first) setExpandedIds([first.id]);
-    }
-  }, [activeProjectId, expandedIds.length, projects]);
+  function openBoard() {
+    void navigate({
+      to: "/project/$projectId/board",
+      params: { projectId: project.id },
+    });
+  }
 
-  function toggleProject(id: string) {
-    setExpandedIds((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
-    );
+  function handleDeleteRequest() {
+    setMenuOpen(false);
+    setDeleteOpen(true);
   }
 
   return (
-    <SidebarGroup className="gap-1 p-2">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu className="gap-0.5">
-          {(projects ?? []).map((project) => {
-            const expanded = expandedIds.includes(project.id);
-            const isActiveProject = activeProjectId === project.id;
-            return (
-              <SidebarMenuItem key={project.id}>
-                <SidebarMenuButton
-                  tooltip={project.name}
-                  isActive={isActiveProject && expanded}
-                  size="default"
-                  className="h-8 text-sm"
-                  onClick={() => toggleProject(project.id)}
-                >
-                  <Folder aria-hidden="true" />
-                  <span>{project.name}</span>
-                  <ChevronRight
-                    aria-hidden="true"
-                    className={cn(
-                      "ml-auto size-4 transition-transform",
-                      expanded && "rotate-90",
-                    )}
-                  />
-                </SidebarMenuButton>
-                {expanded && (
-                  <SidebarMenuSub>
-                    {projectViews.map((view) => (
-                      <SidebarMenuSubItem key={view.key}>
-                        <SidebarMenuSubButton
-                          isActive={
-                            isActiveProject &&
-                            pathname.endsWith(`/${view.key}`)
-                          }
-                          className="cursor-pointer"
-                          onClick={() =>
-                            navigate({
-                              to: view.to,
-                              params: { projectId: project.id },
-                            })
-                          }
-                        >
-                          <view.icon aria-hidden="true" />
-                          <span>{view.title}</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                )}
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+    <SidebarMenuItem className="group/menu-item relative">
+      <SidebarMenuButton
+        isActive={isActive}
+        size="default"
+        className="peer/menu-button h-8 text-sm"
+        onClick={openBoard}
+      >
+        <ProjectIcon aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate">{project.name}</span>
+        {/* Gives way to the row menu, which sits here on hover. */}
+        <ProjectProgress
+          percentage={stats?.completionPercentage ?? 0}
+          className="text-muted-foreground max-md:hidden group-focus-within/menu-item:opacity-0 group-hover/menu-item:opacity-0 group-has-data-[state=open]/menu-item:opacity-0"
+        />
+      </SidebarMenuButton>
+
+      <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`More actions for ${project.name}`}
+            className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground ring-sidebar-ring transition-transform outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-[state=open]:opacity-100 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 md:opacity-0"
+          >
+            <MoreHorizontal className="size-4" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-44 p-1" align="start" side="right">
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              openBoard();
+            }}
+            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50"
+          >
+            <Folder className="size-4 shrink-0 text-muted-foreground" />
+            <span>View project</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteRequest}
+            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-accent/50"
+          >
+            <Trash2 className="size-4 shrink-0" />
+            <span>Delete project</span>
+          </button>
+        </PopoverContent>
+      </Popover>
+
+      <ProjectDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        projectId={project.id}
+        projectName={project.name}
+        onDeleted={() => onDeleted(project.id)}
+      />
+    </SidebarMenuItem>
+  );
+}
+
+/**
+ * Kaneo's project list, mapped: flat rows into the board, per-project
+ * icons, progress wedge, hover menu (view/share/delete), Plus to create.
+ * Deliberately absent: project settings (no settings page), drag reorder
+ * (seam ready, UI follow-up), and the server-only nav items.
+ */
+export function NavProjects() {
+  const navigate = useNavigate();
+  const { projectId: activeProjectId } = useParams({ strict: false });
+  const projects = useLiveQuery(() => getProjects(), []);
+  const [groupOpen, setGroupOpen] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  function handleDeletedProject(deletedId: string) {
+    if (deletedId === activeProjectId) {
+      void navigate({ to: "/" });
+    }
+  }
+
+  return (
+    <>
+      <SidebarGroup className="gap-1 p-2 pt-1">
+        <div className="relative">
+          <SidebarGroupLabel
+            className={cn(
+              "flex h-7 cursor-pointer items-center justify-start gap-1 px-0 text-sidebar-accent-foreground",
+            )}
+            onClick={() => setGroupOpen((open) => !open)}
+          >
+            <span>Projects</span>
+            <ChevronRight
+              aria-hidden="true"
+              className={cn(
+                "h-3.5 w-3.5 text-sidebar-foreground/60 transition-transform duration-200",
+                groupOpen && "rotate-90",
+              )}
+            />
+          </SidebarGroupLabel>
+          <SidebarGroupAction
+            className="top-2 right-2 text-sidebar-foreground/70"
+            title="Add project"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Plus />
+            <span className="sr-only">Add project</span>
+          </SidebarGroupAction>
+        </div>
+        {groupOpen && (
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
+              {(projects ?? []).map((project) => (
+                <ProjectRow
+                  key={project.id}
+                  project={project}
+                  isActive={activeProjectId === project.id}
+                  onDeleted={handleDeletedProject}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
+      </SidebarGroup>
+
+      <CreateProjectDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
+    </>
   );
 }
