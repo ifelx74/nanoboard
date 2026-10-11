@@ -16,15 +16,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { createProject, suggestProjectSlug } from "@/lib/db/queries";
-import { PROJECT_ICONS } from "@/lib/project-icons";
 import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import ProjectIconPicker from "./project-icon-picker";
 
 /**
  * Kaneo's create-project modal, adapted: no workspace (single profile, so
@@ -41,32 +35,25 @@ export default function CreateProjectDialog({
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState("Layout");
-  const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
-  const [iconSearch, setIconSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const SelectedIcon =
-    PROJECT_ICONS[selectedIcon as keyof typeof PROJECT_ICONS] ??
-    PROJECT_ICONS.Layout;
-  const filteredIcons = Object.entries(PROJECT_ICONS).filter(([iconName]) =>
-    iconName.toLowerCase().includes(iconSearch.trim().toLowerCase()),
-  );
 
   function handleClose() {
     if (submitting) return;
     setName("");
     setSlug("");
+    setSlugTouched(false);
     setSelectedIcon("Layout");
-    setIconPopoverOpen(false);
-    setIconSearch("");
     onClose();
   }
 
   function handleNameChange(event: React.ChangeEvent<HTMLInputElement>) {
     const next = event.target.value;
     setName(next);
-    setSlug(suggestProjectSlug(next));
+    if (!slugTouched) {
+      setSlug(suggestProjectSlug(next));
+    }
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -116,63 +103,10 @@ export default function CreateProjectDialog({
 
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
           <div className="space-y-6 px-3 pt-2">
-            <Popover
-              open={iconPopoverOpen}
-              onOpenChange={(next) => {
-                setIconPopoverOpen(next);
-                if (!next) setIconSearch("");
-              }}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  className="h-8 w-8 p-0"
-                  title="Pick an icon"
-                >
-                  <SelectedIcon className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-2" align="start">
-                <div className="space-y-2">
-                  <Input
-                    value={iconSearch}
-                    onChange={(e) => setIconSearch(e.target.value)}
-                    placeholder="Search icons"
-                    className="h-8 text-xs"
-                  />
-                  <div className="max-h-[280px] overflow-y-auto pr-1">
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {filteredIcons.map(([iconName, Icon]) => {
-                        const isSelected = selectedIcon === iconName;
-                        return (
-                          <Button
-                            key={iconName}
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedIcon(iconName);
-                              setIconPopoverOpen(false);
-                              setIconSearch("");
-                            }}
-                            className={cn(
-                              "h-10 items-center justify-center rounded-md p-0",
-                              isSelected &&
-                                "bg-sidebar-accent text-sidebar-accent-foreground",
-                            )}
-                            title={iconName}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <ProjectIconPicker
+              selected={selectedIcon}
+              onSelect={setSelectedIcon}
+            />
 
             <Input
               unstyled
@@ -194,7 +128,10 @@ export default function CreateProjectDialog({
                 <Input
                   id="project-slug"
                   value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
+                  onChange={(e) => {
+                    setSlug(e.target.value);
+                    setSlugTouched(true);
+                  }}
                   placeholder="my-project"
                   maxLength={48}
                   className="h-8 min-w-0 flex-1 rounded-lg border-border bg-background text-center text-sm font-semibold transition-colors duration-150"

@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Folder,
   MoreHorizontal,
+  Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -23,26 +24,30 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import CreateProjectDialog from "@/components/project/create-project-dialog";
+import EditProjectDialog from "@/components/project/edit-project-dialog";
 import ProjectDeleteDialog from "@/components/project/project-delete-dialog";
 import { ProjectProgress } from "@/components/project/project-progress";
-import { getProjectStats, getProjects } from "@/lib/db/queries";
+import { getProjects, getProjectsStats } from "@/lib/db/queries";
+import type { ProjectStats } from "@/lib/db/queries";
 import type { Project } from "@/lib/db/schema";
 import { getProjectIcon } from "@/lib/project-icons";
 import { cn } from "@/lib/utils";
 
 function ProjectRow({
   project,
+  stats,
   isActive,
   onDeleted,
 }: {
   project: Project;
+  stats: ProjectStats | undefined;
   isActive: boolean;
   onDeleted: (projectId: string) => void;
 }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const stats = useLiveQuery(() => getProjectStats(project.id), [project.id]);
   const ProjectIcon = getProjectIcon(project.icon);
 
   function openBoard() {
@@ -98,6 +103,18 @@ function ProjectRow({
           </button>
           <button
             type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              setEditOpen(true);
+            }}
+            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50"
+          >
+            <Pencil className="size-4 shrink-0 text-muted-foreground" />
+            <span>Edit project</span>
+          </button>
+          <div className="my-1 border-t border-border" />
+          <button
+            type="button"
             onClick={handleDeleteRequest}
             className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-accent/50"
           >
@@ -114,20 +131,26 @@ function ProjectRow({
         projectName={project.name}
         onDeleted={() => onDeleted(project.id)}
       />
+      <EditProjectDialog
+        projectId={project.id}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+      />
     </SidebarMenuItem>
   );
 }
 
 /**
  * Kaneo's project list, mapped: flat rows into the board, per-project
- * icons, progress wedge, hover menu (view/share/delete), Plus to create.
- * Deliberately absent: project settings (no settings page), drag reorder
- * (seam ready, UI follow-up), and the server-only nav items.
+ * icons, progress wedge, hover menu (view/edit/delete), Plus to create.
+ * Deliberately absent: drag reorder (seam ready, UI follow-up) and the
+ * server-only nav items.
  */
 export function NavProjects() {
   const navigate = useNavigate();
   const { projectId: activeProjectId } = useParams({ strict: false });
   const projects = useLiveQuery(() => getProjects(), []);
+  const statsByProject = useLiveQuery(() => getProjectsStats(), []);
   const [groupOpen, setGroupOpen] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -172,6 +195,7 @@ export function NavProjects() {
                 <ProjectRow
                   key={project.id}
                   project={project}
+                  stats={statsByProject?.get(project.id)}
                   isActive={activeProjectId === project.id}
                   onDeleted={handleDeletedProject}
                 />

@@ -49,8 +49,8 @@ export default function ProjectDeleteDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete project?</AlertDialogTitle>
           <AlertDialogDescription>
-            “{projectName}” and all of its tasks will be permanently deleted.
-            This cannot be undone.
+            “{projectName}” and all of its columns, tasks, and labels will be
+            permanently deleted. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

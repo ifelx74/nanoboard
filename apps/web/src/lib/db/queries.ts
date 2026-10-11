@@ -2,6 +2,7 @@ import { createId } from "@paralleldrive/cuid2";
 import Dexie from "dexie";
 import { LABEL_COLORS } from "../label-color";
 import { isProjectIconKey } from "../project-icons";
+import type { ProjectIconKey } from "../project-icons";
 import { db } from "./db";
 import type {
   Column,
@@ -77,22 +78,27 @@ function assertValidProjectSlug(slug: string): string {
   return trimmed;
 }
 
-function assertValidProjectIcon(icon: string): void {
+function assertValidProjectIcon(icon: string): asserts icon is ProjectIconKey {
   if (!isProjectIconKey(icon)) {
     throw new Error(`Invalid project icon "${icon}".`);
   }
+}
+
+/** Single-scan slug census shared by the uniqueness checks below (perf). */
+async function takenSlugs(exceptId?: string): Promise<Set<string>> {
+  const projects = await db.projects.toArray();
+  return new Set(
+    projects
+      .filter((project) => project.id !== exceptId)
+      .map((project) => project.slug.toLowerCase()),
+  );
 }
 
 async function assertUniqueProjectSlug(
   slug: string,
   exceptId?: string,
 ): Promise<void> {
-  const siblings = await db.projects.toArray();
-  const clash = siblings.some(
-    (sibling) =>
-      sibling.id !== exceptId && sibling.slug.toLowerCase() === slug,
-  );
-  if (clash) {
+  if ((await takenSlugs(exceptId)).has(slug)) {
     throw new Error(`A project with slug "${slug}" already exists.`);
   }
 }
@@ -102,24 +108,22 @@ export function suggestProjectSlug(name: string): string {
   const base = name
     .normalize("NFKC")
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/[\s_]+/g, "-")
-    .replace(/-+/g, "-")
+    .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, PROJECT_SLUG_MAX);
+    .slice(0, PROJECT_SLUG_MAX)
+    .replace(/-+$/g, "");
   return base || "project";
 }
 
 async function resolveUniqueSlug(base: string, exceptId?: string): Promise<string> {
-  const taken = new Set(
-    (await db.projects.toArray())
-      .filter((project) => project.id !== exceptId)
-      .map((project) => project.slug.toLowerCase()),
-  );
+  const taken = await takenSlugs(exceptId);
   if (!taken.has(base)) return base;
+  // Truncate room for the suffix so the stored slug never exceeds the max
+  // the validator enforces.
   for (let suffix = 2; ; suffix += 1) {
-    const candidate = `${base}-${suffix}`;
+    const tail = `-${suffix}`;
+    const stem = base.slice(0, PROJECT_SLUG_MAX - tail.length).replace(/-+$/g, "");
+    const candidate = `${stem}${tail}`;
     if (!taken.has(candidate)) return candidate;
   }
 }
@@ -128,13 +132,13 @@ export interface CreateProjectInput {
   name: string;
   slug?: string;
   icon?: string;
-  description?: string;
 }
 
 /**
  * Project creation write: the project row plus the 4 default columns in
- * one transaction. Position appends past the last project; slug is
- * suggested from the name when omitted, always deduped. Returns the id.
+ * one transaction. Position appends past the last project. An omitted slug
+ * is suggested from the name and deduped; an explicit taken slug conflicts
+ * (Kaneo's 409). Returns the id.
  */
 export async function createProject(input: CreateProjectInput): Promise<string> {
   const name = assertValidProjectName(input.name);
@@ -143,11 +147,16 @@ export async function createProject(input: CreateProjectInput): Promise<string> 
   const now = Date.now();
   const id = createId();
 
+  const suggested = input.slug === undefined;
+
   const requested =
     input.slug === undefined ? suggestProjectSlug(name) : assertValidProjectSlug(input.slug);
 
   await db.transaction("rw", [db.projects, db.columns], async () => {
-    const slug = await resolveUniqueSlug(requested);
+    if (!suggested) {
+      await assertUniqueProjectSlug(requested);
+    }
+    const slug = suggested ? await resolveUniqueSlug(requested) : requested;
     const ordered = await db.projects.orderBy("position").toArray();
     const position =
       ordered.length === 0 ? 0 : (ordered[ordered.length - 1]?.position ?? -1) + 1;
@@ -156,7 +165,6 @@ export async function createProject(input: CreateProjectInput): Promise<string> 
       id,
       name,
       slug,
-      description: input.description?.trim() || undefined,
       icon,
       position,
       lastTaskNumber: 0,
@@ -230,12 +238,11 @@ export async function deleteProject(id: string): Promise<void> {
     "rw",
     [db.projects, db.columns, db.tasks, db.labels, db.taskLabels],
     async () => {
-      for (const taskId of taskIds) {
-        await db.taskLabels.where("taskId").equals(taskId).delete();
-      }
+      // One indexed join wipe instead of a per-task loop (perf).
+      await db.taskLabels.where("taskId").anyOf(taskIds).delete();
       await db.tasks.where("projectId").equals(id).delete();
       // Joins can't dangle: every project-label join belonged to a project
-      // task (same-project attach rule), all removed in the loop above.
+      // task (same-project attach rule), all removed above.
       await db.labels.where("projectId").equals(id).delete();
       await db.columns.where("projectId").equals(id).delete();
       await db.projects.delete(id);
@@ -244,18 +251,20 @@ export async function deleteProject(id: string): Promise<void> {
 }
 
 /**
- * Dense position renumber from an id list (the sidebar drop handler calls
- * exactly this). Unique, existing ids enforced; only changed rows rewrite.
+ * Dense position renumber from the full id list in its new order (the
+ * sidebar drop handler calls exactly this). Unique ids covering every
+ * project enforced; only changed rows rewrite.
  */
 export async function reorderProjects(ids: string[]): Promise<void> {
   if (new Set(ids).size !== ids.length) {
     throw new Error("Project IDs must be unique.");
   }
-  const existing = await db.projects.where("id").anyOf(ids).toArray();
-  if (existing.length !== ids.length) {
-    throw new Error("Unknown project in reorder list.");
+  const all = await db.projects.toArray();
+  const allIds = new Set(all.map((project) => project.id));
+  if (ids.length !== all.length || !ids.every((id) => allIds.has(id))) {
+    throw new Error("Reorder list must cover every project exactly once.");
   }
-  const positionById = new Map(existing.map((project) => [project.id, project.position]));
+  const positionById = new Map(all.map((project) => [project.id, project.position]));
   const now = Date.now();
   await db.transaction("rw", db.projects, async () => {
     for (let index = 0; index < ids.length; index += 1) {
@@ -279,25 +288,49 @@ export interface ProjectStats {
 
 /** Computed read backing the sidebar progress donut; no stored aggregates. */
 export async function getProjectStats(projectId: string): Promise<ProjectStats> {
+  return (await getProjectsStats()).get(projectId) ?? {
+    totalTasks: 0,
+    doneTasks: 0,
+    completionPercentage: 0,
+    dueDate: null,
+  };
+}
+
+/**
+ * Every project's stats in one pass (the sidebar subscribes to this once
+ * instead of two queries per row).
+ */
+export async function getProjectsStats(): Promise<Map<string, ProjectStats>> {
   const [columns, tasks] = await Promise.all([
-    db.columns.where("projectId").equals(projectId).toArray(),
-    db.tasks.where("projectId").equals(projectId).toArray(),
+    db.columns.toArray(),
+    db.tasks.toArray(),
   ]);
   const finalIds = new Set(
     columns.filter((column) => column.isFinal).map((column) => column.id),
   );
-  const doneTasks = tasks.filter((task) => finalIds.has(task.columnId)).length;
-  const dueDates = tasks
-    .map((task) => task.dueDate)
-    .filter((dueDate): dueDate is DueDateString => dueDate !== undefined)
-    .sort();
-  return {
-    totalTasks: tasks.length,
-    doneTasks,
-    completionPercentage:
-      tasks.length === 0 ? 0 : Math.round((doneTasks / tasks.length) * 100),
-    dueDate: dueDates[0] ?? null,
-  };
+  const byProject = new Map<string, { total: number; done: number; dues: DueDateString[] }>();
+  for (const task of tasks) {
+    let entry = byProject.get(task.projectId);
+    if (!entry) {
+      entry = { total: 0, done: 0, dues: [] };
+      byProject.set(task.projectId, entry);
+    }
+    entry.total += 1;
+    if (finalIds.has(task.columnId)) entry.done += 1;
+    if (task.dueDate !== undefined) entry.dues.push(task.dueDate);
+  }
+  const stats = new Map<string, ProjectStats>();
+  for (const [projectId, entry] of byProject) {
+    entry.dues.sort();
+    stats.set(projectId, {
+      totalTasks: entry.total,
+      doneTasks: entry.done,
+      completionPercentage:
+        entry.total === 0 ? 0 : Math.round((entry.done / entry.total) * 100),
+      dueDate: entry.dues[0] ?? null,
+    });
+  }
+  return stats;
 }
 
 
