@@ -8,6 +8,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { format } from "date-fns";
 import { Calendar, CalendarClock, CalendarX, Plus } from "lucide-react";
 import type { Column, Label, Task } from "@/lib/db/schema";
+import { Badge } from "@/components/ui/badge";
 import { getColumnIcon } from "@/lib/column";
 import {
   getDueDateStatus,
@@ -85,12 +86,14 @@ export function TaskCardView({
       {!isFinal && (hasPriority || task.dueDate) && (
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
           {hasPriority && (
-            <span
-              className="inline-flex h-5 items-center"
+            <Badge
+              variant={task.priority === "urgent" ? "destructive" : "secondary"}
               title={priorityLabel(task.priority)}
+              className="gap-1 font-medium"
             >
               {getPriorityIcon(task.priority)}
-            </span>
+              <span>{priorityLabel(task.priority)}</span>
+            </Badge>
           )}
           {task.dueDate && (
             <div
