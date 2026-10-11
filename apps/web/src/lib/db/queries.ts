@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import Dexie from "dexie";
 import { LABEL_COLORS } from "../label-color";
+import { isProjectIconKey } from "../project-icons";
 import { db } from "./db";
 import type {
   Column,
@@ -12,7 +13,11 @@ import type {
   Task,
   TaskPriority,
 } from "./schema";
-import { TASK_PRIORITIES } from "./schema";
+import {
+  DEFAULT_COLUMNS,
+  DEFAULT_PROJECT_ICON,
+  TASK_PRIORITIES,
+} from "./schema";
 
 export function getProject(projectId: string): Promise<Project | undefined> {
   return db.projects.get(projectId);
@@ -37,6 +42,264 @@ export function getProjects(): Promise<Project[]> {
 export function countProjectTasks(projectId: string): Promise<number> {
   return db.tasks.where("projectId").equals(projectId).count();
 }
+
+export const PROJECT_NAME_MIN = 1;
+export const PROJECT_NAME_MAX = 100;
+export const PROJECT_SLUG_MAX = 48;
+
+const PROJECT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function assertValidProjectName(name: string): string {
+  const trimmed = name.trim();
+  if (
+    trimmed.length < PROJECT_NAME_MIN ||
+    trimmed.length > PROJECT_NAME_MAX
+  ) {
+    throw new Error(
+      `Project name must be ${PROJECT_NAME_MIN}–${PROJECT_NAME_MAX} characters after trimming.`,
+    );
+  }
+  return trimmed;
+}
+
+function assertValidProjectSlug(slug: string): string {
+  const trimmed = slug.trim().toLowerCase();
+  if (trimmed.length === 0 || trimmed.length > PROJECT_SLUG_MAX) {
+    throw new Error(
+      `Project slug must be 1–${PROJECT_SLUG_MAX} characters after trimming.`,
+    );
+  }
+  if (!PROJECT_SLUG_PATTERN.test(trimmed)) {
+    throw new Error(
+      `Invalid project slug "${slug}". Use lowercase letters, numbers, and hyphens.`,
+    );
+  }
+  return trimmed;
+}
+
+function assertValidProjectIcon(icon: string): void {
+  if (!isProjectIconKey(icon)) {
+    throw new Error(`Invalid project icon "${icon}".`);
+  }
+}
+
+async function assertUniqueProjectSlug(
+  slug: string,
+  exceptId?: string,
+): Promise<void> {
+  const siblings = await db.projects.toArray();
+  const clash = siblings.some(
+    (sibling) =>
+      sibling.id !== exceptId && sibling.slug.toLowerCase() === slug,
+  );
+  if (clash) {
+    throw new Error(`A project with slug "${slug}" already exists.`);
+  }
+}
+
+/** Kebab-case suggestion from the name; uniqueness is resolved by the caller. */
+export function suggestProjectSlug(name: string): string {
+  const base = name
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, PROJECT_SLUG_MAX);
+  return base || "project";
+}
+
+async function resolveUniqueSlug(base: string, exceptId?: string): Promise<string> {
+  const taken = new Set(
+    (await db.projects.toArray())
+      .filter((project) => project.id !== exceptId)
+      .map((project) => project.slug.toLowerCase()),
+  );
+  if (!taken.has(base)) return base;
+  for (let suffix = 2; ; suffix += 1) {
+    const candidate = `${base}-${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
+
+export interface CreateProjectInput {
+  name: string;
+  slug?: string;
+  icon?: string;
+  description?: string;
+}
+
+/**
+ * Project creation write: the project row plus the 4 default columns in
+ * one transaction. Position appends past the last project; slug is
+ * suggested from the name when omitted, always deduped. Returns the id.
+ */
+export async function createProject(input: CreateProjectInput): Promise<string> {
+  const name = assertValidProjectName(input.name);
+  const icon = input.icon ?? DEFAULT_PROJECT_ICON;
+  assertValidProjectIcon(icon);
+  const now = Date.now();
+  const id = createId();
+
+  const requested =
+    input.slug === undefined ? suggestProjectSlug(name) : assertValidProjectSlug(input.slug);
+
+  await db.transaction("rw", [db.projects, db.columns], async () => {
+    const slug = await resolveUniqueSlug(requested);
+    const ordered = await db.projects.orderBy("position").toArray();
+    const position =
+      ordered.length === 0 ? 0 : (ordered[ordered.length - 1]?.position ?? -1) + 1;
+
+    await db.projects.add({
+      id,
+      name,
+      slug,
+      description: input.description?.trim() || undefined,
+      icon,
+      position,
+      lastTaskNumber: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+    for (const column of DEFAULT_COLUMNS) {
+      await db.columns.add({
+        id: createId(),
+        projectId: id,
+        name: column.name,
+        slug: column.slug,
+        position: column.position,
+        isFinal: column.isFinal,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  });
+
+  return id;
+}
+
+export interface UpdateProjectInput {
+  name?: string;
+  slug?: string;
+  icon?: string;
+  description?: string | null;
+}
+
+/** Field patch; slug conflicts exclude the project itself. */
+export async function updateProject(
+  id: string,
+  patch: UpdateProjectInput,
+): Promise<void> {
+  const existing = await db.projects.get(id);
+  if (!existing) {
+    throw new Error("Project not found.");
+  }
+  const next: Partial<Project> = { updatedAt: Date.now() };
+  if (patch.name !== undefined) next.name = assertValidProjectName(patch.name);
+  if (patch.slug !== undefined) {
+    const slug = assertValidProjectSlug(patch.slug);
+    await assertUniqueProjectSlug(slug, id);
+    next.slug = slug;
+  }
+  if (patch.icon !== undefined) {
+    assertValidProjectIcon(patch.icon);
+    next.icon = patch.icon;
+  }
+  if (patch.description !== undefined) {
+    next.description = patch.description?.trim() || undefined;
+  }
+  await db.projects.update(id, next);
+}
+
+/**
+ * Hard delete with the transitive closure of today's stores: label joins,
+ * tasks, labels, columns, then the project. Relations and activities join
+ * the closure with the v4 task-detail tables. No guards — Kaneo has none.
+ */
+export async function deleteProject(id: string): Promise<void> {
+  const existing = await db.projects.get(id);
+  if (!existing) {
+    throw new Error("Project not found.");
+  }
+  const taskIds = (await db.tasks.where("projectId").equals(id).toArray()).map(
+    (task) => task.id,
+  );
+  await db.transaction(
+    "rw",
+    [db.projects, db.columns, db.tasks, db.labels, db.taskLabels],
+    async () => {
+      for (const taskId of taskIds) {
+        await db.taskLabels.where("taskId").equals(taskId).delete();
+      }
+      await db.tasks.where("projectId").equals(id).delete();
+      // Joins can't dangle: every project-label join belonged to a project
+      // task (same-project attach rule), all removed in the loop above.
+      await db.labels.where("projectId").equals(id).delete();
+      await db.columns.where("projectId").equals(id).delete();
+      await db.projects.delete(id);
+    },
+  );
+}
+
+/**
+ * Dense position renumber from an id list (the sidebar drop handler calls
+ * exactly this). Unique, existing ids enforced; only changed rows rewrite.
+ */
+export async function reorderProjects(ids: string[]): Promise<void> {
+  if (new Set(ids).size !== ids.length) {
+    throw new Error("Project IDs must be unique.");
+  }
+  const existing = await db.projects.where("id").anyOf(ids).toArray();
+  if (existing.length !== ids.length) {
+    throw new Error("Unknown project in reorder list.");
+  }
+  const positionById = new Map(existing.map((project) => [project.id, project.position]));
+  const now = Date.now();
+  await db.transaction("rw", db.projects, async () => {
+    for (let index = 0; index < ids.length; index += 1) {
+      const projectId = ids[index];
+      if (projectId === undefined) continue;
+      if (positionById.get(projectId) !== index) {
+        await db.projects.update(projectId, { position: index, updatedAt: now });
+      }
+    }
+  });
+}
+
+export interface ProjectStats {
+  totalTasks: number;
+  doneTasks: number;
+  /** Rounded 0–100; 0 when the project has no tasks. */
+  completionPercentage: number;
+  /** Soonest due date in the project, or null when none is set. */
+  dueDate: DueDateString | null;
+}
+
+/** Computed read backing the sidebar progress donut; no stored aggregates. */
+export async function getProjectStats(projectId: string): Promise<ProjectStats> {
+  const [columns, tasks] = await Promise.all([
+    db.columns.where("projectId").equals(projectId).toArray(),
+    db.tasks.where("projectId").equals(projectId).toArray(),
+  ]);
+  const finalIds = new Set(
+    columns.filter((column) => column.isFinal).map((column) => column.id),
+  );
+  const doneTasks = tasks.filter((task) => finalIds.has(task.columnId)).length;
+  const dueDates = tasks
+    .map((task) => task.dueDate)
+    .filter((dueDate): dueDate is DueDateString => dueDate !== undefined)
+    .sort();
+  return {
+    totalTasks: tasks.length,
+    doneTasks,
+    completionPercentage:
+      tasks.length === 0 ? 0 : Math.round((doneTasks / tasks.length) * 100),
+    dueDate: dueDates[0] ?? null,
+  };
+}
+
 
 export const QUICK_ADD_TITLE_MIN = 3;
 export const QUICK_ADD_TITLE_MAX = 256;
