@@ -61,7 +61,7 @@ export function TaskCardView({
       <div className={cn(!isFinal && "mb-2.5")}>
         <div
           className={cn(
-            "overflow-hidden break-words font-medium text-[15px] leading-5",
+            "overflow-hidden wrap-break-word font-medium text-[15px] leading-5",
             isFinal ? "text-muted-foreground" : "text-foreground/95",
           )}
           style={{
@@ -197,7 +197,7 @@ export default function BoardColumn({
         setNodeRef(element);
         registerLaneRef(column.id, element);
       }}
-      className={`flex w-72 shrink-0 flex-col gap-2 rounded-xl bg-muted/50 p-2 ${isOver ? "ring-2 ring-ring/40" : ""}`}
+      className={`flex h-full min-h-0 w-full flex-col gap-2 rounded-xl bg-muted/50 p-2 ${isOver ? "ring-2 ring-ring/40" : ""}`}
     >
       <header className="flex items-center justify-between gap-2 px-1.5 py-1">
         <div className="flex min-w-0 items-center gap-2">

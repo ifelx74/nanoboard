@@ -298,21 +298,24 @@ export default function KanbanBoard({
           onToggle={toggle}
           onClear={clear}
         />
-        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-4 pt-3">
-          {columns.map((column) => (
-            <BoardColumn
-              key={column.id}
-              column={column}
-              tasks={shownGrouping.get(column.id) ?? []}
-              labelsByTask={labelsByTask}
-              filterActive={selected !== null}
-              disabled={disableDragDrop}
-              justDraggedRef={justDraggedRef}
-              onOpenTask={onOpenTask}
-              onCreateTask={setCreateColumnId}
-              registerLaneRef={registerLaneRef}
-            />
-          ))}
+        <div className="min-h-0 flex-1 overflow-x-auto">
+          <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
+            {columns.map((column) => (
+              <div key={column.id} className="h-full max-w-96 min-w-80 shrink-0 flex-1">
+                <BoardColumn
+                  column={column}
+                  tasks={shownGrouping.get(column.id) ?? []}
+                  labelsByTask={labelsByTask}
+                  filterActive={selected !== null}
+                  disabled={disableDragDrop}
+                  justDraggedRef={justDraggedRef}
+                  onOpenTask={onOpenTask}
+                  onCreateTask={setCreateColumnId}
+                  registerLaneRef={registerLaneRef}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       {createColumn && (
