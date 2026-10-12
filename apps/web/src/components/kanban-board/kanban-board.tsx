@@ -21,6 +21,11 @@ import BoardColumn, { TaskCardView } from "./column";
 import CreateTaskDialog from "@/components/task/create-task-dialog";
 import BoardFilterBar from "./board-filter-bar";
 import { filterGrouping } from "./board-filter-model";
+import {
+  groupingKey,
+  isPreviewEchoed,
+  mergePreviewLive,
+} from "./board-preview";
 import { useBoardLabelFilter } from "./use-board-label-filter";
 import { boardCollisionDetection } from "./collision";
 import { type DropTarget, type Pointer, locateFromPointer } from "./locate";
@@ -37,15 +42,6 @@ function groupTasks(tasks: Task[]): Map<string, Task[]> {
     list.sort((a, b) => a.position - b.position);
   }
   return grouping;
-}
-
-function groupingKey(grouping: Map<string, Task[]>): string {
-  return [...grouping.entries()]
-    .map(
-      ([columnId, list]) =>
-        `${columnId}:${list.map((task) => task.id).join(",")}`,
-    )
-    .join("|");
 }
 
 function pointerFromActivator(event: DragStartEvent): Pointer | null {
@@ -131,23 +127,24 @@ export default function KanbanBoard({
 
   // Labels filter: render-only. Drag math, drop writes, and the echo
   // handoff all stay on the full order so hidden tasks keep their places.
-  // A held preview carries the full order too and is intersected here, so
-  // filtered-out tasks never flash mid-drag.
+  // A held preview carries the full order too and is merged with live data
+  // (not a wholesale replacement) before intersecting here, so a task
+  // created mid-echo stays visible and filtered-out tasks never flash.
   const { selected, toggle, clear } = useBoardLabelFilter(projectId);
+  const heldGrouping = useMemo(
+    () => (preview ? mergePreviewLive(liveGrouping, preview) : liveGrouping),
+    [preview, liveGrouping],
+  );
   const shownGrouping = useMemo(
-    () =>
-      filterGrouping(preview ?? liveGrouping, labelsByTask, selected),
-    [preview, liveGrouping, labelsByTask, selected],
+    () => filterGrouping(heldGrouping, labelsByTask, selected),
+    [heldGrouping, labelsByTask, selected],
   );
 
   // Release a held drop preview once live data echoes the same order,
-  // so the handoff is seamless
+  // so the handoff is seamless. The check tolerates extra live tasks, so
+  // a concurrent create can't stick the preview (and hide the new task).
   useEffect(() => {
-    if (
-      preview &&
-      !writing &&
-      groupingKey(liveGrouping) === groupingKey(preview)
-    ) {
+    if (preview && !writing && isPreviewEchoed(liveGrouping, preview)) {
       setPreview(null);
     }
   }, [preview, writing, liveGrouping]);

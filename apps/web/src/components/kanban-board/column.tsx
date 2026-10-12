@@ -224,7 +224,7 @@ export default function BoardColumn({
           <Plus className="h-4 w-4" aria-hidden="true" />
         </button>
       </header>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 overflow-auto">
         <SortableContext
           items={tasks.map((task) => task.id)}
           strategy={verticalListSortingStrategy}
