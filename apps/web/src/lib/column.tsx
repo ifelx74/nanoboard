@@ -2,9 +2,10 @@ import {
   CheckCircle2,
   Circle,
   CircleDot,
-  Search,
+  ScanSearch,
 } from "lucide-react";
 import type { ColumnSlug } from "@/lib/db/schema";
+import { cn } from "./utils";
 
 /**
  * Column icon by slug, mirroring Kaneo's defaults (`to-do` Circle,
@@ -18,14 +19,14 @@ export function getColumnIcon(slug: ColumnSlug, isFinal = false) {
     case "to-do":
       return <Circle className={className} aria-hidden="true" />;
     case "in-progress":
-      return <CircleDot className={className} aria-hidden="true" />;
+      return <CircleDot className={cn(className, "text-yellow-500")} aria-hidden="true" />;
     case "in-review":
-      return <Search className={className} aria-hidden="true" />;
+      return <ScanSearch className={cn(className, "text-blue-500")} aria-hidden="true" />;
     case "done":
-      return <CheckCircle2 className={className} aria-hidden="true" />;
+      return <CheckCircle2 className={cn(className, "text-green-500")} aria-hidden="true" />;
     default:
       return isFinal ? (
-        <CheckCircle2 className={className} aria-hidden="true" />
+        <CheckCircle2 className={cn(className, "text-green-500")} aria-hidden="true" />
       ) : (
         <Circle className={className} aria-hidden="true" />
       );
