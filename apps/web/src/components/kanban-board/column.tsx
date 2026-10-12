@@ -44,7 +44,6 @@ export function TaskCardView({
 }) {
   const dueDateStatus = getDueDateStatus(task.dueDate, isFinal);
   const isOverdue = dueDateStatus === "overdue";
-  const hasPriority = task.priority !== "no-priority";
 
   return (
     <article
@@ -83,18 +82,16 @@ export function TaskCardView({
         </div>
       )}
 
-      {!isFinal && (hasPriority || task.dueDate) && (
+      {!isFinal && (
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-          {hasPriority && (
-            <Badge
-              variant={task.priority === "urgent" ? "destructive" : "secondary"}
-              title={priorityLabel(task.priority)}
-              className="gap-1 font-medium"
-            >
-              {getPriorityIcon(task.priority)}
-              <span>{priorityLabel(task.priority)}</span>
-            </Badge>
-          )}
+          <Badge
+            variant={task.priority === "urgent" ? "destructive" : "outline"}
+            title={priorityLabel(task.priority)}
+            className="gap-1 font-medium rounded-md! text-sm h-6!"
+          >
+            {getPriorityIcon(task.priority)}
+            <span>{priorityLabel(task.priority)}</span>
+          </Badge>
           {task.dueDate && (
             <div
               className={cn(
