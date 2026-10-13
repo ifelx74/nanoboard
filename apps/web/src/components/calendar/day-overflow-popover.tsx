@@ -55,6 +55,11 @@ export default function DayOverflowPopover({
                 <span className="w-full truncate text-xs font-medium text-foreground">
                   {task.title}
                 </span>
+                {task.key && (
+                  <span className="truncate text-[10px] text-muted-foreground">
+                    {task.key}
+                  </span>
+                )}
                 <span className="w-full truncate text-[11px] text-muted-foreground">
                   {formatDayRange(task.scheduleStart, task.scheduleEnd)}
                 </span>

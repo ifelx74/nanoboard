@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ProjectLayout } from "@/components/common/project-layout";
 import TaskDrawer from "@/components/task/task-drawer";
-import { getProjectTasks } from "@/lib/db/queries";
+import { getProject, getProjectTasks } from "@/lib/db/queries";
+import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/list")({
@@ -47,6 +48,8 @@ function RouteComponent() {
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const slug = project?.slug ?? "";
 
   function openTask(taskId: string) {
     void navigate({
@@ -64,7 +67,7 @@ function RouteComponent() {
     });
   }
 
-  if (tasks === undefined) {
+  if (tasks === undefined || project === undefined) {
     return (
       <ProjectLayout projectId={projectId} activeView="list">
         <ListSkeleton />
@@ -85,6 +88,7 @@ function RouteComponent() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/80 bg-muted/50 text-left text-xs text-muted-foreground">
+                <th className="px-3 py-2 font-medium">Key</th>
                 <th className="px-3 py-2 font-medium">Title</th>
                 <th className="px-3 py-2 font-medium">Due</th>
                 <th className="px-3 py-2 font-medium">Priority</th>
@@ -94,7 +98,7 @@ function RouteComponent() {
               {tasks.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={3}
+                    colSpan={4}
                     className="px-3 py-6 text-center text-sm text-muted-foreground"
                   >
                     No tasks in this project
@@ -107,6 +111,9 @@ function RouteComponent() {
                   onClick={() => openTask(task.id)}
                   className="cursor-pointer border-b border-border/50 last:border-0 hover:bg-muted/30"
                 >
+                  <td className="shrink-0 px-3 py-2 font-mono text-xs text-muted-foreground">
+                    {taskKey(slug, task.number)}
+                  </td>
                   <td className="px-3 py-2">{task.title}</td>
                   <td className="px-3 py-2 text-muted-foreground">
                     {task.dueDate ?? "—"}

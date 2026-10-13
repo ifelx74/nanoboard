@@ -15,6 +15,7 @@ import {
   parseLocalDate,
 } from "@/lib/due-date-status";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
+import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
 import { TaskLabels } from "@/components/task/task-labels";
 
@@ -36,11 +37,13 @@ export function TaskCardView({
   labels,
   isFinal = false,
   dimmed,
+  taskKey,
 }: {
   task: Task;
   labels?: Label[];
   isFinal?: boolean;
   dimmed?: boolean;
+  taskKey: string;
 }) {
   const dueDateStatus = getDueDateStatus(task.dueDate, isFinal);
   const isOverdue = dueDateStatus === "overdue";
@@ -48,7 +51,7 @@ export function TaskCardView({
   return (
     <article
       className={cn(
-        "group relative rounded-lg border p-3 transition-[background-color,border-color,box-shadow] duration-150 ease-out",
+        "group relative rounded-lg border p-3 transition-[background-color,border-color,box-shadow] duration-150 ease-out select-none",
         // Finished work steps back so open cards draw the eye.
         isFinal ? "bg-background/60" : "bg-card shadow-sm/5",
         dimmed && "border-ring/40 bg-card shadow-lg",
@@ -58,6 +61,9 @@ export function TaskCardView({
             : "border-border/80 hover:bg-background hover:shadow-sm"),
       )}
     >
+      <div className="mb-2 font-medium text-[11px] text-muted-foreground/90">
+        {taskKey}
+      </div>
       <div className={cn(!isFinal && "mb-2.5")}>
         <div
           className={cn(
@@ -126,6 +132,7 @@ function SortableTaskCard({
   disabled,
   justDraggedRef,
   onOpen,
+  taskKey,
 }: {
   task: Task;
   labels?: Label[];
@@ -133,6 +140,7 @@ function SortableTaskCard({
   disabled: boolean;
   justDraggedRef: React.RefObject<boolean>;
   onOpen: (taskId: string) => void;
+  taskKey: string;
 }) {
   const {
     attributes,
@@ -159,7 +167,7 @@ function SortableTaskCard({
       tabIndex={0}
       className="cursor-pointer touch-none outline-none"
     >
-      <TaskCardView task={task} labels={labels} isFinal={isFinal} dimmed={isDragging} />
+      <TaskCardView task={task} labels={labels} isFinal={isFinal} dimmed={isDragging} taskKey={taskKey} />
     </div>
   );
 }
@@ -174,6 +182,7 @@ export default function BoardColumn({
   onOpenTask,
   onCreateTask,
   registerLaneRef,
+  projectSlug,
 }: {
   column: Column;
   tasks: Task[];
@@ -184,6 +193,7 @@ export default function BoardColumn({
   onOpenTask: (taskId: string) => void;
   onCreateTask: (columnId: string) => void;
   registerLaneRef: (columnId: string, element: HTMLElement | null) => void;
+  projectSlug: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
@@ -235,6 +245,7 @@ export default function BoardColumn({
               disabled={disabled}
               justDraggedRef={justDraggedRef}
               onOpen={onOpenTask}
+              taskKey={taskKey(projectSlug, task.number)}
             />
           ))}
         </SortableContext>

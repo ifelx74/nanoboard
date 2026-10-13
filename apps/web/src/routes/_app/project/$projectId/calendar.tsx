@@ -9,8 +9,9 @@ import type { CalendarTask } from "@/components/calendar/calendar-task-bar";
 import { buildMonthWeeks } from "@/components/calendar/month-grid-model";
 import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import TaskDrawer from "@/components/task/task-drawer";
-import { getProjectTasks } from "@/lib/db/queries";
+import { getProject, getProjectTasks } from "@/lib/db/queries";
 import { parseLocalDate } from "@/lib/due-date-status";
+import { taskKey } from "@/lib/task-key";
 
 export const Route = createFileRoute("/_app/project/$projectId/calendar")({
   component: RouteComponent,
@@ -48,6 +49,8 @@ function RouteComponent() {
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const slug = project?.slug ?? "";
   const maxLanes = useMaxLanes();
   const [visibleMonth, setVisibleMonth] = useState(() =>
     startOfMonth(new Date()),
@@ -75,12 +78,13 @@ function RouteComponent() {
             id: task.id,
             title: task.title,
             status: task.status,
+            key: taskKey(slug, task.number),
             scheduleStart: earlier,
             scheduleEnd: later,
           },
         ];
       }),
-    [tasks],
+    [tasks, slug],
   );
 
   const weeks = useMemo(

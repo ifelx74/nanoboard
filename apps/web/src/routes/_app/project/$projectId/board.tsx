@@ -3,7 +3,12 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { ProjectLayout } from "@/components/common/project-layout";
 import KanbanBoard from "@/components/kanban-board/kanban-board";
 import TaskDrawer from "@/components/task/task-drawer";
-import { getProjectColumns, getProjectTaskLabels, getProjectTasks } from "@/lib/db/queries";
+import {
+  getProject,
+  getProjectColumns,
+  getProjectTaskLabels,
+  getProjectTasks,
+} from "@/lib/db/queries";
 
 export const Route = createFileRoute("/_app/project/$projectId/board")({
   component: RouteComponent,
@@ -50,6 +55,7 @@ function RouteComponent() {
   const navigate = useNavigate();
   const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(projectId), [projectId]);
   const labelsByTask = useLiveQuery(() => getProjectTaskLabels(projectId), [
     projectId,
   ]);
@@ -70,7 +76,7 @@ function RouteComponent() {
     });
   }
 
-  if (columns === undefined || tasks === undefined || labelsByTask === undefined) {
+  if (columns === undefined || tasks === undefined || labelsByTask === undefined || project === undefined) {
     return (
       <ProjectLayout projectId={projectId} activeView="board">
         <BoardSkeleton />
@@ -89,6 +95,7 @@ function RouteComponent() {
       <KanbanBoard
         key={projectId}
         projectId={projectId}
+        projectSlug={project.slug}
         columns={columns}
         tasks={tasks}
         labelsByTask={labelsByTask}

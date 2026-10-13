@@ -66,7 +66,7 @@ function EditProjectForm({
 
   const dirty =
     name.trim() !== project.name ||
-    slug.trim().toLowerCase() !== project.slug ||
+    slug.trim().toUpperCase() !== project.slug ||
     icon !== project.icon ||
     (description.trim() || "") !== (project.description ?? "");
 
@@ -117,13 +117,13 @@ function EditProjectForm({
             htmlFor="edit-project-slug"
             className="text-xs font-medium text-muted-foreground"
           >
-            Slug
+            Slug (letters and numbers, max 5, starts with a letter)
           </label>
           <Input
             id="edit-project-slug"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            maxLength={48}
+            maxLength={5}
             className="h-9 text-sm"
             required
           />

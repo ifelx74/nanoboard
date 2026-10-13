@@ -16,14 +16,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { createProject, suggestProjectSlug } from "@/lib/db/queries";
+import { createProject, suggestProjectKey } from "@/lib/db/queries";
 import { toast } from "@/lib/toast";
 import ProjectIconPicker from "./project-icon-picker";
 
 /**
  * Kaneo's create-project modal, adapted: no workspace (single profile, so
- * the breadcrumb shows the app name), kebab slug with a wider input. Icon
- * grid, 2xl name, slug box, and footer match.
+ * the breadcrumb shows the app name), short uppercase key. Icon
+ * grid, 2xl name, key box, and footer match.
  */
 export default function CreateProjectDialog({
   open,
@@ -52,7 +52,7 @@ export default function CreateProjectDialog({
     const next = event.target.value;
     setName(next);
     if (!slugTouched) {
-      setSlug(suggestProjectSlug(next));
+      setSlug(suggestProjectKey(next));
     }
   }
 
@@ -63,7 +63,9 @@ export default function CreateProjectDialog({
     try {
       const id = await createProject({
         name: name.trim(),
-        slug: slug.trim(),
+        // Untouched suggestions dedupe server-side-style (WR2); an explicit
+        // taken key conflicts instead.
+        slug: slugTouched ? slug.trim() : undefined,
         icon: selectedIcon,
       });
       handleClose();
@@ -121,9 +123,9 @@ export default function CreateProjectDialog({
 
           <div className="space-y-3 px-3">
             <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <span className="shrink-0 text-sm font-medium text-muted-foreground">
-                  Slug
+                  Key
                 </span>
                 <Input
                   id="project-slug"
@@ -132,14 +134,14 @@ export default function CreateProjectDialog({
                     setSlug(e.target.value);
                     setSlugTouched(true);
                   }}
-                  placeholder="my-project"
-                  maxLength={48}
-                  className="h-8 min-w-0 flex-1 rounded-lg border-border bg-background text-center text-sm font-semibold transition-colors duration-150"
+                  placeholder="PRO"
+                  maxLength={5}
+                  className="h-8 w-22 rounded-lg border-border bg-background text-center text-sm font-semibold transition-colors duration-150"
                   required
                 />
               </div>
               <div className="hidden flex-1 text-xs text-muted-foreground opacity-80 sm:block">
-                Used in links as {slug || "my-project"}
+                Tasks show as {slug || "ABC"}-1, {slug || "ABC"}-2, …
               </div>
             </div>
           </div>

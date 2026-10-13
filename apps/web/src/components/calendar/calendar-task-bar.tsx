@@ -6,6 +6,8 @@ import type { PackableTask, WeekSegment } from "./month-grid-model";
 export type CalendarTask = PackableTask & {
   title: string;
   status: string;
+  /** Ticket key (`SLUG-12`); empty until the route resolves the project. */
+  key: string;
 };
 
 const STATUS_CLASSES: Record<string, string> = {
@@ -46,6 +48,7 @@ export default function CalendarTaskBar({
   // Kaneo always labels the bar with the full range, even for single-day
   // bars ("Jan 5 – Jan 5").
   const range = formatDayRange(task.scheduleStart, task.scheduleEnd);
+  const prefix = task.key ? `${task.key} · ${task.title}` : task.title;
 
   return (
     <button
@@ -55,8 +58,8 @@ export default function CalendarTaskBar({
         // Row 1 holds the date numbers, so lanes start at row 2.
         gridRow: lane + 2,
       }}
-      title={`${task.title} · ${range}`}
-      aria-label={`${task.title}, ${range}`}
+      title={`${prefix} · ${range}`}
+      aria-label={`${prefix}, ${range}`}
       data-task-status={task.status}
       onClick={() => onOpenTask(task.id)}
       className={cn(

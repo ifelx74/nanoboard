@@ -25,6 +25,7 @@ import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
 import { formatDateShort } from "@/lib/due-date-status";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
+import { taskKey } from "@/lib/task-key";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import TaskColumnPopover from "./task-column-popover";
@@ -124,6 +125,11 @@ export default function TaskDrawer({
         ? CalendarClock
         : Calendar;
 
+  const taskKeyText =
+    project && task
+      ? taskKey(project.slug, task.number)
+      : (project?.slug.toUpperCase() ?? "");
+
   return (
     <Sheet
       open={taskId !== undefined}
@@ -138,7 +144,7 @@ export default function TaskDrawer({
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border bg-background px-4 py-2.5">
           <span className="text-sm font-medium text-muted-foreground">
-            {project?.slug.toUpperCase() ?? ""}
+            {taskKeyText}
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -329,6 +335,11 @@ export default function TaskDrawer({
               </div>
 
               <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+                {project && (
+                  <p className="text-xs font-semibold text-foreground/70">
+                    {taskKeyText}
+                  </p>
+                )}
                 <TaskTitle task={task} />
                 <TaskDescription task={task} />
               </div>

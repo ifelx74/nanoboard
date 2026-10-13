@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { reorderTasks } from "@/lib/db/queries";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { toast } from "@/lib/toast";
+import { taskKey } from "@/lib/task-key";
 import BoardColumn, { TaskCardView } from "./column";
 import CreateTaskDialog from "@/components/task/create-task-dialog";
 import BoardFilterBar from "./board-filter-bar";
@@ -73,6 +74,7 @@ const dropAnimation: DropAnimation = {
 
 export default function KanbanBoard({
   projectId,
+  projectSlug,
   columns,
   tasks,
   labelsByTask,
@@ -80,6 +82,7 @@ export default function KanbanBoard({
   disableDragDrop = false,
 }: {
   projectId: string;
+  projectSlug: string;
   columns: Column[];
   tasks: Task[];
   labelsByTask: Map<string, Label[]>;
@@ -309,6 +312,7 @@ export default function KanbanBoard({
                   onOpenTask={onOpenTask}
                   onCreateTask={setCreateColumnId}
                   registerLaneRef={registerLaneRef}
+                  projectSlug={projectSlug}
                 />
               </div>
             ))}
@@ -335,6 +339,7 @@ export default function KanbanBoard({
                   columns.find((column) => column.id === activeTask.columnId)
                     ?.isFinal ?? false
                 }
+                taskKey={taskKey(projectSlug, activeTask.number)}
               />
             </div>
           </div>

@@ -43,7 +43,7 @@ export function buildSeedRows(now: number = Date.now()): SeedRows {
     {
       id: "p-website",
       name: "Website relaunch",
-      slug: "website-relaunch",
+      slug: "WR",
       description: "Marketing site rebuild",
       icon: DEFAULT_PROJECT_ICON,
       position: 0,
@@ -54,7 +54,7 @@ export function buildSeedRows(now: number = Date.now()): SeedRows {
     {
       id: "p-mobile",
       name: "Mobile app",
-      slug: "mobile-app",
+      slug: "MA",
       description: "iOS and Android client",
       icon: DEFAULT_PROJECT_ICON,
       position: 1,

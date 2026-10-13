@@ -2,6 +2,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { db } from "./db";
 import { isProjectIconKey } from "../project-icons";
 import type { ProjectIconKey } from "../project-icons";
+import type { ProjectKey } from "../task-key";
 import type { DueDateString, Project } from "./schema";
 import { DEFAULT_COLUMNS, DEFAULT_PROJECT_ICON } from "./schema";
 
@@ -15,9 +16,14 @@ export function getProjects(): Promise<Project[]> {
 
 export const PROJECT_NAME_MIN = 1;
 export const PROJECT_NAME_MAX = 100;
-export const PROJECT_SLUG_MAX = 48;
+export const PROJECT_SLUG_MAX = 5;
 
-const PROJECT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const PROJECT_SLUG_FALLBACK = "PROJ";
+
+/** Hard cap so a saturated namespace fails loudly instead of hanging. */
+const MAX_SLUG_ATTEMPTS = 10_000;
+
+const PROJECT_SLUG_PATTERN = /^[A-Z][A-Z0-9]*$/;
 
 function assertValidProjectName(name: string): string {
   const trimmed = name.trim();
@@ -32,19 +38,19 @@ function assertValidProjectName(name: string): string {
   return trimmed;
 }
 
-function assertValidProjectSlug(slug: string): string {
-  const trimmed = slug.trim().toLowerCase();
+function assertValidProjectSlug(slug: string): ProjectKey {
+  const trimmed = slug.trim().toUpperCase();
   if (trimmed.length === 0 || trimmed.length > PROJECT_SLUG_MAX) {
     throw new Error(
-      `Project slug must be 1–${PROJECT_SLUG_MAX} characters after trimming.`,
+      `Project key must be 1–${PROJECT_SLUG_MAX} characters after trimming.`,
     );
   }
   if (!PROJECT_SLUG_PATTERN.test(trimmed)) {
     throw new Error(
-      `Invalid project slug "${slug}". Use lowercase letters, numbers, and hyphens.`,
+      `Invalid project key "${slug}". Use letters and numbers, starting with a letter.`,
     );
   }
-  return trimmed;
+  return trimmed as ProjectKey;
 }
 
 function assertValidProjectIcon(icon: string): asserts icon is ProjectIconKey {
@@ -67,34 +73,53 @@ async function assertUniqueProjectSlug(
   slug: string,
   exceptId?: string,
 ): Promise<void> {
-  if ((await takenSlugs(exceptId)).has(slug)) {
-    throw new Error(`A project with slug "${slug}" already exists.`);
+  if ((await takenSlugs(exceptId)).has(slug.toLowerCase())) {
+    throw new Error(`A project with key "${slug}" already exists.`);
   }
 }
 
-/** Kebab-case suggestion from the name; uniqueness is resolved by the caller. */
-export function suggestProjectSlug(name: string): string {
-  const base = name
+/**
+ * Kaneo-style key suggestion: single word contributes its head, multiple
+ * words their initials (both capped so the key fits the max). Words split
+ * on spaces, underscores, and dashes, so `mobile-app` suggests `MA`;
+ * specials never survive — keys are bare alphanumerics.
+ */
+export function suggestProjectKey(name: string): ProjectKey {
+  const words = name
     .normalize("NFKC")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, PROJECT_SLUG_MAX)
-    .replace(/-+$/g, "");
-  return base || "project";
+    .toUpperCase()
+    .split(/[\s_-]+/)
+    .map((word) => word.replace(/[^A-Z0-9]/g, ""))
+    .filter((word) => word.length > 0);
+  if (words.length === 0) return PROJECT_SLUG_FALLBACK as ProjectKey;
+  const first = words[0] as string;
+  const candidate =
+    words.length === 1
+      ? first.slice(0, PROJECT_SLUG_MAX)
+      : words
+          .slice(0, PROJECT_SLUG_MAX)
+          .map((word) => word[0] as string)
+          .join("");
+  // Keys start with a letter; digit-led suggestions fall back.
+  const key = candidate.replace(/^[0-9]+/, "");
+  return (key || PROJECT_SLUG_FALLBACK) as ProjectKey;
 }
 
-async function resolveUniqueSlug(base: string, exceptId?: string): Promise<string> {
+async function resolveUniqueSlug(
+  base: string,
+  exceptId?: string,
+): Promise<ProjectKey> {
   const taken = await takenSlugs(exceptId);
-  if (!taken.has(base)) return base;
-  // Truncate room for the suffix so the stored slug never exceeds the max
-  // the validator enforces.
-  for (let suffix = 2; ; suffix += 1) {
-    const tail = `-${suffix}`;
-    const stem = base.slice(0, PROJECT_SLUG_MAX - tail.length).replace(/-+$/g, "");
+  if (!taken.has(base.toLowerCase())) return base as ProjectKey;
+  // Digit suffix, no dash (keys stay bare alphanumerics); the stem yields
+  // room so the stored key never exceeds the max the validator enforces.
+  for (let suffix = 2; suffix < MAX_SLUG_ATTEMPTS; suffix += 1) {
+    const tail = String(suffix);
+    const stem = base.slice(0, PROJECT_SLUG_MAX - tail.length);
     const candidate = `${stem}${tail}`;
-    if (!taken.has(candidate)) return candidate;
+    if (!taken.has(candidate.toLowerCase())) return candidate as ProjectKey;
   }
+  throw new Error("Could not allocate a unique project key.");
 }
 
 export interface CreateProjectInput {
@@ -119,7 +144,7 @@ export async function createProject(input: CreateProjectInput): Promise<string> 
   const suggested = input.slug === undefined;
 
   const requested =
-    input.slug === undefined ? suggestProjectSlug(name) : assertValidProjectSlug(input.slug);
+    input.slug === undefined ? suggestProjectKey(name) : assertValidProjectSlug(input.slug);
 
   await db.transaction("rw", [db.projects, db.columns], async () => {
     if (!suggested) {
