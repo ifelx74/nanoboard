@@ -65,14 +65,16 @@ export function buildSeedRows(now: number = Date.now()): SeedRows {
   ];
 
   const columns: Column[] = [
-    { id: "c-web-todo", projectId: "p-website", name: "To Do", slug: columnSlug("to-do"), position: 0, isFinal: false, createdAt: now, updatedAt: now },
-    { id: "c-web-progress", projectId: "p-website", name: "In Progress", slug: columnSlug("in-progress"), position: 1, isFinal: false, createdAt: now, updatedAt: now },
-    { id: "c-web-review", projectId: "p-website", name: "In Review", slug: columnSlug("in-review"), position: 2, isFinal: false, createdAt: now, updatedAt: now },
-    { id: "c-web-done", projectId: "p-website", name: "Done", slug: columnSlug("done"), position: 3, isFinal: true, createdAt: now, updatedAt: now },
-    { id: "c-mob-todo", projectId: "p-mobile", name: "To Do", slug: columnSlug("to-do"), position: 0, isFinal: false, createdAt: now, updatedAt: now },
-    { id: "c-mob-progress", projectId: "p-mobile", name: "In Progress", slug: columnSlug("in-progress"), position: 1, isFinal: false, createdAt: now, updatedAt: now },
-    { id: "c-mob-review", projectId: "p-mobile", name: "In Review", slug: columnSlug("in-review"), position: 2, isFinal: false, createdAt: now, updatedAt: now },
-    { id: "c-mob-done", projectId: "p-mobile", name: "Done", slug: columnSlug("done"), position: 3, isFinal: true, createdAt: now, updatedAt: now },
+    { id: "c-web-backlog", projectId: "p-website", name: "Backlog", slug: columnSlug("backlog"), position: 0, isFinal: false, createdAt: now, updatedAt: now },
+    { id: "c-web-todo", projectId: "p-website", name: "To Do", slug: columnSlug("to-do"), position: 1, isFinal: false, createdAt: now, updatedAt: now },
+    { id: "c-web-progress", projectId: "p-website", name: "In Progress", slug: columnSlug("in-progress"), position: 2, isFinal: false, createdAt: now, updatedAt: now },
+    { id: "c-web-review", projectId: "p-website", name: "In Review", slug: columnSlug("in-review"), position: 3, isFinal: false, createdAt: now, updatedAt: now },
+    { id: "c-web-done", projectId: "p-website", name: "Completed", slug: columnSlug("done"), position: 4, isFinal: true, createdAt: now, updatedAt: now },
+    { id: "c-mob-backlog", projectId: "p-mobile", name: "Backlog", slug: columnSlug("backlog"), position: 0, isFinal: false, createdAt: now, updatedAt: now },
+    { id: "c-mob-todo", projectId: "p-mobile", name: "To Do", slug: columnSlug("to-do"), position: 1, isFinal: false, createdAt: now, updatedAt: now },
+    { id: "c-mob-progress", projectId: "p-mobile", name: "In Progress", slug: columnSlug("in-progress"), position: 2, isFinal: false, createdAt: now, updatedAt: now },
+    { id: "c-mob-review", projectId: "p-mobile", name: "In Review", slug: columnSlug("in-review"), position: 3, isFinal: false, createdAt: now, updatedAt: now },
+    { id: "c-mob-done", projectId: "p-mobile", name: "Completed", slug: columnSlug("done"), position: 4, isFinal: true, createdAt: now, updatedAt: now },
   ];
 
   const tasks: Task[] = [

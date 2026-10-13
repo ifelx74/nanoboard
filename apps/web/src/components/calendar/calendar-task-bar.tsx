@@ -11,6 +11,8 @@ export type CalendarTask = PackableTask & {
 };
 
 const STATUS_CLASSES: Record<string, string> = {
+  backlog:
+    "border-zinc-500/35 bg-zinc-500/15 hover:border-zinc-500/50 hover:bg-zinc-500/20",
   "to-do":
     "border-slate-500/35 bg-slate-500/15 hover:border-slate-500/50 hover:bg-slate-500/20",
   "in-progress":

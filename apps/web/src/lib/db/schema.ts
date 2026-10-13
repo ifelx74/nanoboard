@@ -104,8 +104,9 @@ export const DEFAULT_COLUMNS: {
   position: number;
   isFinal: boolean;
 }[] = [
-  { name: "To Do", slug: columnSlug("to-do"), position: 0, isFinal: false },
-  { name: "In Progress", slug: columnSlug("in-progress"), position: 1, isFinal: false },
-  { name: "In Review", slug: columnSlug("in-review"), position: 2, isFinal: false },
-  { name: "Done", slug: columnSlug("done"), position: 3, isFinal: true },
+  { name: "Backlog", slug: columnSlug("backlog"), position: 0, isFinal: false },
+  { name: "To Do", slug: columnSlug("to-do"), position: 1, isFinal: false },
+  { name: "In Progress", slug: columnSlug("in-progress"), position: 2, isFinal: false },
+  { name: "In Review", slug: columnSlug("in-review"), position: 3, isFinal: false },
+  { name: "Completed", slug: columnSlug("done"), position: 4, isFinal: true },
 ];
