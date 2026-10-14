@@ -31,6 +31,24 @@ export function formatDateShort(date: Date): string {
   });
 }
 
+/**
+ * Kaneo-style relative chip label for list rows: Today / Tomorrow /
+ * Yesterday / in N days / N days ago, short date beyond 30 days out.
+ */
+export function formatRelativeDueDate(due: Date, today = new Date()): string {
+  const startOfDay = (value: Date) =>
+    new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  const diff = Math.round(
+    (startOfDay(due).getTime() - startOfDay(today).getTime()) / 86_400_000,
+  );
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  if (diff > 1 && diff <= 30) return `in ${diff} days`;
+  if (diff < -1) return `${Math.abs(diff)} days ago`;
+  return formatDateShort(due);
+}
+
 /** Parses a `yyyy-mm-dd` day string as a local date (no UTC shift). */
 export function parseLocalDate(isoDate: DueDateString | StartDateString): Date {
   return parseDayString(isoDate);
