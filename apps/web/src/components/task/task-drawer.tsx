@@ -34,6 +34,7 @@ import TaskDescription from "./task-description";
 import TaskDueDatePopover from "./task-due-date-popover";
 import TaskLabelsPopover from "./task-labels-popover";
 import TaskPriorityPopover from "./task-priority-popover";
+import TaskResources from "./task-resources";
 import TaskStartDatePopover from "./task-start-date-popover";
 import TaskTitle from "./task-title";
 
@@ -342,6 +343,7 @@ export default function TaskDrawer({
                 )}
                 <TaskTitle task={task} />
                 <TaskDescription task={task} />
+                <TaskResources taskId={task.id} />
               </div>
             </div>
           )}

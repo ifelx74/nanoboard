@@ -319,8 +319,9 @@ export async function moveTaskToColumn(
  */
 export async function deleteTask(id: string): Promise<void> {
   await requireTask(id);
-  await db.transaction("rw", db.tasks, db.taskLabels, async () => {
+  await db.transaction("rw", db.tasks, db.taskLabels, db.taskResources, async () => {
     await db.taskLabels.where("taskId").equals(id).delete();
+    await db.taskResources.where("taskId").equals(id).delete();
     await db.tasks.delete(id);
   });
 }

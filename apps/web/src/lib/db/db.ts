@@ -1,5 +1,12 @@
 import Dexie, { type Table } from "dexie";
-import type { Column, Label, Project, Task, TaskLabel } from "./schema";
+import type {
+  Column,
+  Label,
+  Project,
+  Task,
+  TaskLabel,
+  TaskResource,
+} from "./schema";
 import { buildLabelSeedRows, seedDatabase } from "./seed";
 
 export class NanoboardDB extends Dexie {
@@ -8,6 +15,7 @@ export class NanoboardDB extends Dexie {
   tasks!: Table<Task, string>;
   labels!: Table<Label, string>;
   taskLabels!: Table<TaskLabel, [string, string]>;
+  taskResources!: Table<TaskResource, string>;
 
   constructor(name = "nanoboard") {
     super(name);
@@ -46,6 +54,17 @@ export class NanoboardDB extends Dexie {
         );
         await tx.table("labels").bulkAdd(labels);
       });
+    // v4: per-task manual URL links (Kaneo's external_link minus the
+    // integration columns). A new empty table needs no upgrade function.
+    this.version(4).stores({
+      projects: "&id, slug, position",
+      columns: "&id, projectId, [projectId+position]",
+      tasks:
+        "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
+      labels: "&id, projectId, &[projectId+name]",
+      taskLabels: "&[taskId+labelId], taskId, labelId",
+      taskResources: "&id, taskId",
+    });
     this.on("populate", () => seedDatabase(this));
   }
 }

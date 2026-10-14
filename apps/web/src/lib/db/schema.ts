@@ -96,6 +96,22 @@ export interface TaskLabel {
   labelId: string;
 }
 
+export interface TaskResource {
+  id: string;
+  taskId: string;
+  /**
+   * Always `"url"` here — Kaneo's manual-link row shape minus the
+   * integration columns, which cannot exist without a server.
+   */
+  resourceType: string;
+  /** Mirrors `url` for manual links; Kaneo's display fallback. */
+  externalId: string;
+  url: string;
+  title: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export const DEFAULT_PROJECT_ICON = "Layout";
 
 export const DEFAULT_COLUMNS: {
