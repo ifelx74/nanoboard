@@ -1,52 +1,123 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { EditorContent, useEditor } from "@tiptap/react";
+import { useEffect, useRef, useState } from "react";
 import { updateTaskDescription } from "@/lib/db/queries";
 import type { Task } from "@/lib/db/schema";
+import { createDescriptionExtensions } from "@/lib/editor/preset";
+import { formatMarkdown } from "@/lib/editor/markdown";
 import { toast } from "@/lib/toast";
+import DescriptionBubbleMenu from "./description-bubble-menu";
+import { SlashCommands } from "./description-slash-menu";
+import "./task-description.css";
 
+const AUTOSAVE_DELAY = 700;
+
+type SaveStatus = "idle" | "saving" | "saved" | "failed";
+
+/**
+ * Task description editor (TipTap over the Markdown `description`
+ * column, Kaneo-style): bubble toolbar + slash menu, debounced autosave
+ * with status and retry. The drawer remounts per task (`key={task.id}`),
+ * so hydration runs once on mount without undo pollution.
+ */
 export default function TaskDescription({ task }: { task: Task }) {
-  const [value, setValue] = useState(task.description);
-  const [saving, setSaving] = useState(false);
-  const dirty = value !== task.description;
+  const [status, setStatus] = useState<SaveStatus>("idle");
+  const savedRef = useRef(task.description);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const persistRef = useRef<(() => void) | null>(null);
 
-  async function handleSave() {
-    if (!dirty || saving) return;
-    setSaving(true);
-    try {
-      await updateTaskDescription(task.id, value);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to save description",
+  const editor = useEditor(
+    {
+      extensions: [
+        ...createDescriptionExtensions("Add a description"),
+        SlashCommands,
+      ],
+      content: "",
+      onUpdate: () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        setStatus("saving");
+        timerRef.current = setTimeout(() => persistRef.current?.(), AUTOSAVE_DELAY);
+      },
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!editor) return undefined;
+    editor.commands.setContent(task.description, {
+      emitUpdate: false,
+      contentType: "markdown",
+    });
+    savedRef.current = task.description;
+    setStatus("idle");
+    // Mount-only hydration: the drawer remounts per task (key={task.id}),
+    // so task.description is fixed for this instance's lifetime.
+    return undefined;
+  }, [editor]);
+
+  useEffect(() => {
+    persistRef.current = () => {
+      if (!editor) return;
+      const markdown = formatMarkdown(editor.getMarkdown());
+      if (markdown === savedRef.current) {
+        setStatus("saved");
+        return;
+      }
+      setStatus("saving");
+      void updateTaskDescription(task.id, markdown).then(
+        () => {
+          savedRef.current = markdown;
+          setStatus("saved");
+        },
+        (error: unknown) => {
+          setStatus("failed");
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to save description",
+          );
+        },
       );
-    } finally {
-      setSaving(false);
-    }
-  }
+    };
+  }, [editor, task.id]);
 
-  function handleCancel() {
-    setValue(task.description);
-  }
+  // Flush a pending edit if the drawer closes mid-debounce.
+  useEffect(
+    () => () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+        persistRef.current?.();
+      }
+    },
+    [],
+  );
 
   return (
-    <div className="flex flex-col gap-2">
-      <textarea
-        value={value}
-        rows={6}
-        placeholder="Add a description"
-        aria-label="Task description"
-        onChange={(event) => setValue(event.target.value)}
-        className="w-full resize-y border-0 bg-transparent p-0 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
-      />
-      {dirty && (
-        <div className="flex gap-1.5">
-          <Button size="sm" disabled={saving} onClick={() => void handleSave()}>
-            {saving ? "Saving" : "Save"}
-          </Button>
-          <Button size="sm" variant="outline" onClick={handleCancel}>
-            Cancel
-          </Button>
-        </div>
-      )}
+    <div className="flex flex-col gap-1">
+      <div className="nb-description">
+        <EditorContent editor={editor} aria-label="Task description" />
+      </div>
+      {editor && <DescriptionBubbleMenu editor={editor} />}
+      <div aria-live="polite" className="min-h-4 text-[11px]">
+        {status === "saving" && (
+          <span className="text-muted-foreground">Saving…</span>
+        )}
+        {status === "saved" && (
+          <span className="text-muted-foreground">Saved</span>
+        )}
+        {status === "failed" && (
+          <span className="flex items-center gap-1.5 text-destructive">
+            Couldn&apos;t save
+            <button
+              type="button"
+              onClick={() => persistRef.current?.()}
+              className="font-medium underline underline-offset-2 outline-none hover:text-destructive/80 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Retry
+            </button>
+          </span>
+        )}
+      </div>
     </div>
   );
 }

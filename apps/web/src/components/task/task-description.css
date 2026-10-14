@@ -1,0 +1,121 @@
+@layer components {
+  /* Task description editor (TipTap) prose styles. Scoped to .nb-description. */
+
+  .nb-description .tiptap {
+    min-height: 7rem;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: var(--color-foreground);
+    outline: none;
+  }
+
+  .nb-description .tiptap > * + * {
+    margin-top: 0.5rem;
+  }
+
+  .nb-description .tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--color-muted-foreground);
+  }
+
+  .nb-description .tiptap h1,
+  .nb-description .tiptap h2,
+  .nb-description .tiptap h3 {
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-tight);
+  }
+
+  .nb-description .tiptap h1 {
+    font-size: var(--text-xl);
+  }
+
+  .nb-description .tiptap h2 {
+    font-size: var(--text-lg);
+  }
+
+  .nb-description .tiptap h3 {
+    font-size: var(--text-base);
+  }
+
+  .nb-description .tiptap blockquote {
+    border-left: 2px solid var(--color-border);
+    padding-left: 0.75rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .nb-description .tiptap pre {
+    background-color: var(--color-muted);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    overflow-x: auto;
+  }
+
+  .nb-description .tiptap pre code {
+    background: none;
+    padding: 0;
+  }
+
+  .nb-description .tiptap :not(pre) > code {
+    background-color: var(--color-muted);
+    border-radius: var(--radius-sm);
+    padding: 0.1rem 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+  }
+
+  .nb-description .tiptap a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  .nb-description .tiptap ul[data-type="taskList"] {
+    list-style: none;
+    padding: 0;
+  }
+
+  .nb-description .tiptap ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .nb-description .tiptap ul[data-type="taskList"] li > label {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  .nb-description .tiptap ul[data-type="taskList"] li > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .nb-description .tiptap ul[data-type="taskList"] input[type="checkbox"] {
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  .nb-description .tiptap ul:not([data-type="taskList"]),
+  .nb-description .tiptap ol {
+    padding-left: 1.25rem;
+  }
+
+  .nb-description .tiptap ul:not([data-type="taskList"]) {
+    list-style: disc;
+  }
+
+  .nb-description .tiptap ol {
+    list-style: decimal;
+  }
+
+  .nb-description .tiptap img.nb-editor-image {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+  }
+}

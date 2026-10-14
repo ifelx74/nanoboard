@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { CalendarIcon, Check, ChevronRight, Plus, Search, Tag, X } from "lucide-react";
+import { CalendarIcon, Check, Plus, Search, Tag, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
@@ -10,7 +10,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
@@ -41,6 +48,7 @@ import type { LabelColorValue } from "@/lib/label-color";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import TaskDescriptionInput from "./task-description-input";
 
 function toISODate(date: Date): DueDateString {
   return toDayString(date) as DueDateString;
@@ -67,7 +75,7 @@ function LabelDot({ color }: { color: string }) {
 }
 
 /**
- * Kaneo's create-task modal, adapted: plain textarea description, no assignee
+ * Kaneo's create-task modal, adapted: rich description editor, no assignee
  * / project picker / custom fields / uploads (unimplemented features).
  * Labels stage as local ids; the palette entry is created
  * immediately on color pick and attached at submit — Kaneo's semantics.
@@ -88,6 +96,7 @@ export default function CreateTaskDialog({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [descKey, setDescKey] = useState(0);
   const [priority, setPriority] = useState<TaskPriority>("no-priority");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
@@ -165,6 +174,7 @@ export default function CreateTaskDialog({
   function resetForm() {
     setTitle("");
     setDescription("");
+    setDescKey((key) => key + 1);
     setPriority("no-priority");
     setStartDate(undefined);
     setDueDate(undefined);
@@ -234,21 +244,27 @@ export default function CreateTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl" showCloseButton={false}>
-        <DialogHeader>
+      <DialogContent
+        className="max-h-[90vh] max-w-2xl flex-col overflow-hidden"
+        showCloseButton={false}
+      >
+        <DialogHeader className="shrink-0">
           <DialogTitle asChild>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-sm font-semibold tracking-wider text-muted-foreground">
-                {project?.slug.toUpperCase() ?? "TASK"}
-              </span>
-              <ChevronRight className="size-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">
-                New task
-              </span>
-            </div>
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="font-semibold tracking-wider text-muted-foreground">
+                  {project?.slug.toUpperCase() ?? "TASK"}
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem className="font-medium text-foreground">
+                  New Task
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Create a new task in {column.name}
+            Create a new task by providing a title, description, and other
+            details.
           </DialogDescription>
         </DialogHeader>
 
@@ -267,27 +283,33 @@ export default function CreateTaskDialog({
               className="w-full [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:py-3 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:leading-tight [&_[data-slot=input]]:tracking-tight [&_[data-slot=input]]:text-foreground [&_[data-slot=input]]:outline-none [&_[data-slot=input]]:placeholder:text-muted-foreground"
             />
 
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a description"
-              rows={4}
-              className="min-h-24 w-full rounded-lg border border-border bg-background p-2.5 text-sm outline-none placeholder:text-muted-foreground focus:border-ring"
-            />
+            <div className="min-h-[200px]">
+              <TaskDescriptionInput
+                key={descKey}
+                onMarkdown={setDescription}
+                placeholder="Add a description for your task..."
+                className="[&_.tiptap]:min-h-[11rem] [&_.tiptap]:px-0 [&_.tiptap]:pt-1 [&_.tiptap]:pb-2"
+              />
+            </div>
 
             {stagedLabels.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-1.5">
                 {stagedLabels.map((label) => (
-                  <button
+                  <Badge
                     key={label.id}
-                    type="button"
+                    variant="outline"
+                    className="cursor-pointer gap-1 pl-3 transition-colors hover:bg-accent/50"
                     onClick={() => toggleLabel(label.id)}
-                    title={`Remove ${label.name}`}
-                    className="flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[10px] transition-colors hover:bg-accent/50"
                   >
-                    <LabelDot color={label.color} />
+                    <span
+                      aria-hidden="true"
+                      className="mr-1.5 inline-block h-2 w-2 rounded-full"
+                      style={{
+                        backgroundColor: resolveLabelColor(label.color),
+                      }}
+                    />
                     <span className="max-w-20 truncate">{label.name}</span>
-                  </button>
+                  </Badge>
                 ))}
               </div>
             )}
@@ -448,7 +470,7 @@ export default function CreateTaskDialog({
                           ref={searchInputRef}
                           value={searchValue}
                           onChange={(e) => setSearchValue(e.target.value)}
-                          placeholder="Search labels"
+                          placeholder="Search labels..."
                           className="h-auto border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
                         />
                       </div>
@@ -457,7 +479,7 @@ export default function CreateTaskDialog({
                         {filteredLabels.length === 0 &&
                           searchValue.length === 0 && (
                             <span className="px-2 text-xs text-muted-foreground">
-                              No labels yet
+                              No labels found
                             </span>
                           )}
                         {filteredLabels.map((label) => (
@@ -479,7 +501,7 @@ export default function CreateTaskDialog({
                           </button>
                         ))}
 
-                        {isCreatingNewLabel && filteredLabels.length > 0 && (
+                        {isCreatingNewLabel && (
                           <div className="my-1 border-t border-border" />
                         )}
                         {isCreatingNewLabel && (
@@ -495,7 +517,7 @@ export default function CreateTaskDialog({
                               <Plus className="h-3 w-3" />
                             </div>
                             <span className="truncate">
-                              Create “{searchValue.trim()}”
+                              Create &quot;{searchValue.trim()}&quot;
                             </span>
                           </button>
                         )}
@@ -573,7 +595,7 @@ export default function CreateTaskDialog({
               size="sm"
               className="disabled:opacity-50"
             >
-              {submitting ? "Creating" : "Create"}
+              Create Task
             </Button>
           </DialogFooter>
         </form>
@@ -582,9 +604,9 @@ export default function CreateTaskDialog({
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard this task?</AlertDialogTitle>
+            <AlertDialogTitle>Discard task?</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Closing now will discard them.
+              Your unsaved task details will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -599,7 +621,7 @@ export default function CreateTaskDialog({
               size="sm"
               onClick={onClose}
             >
-              Discard
+              Discard task
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
