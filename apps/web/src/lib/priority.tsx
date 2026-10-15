@@ -1,11 +1,10 @@
-import {
-  ChevronDown,
-  ChevronsUp,
-  ChevronUp,
-  CircleAlert,
-  Minus,
-} from "lucide-react";
 import type { TaskPriority } from "@/lib/db/schema";
+import PriorityUrgent from "@/icons/priority-urgent";
+import PriorityHigh from "@/icons/priority-high";
+import PriorityMedium from "@/icons/priority-medium";
+import PriorityLow from "@/icons/priority-low";
+import PriorityNone from "@/icons/priority-none";
+import { cn } from "./utils";
 
 export function priorityLabel(priority: TaskPriority): string {
   return priority
@@ -14,27 +13,32 @@ export function priorityLabel(priority: TaskPriority): string {
     .join(" ");
 }
 
-export function getPriorityIcon(priority: string) {
-  switch (priority) {
-    case "urgent":
-      return (
-        <CircleAlert className="h-4! w-4! text-destructive-foreground" />
-      );
-    case "high":
-      return (
-        <ChevronsUp className="h-4! w-4! text-warning-foreground" />
-      );
-    case "medium":
-      return (
-        <ChevronUp className="size-4! text-warning-foreground/80" />
-      );
-    case "low":
-      return (
-        <ChevronDown className="size-4! text-info-foreground/85" />
-      );
-    case "no-priority":
-      return <Minus className="size-4! text-muted-foreground" />;
-    default:
-      return <Minus className="size-4! text-muted-foreground" />;
-  }
+export function getPriorityIcon(priority: TaskPriority, className?: string) {
+  const icons = {
+    urgent: PriorityUrgent,
+    high: PriorityHigh,
+    medium: PriorityMedium,
+    low: PriorityLow,
+    "no-priority": PriorityNone,
+  };
+
+  const Icon = icons[priority ?? "no-priority"] ?? PriorityNone;
+
+  if (!Icon) return null;
+
+  return (
+    <Icon
+      className={cn(
+        "shrink-0 size-4!",
+        {
+          "text-destructive": priority === "urgent",
+          "text-warning-foreground": priority === "high",
+          "text-warning-foreground/80": priority === "medium",
+          "text-info-foreground/85": priority === "low",
+          "text-muted-foreground": priority === "no-priority",
+        },
+        className,
+      )}
+    />
+  );
 }

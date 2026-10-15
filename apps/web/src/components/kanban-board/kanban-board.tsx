@@ -316,7 +316,7 @@ export default function KanbanBoard({
       onDragCancel={resetDrag}
     >
       <div className="flex h-full min-h-0 flex-col">
-        <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
+        <div className="flex shrink-0 items-center gap-2 px-4 py-2 border-b border-border/80 md:px-5">
           <BoardSearch
             key={projectId}
             value={view.search}
