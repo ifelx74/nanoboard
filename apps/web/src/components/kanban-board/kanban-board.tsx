@@ -21,13 +21,20 @@ import { taskKey } from "@/lib/task-key";
 import BoardColumn, { TaskCardView } from "./column";
 import CreateTaskDialog from "@/components/task/create-task-dialog";
 import BoardFilterBar from "./board-filter-bar";
-import { filterGrouping } from "./board-filter-model";
+import { BoardSearch } from "./board-search";
+import { BoardTaskCount } from "./board-task-count";
+import {
+  EMPTY_BOARD_FILTERS,
+  filterBoardGrouping,
+} from "./board-filter-model";
 import {
   groupingKey,
   isPreviewEchoed,
   mergePreviewLive,
 } from "./board-preview";
 import { useBoardLabelFilter } from "./use-board-label-filter";
+import { useBoardSearch } from "./use-board-search";
+import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import { boardCollisionDetection } from "./collision";
 import { type DropTarget, type Pointer, locateFromPointer } from "./locate";
 import { computeMove } from "./move";
@@ -128,19 +135,34 @@ export default function KanbanBoard({
 
   const liveGrouping = useMemo(() => groupTasks(tasks), [tasks]);
 
-  // Labels filter: render-only. Drag math, drop writes, and the echo
-  // handoff all stay on the full order so hidden tasks keep their places.
+  // Search + labels narrow the rendered lanes only. Drag math, drop
+  // writes, and the echo handoff all stay on the full order so hidden
+  // tasks keep their places.
   // A held preview carries the full order too and is merged with live data
   // (not a wholesale replacement) before intersecting here, so a task
   // created mid-echo stays visible and filtered-out tasks never flash.
   const { selected, toggle, clear } = useBoardLabelFilter(projectId);
+  const { search, setSearch } = useBoardSearch(projectId);
+  const [weekStartsOn] = useWeekStartsOn();
   const heldGrouping = useMemo(
     () => (preview ? mergePreviewLive(liveGrouping, preview) : liveGrouping),
     [preview, liveGrouping],
   );
   const shownGrouping = useMemo(
-    () => filterGrouping(heldGrouping, labelsByTask, selected),
-    [heldGrouping, labelsByTask, selected],
+    () =>
+      filterBoardGrouping(
+        heldGrouping,
+        labelsByTask,
+        { ...EMPTY_BOARD_FILTERS, labels: selected },
+        { query: search, today: new Date(), weekStartsOn },
+      ),
+    [heldGrouping, labelsByTask, selected, search, weekStartsOn],
+  );
+  const filterActive = selected !== null || search.trim() !== "";
+  const shownCount = useMemo(
+    () =>
+      [...shownGrouping.values()].reduce((sum, list) => sum + list.length, 0),
+    [shownGrouping],
   );
 
   // Release a held drop preview once live data echoes the same order,
@@ -292,6 +314,18 @@ export default function KanbanBoard({
       onDragCancel={resetDrag}
     >
       <div className="flex h-full min-h-0 flex-col">
+        <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
+          <BoardSearch
+            key={projectId}
+            value={search}
+            onChange={setSearch}
+          />
+          <BoardTaskCount
+            shown={shownCount}
+            total={tasks.length}
+            className="ml-auto hidden truncate text-xs text-muted-foreground tabular-nums sm:inline"
+          />
+        </div>
         <BoardFilterBar
           projectId={projectId}
           selected={selected}
@@ -306,7 +340,7 @@ export default function KanbanBoard({
                   column={column}
                   tasks={shownGrouping.get(column.id) ?? []}
                   labelsByTask={labelsByTask}
-                  filterActive={selected !== null}
+                  filterActive={filterActive}
                   disabled={disableDragDrop}
                   justDraggedRef={justDraggedRef}
                   onOpenTask={onOpenTask}
