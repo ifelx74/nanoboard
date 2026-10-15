@@ -329,11 +329,13 @@ export default function KanbanBoard({
           <BoardTaskCount
             shown={shownCount}
             total={tasks.length}
-            className="ml-auto hidden truncate text-xs text-muted-foreground tabular-nums sm:inline"
+            className="ml-auto truncate text-xs text-muted-foreground tabular-nums"
           />
         </div>
         <BoardActiveFiltersBar
           subjects={subjects}
+          searchQuery={view.search}
+          onClearSearch={() => view.setSearch("")}
           onClearAll={view.clearFilters}
         />
         <div className="min-h-0 flex-1 overflow-x-auto">

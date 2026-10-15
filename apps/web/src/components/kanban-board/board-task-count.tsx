@@ -12,7 +12,7 @@ export function BoardTaskCount({
     <span
       aria-live="polite"
       className={
-        className ?? "hidden truncate text-xs text-muted-foreground tabular-nums sm:inline"
+        className ?? "truncate text-xs text-muted-foreground tabular-nums"
       }
     >
       {shown === total

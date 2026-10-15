@@ -56,10 +56,16 @@ export function useBoardTaskView(projectId: string) {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(
-        storageKey(projectId),
-        JSON.stringify(filters),
-      );
+      const key = storageKey(projectId);
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        // Persist only real changes: the stored value already reads back
+        // to this state (legacy shapes included), so rewriting it would be
+        // a durable migration the spec rules out.
+        const stored = normalizeBoardFilters(JSON.parse(raw) as unknown);
+        if (JSON.stringify(stored) === JSON.stringify(filters)) return;
+      }
+      window.localStorage.setItem(key, JSON.stringify(filters));
     } catch {
       // Storage may be unavailable or full; keep filtering in memory.
     }

@@ -129,7 +129,16 @@ function matchesDueDateValue(
   // Local-midnight parse, same convention as parseDayString in
   // lib/due-date-status (yyyy-mm-dd carries no UTC shift in this app).
   const [year, month, day] = task.dueDate.split("-").map(Number);
-  const due = new Date(year, (month ?? 1) - 1, day);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    // Corrupt stored date: match nothing instead of throwing (date-fns
+    // rejects Invalid Date), so the board never breaks on old data.
+    return false;
+  }
+  const due = new Date(year, month - 1, day);
   const reference = addWeeks(context.today, weeksAhead);
   return isWithinInterval(due, {
     start: startOfWeek(reference, { weekStartsOn: context.weekStartsOn }),

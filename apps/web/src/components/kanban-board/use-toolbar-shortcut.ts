@@ -4,10 +4,13 @@ function isTextEntry(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   const tag = target.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  // SELECT is not text entry: shortcuts stay available on focused selects.
+  if (tag === "INPUT" || tag === "TEXTAREA") return true;
+  // Popups carry no dialog/menu role (Base UI popover, tooltip), so match
+  // their slots directly alongside the roles.
   return (
     target.closest(
-      '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="combobox"]',
+      '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="combobox"], [data-slot="popover-popup"], [data-slot="tooltip-popup"]',
     ) !== null
   );
 }
