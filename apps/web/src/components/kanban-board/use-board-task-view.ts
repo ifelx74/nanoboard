@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import {
   countActiveBoardFilters,
@@ -98,11 +98,19 @@ export function useBoardTaskView(projectId: string) {
   };
 
   const activeFilterCount = countActiveBoardFilters(filters);
-  const context: BoardFilterContext = {
-    query: search,
-    today: new Date(),
-    weekStartsOn,
-  };
+  // `today` feeds day-granular week math only: the date key keeps this
+  // context (and the lane-intersection memo keyed on it) stable across
+  // renders, refreshing only when the day, search, or week preference
+  // actually changes.
+  const todayKey = new Date().toDateString();
+  const context: BoardFilterContext = useMemo(
+    () => ({
+      query: search,
+      today: new Date(),
+      weekStartsOn,
+    }),
+    [search, weekStartsOn, todayKey],
+  );
 
   return {
     search,

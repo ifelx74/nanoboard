@@ -18,7 +18,9 @@ function isTextEntry(target: EventTarget | null): boolean {
  */
 export function useToolbarShortcut(key: string, onPress: () => void) {
   const handler = useRef(onPress);
-  handler.current = onPress;
+  useEffect(() => {
+    handler.current = onPress;
+  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { CalendarDays, CircleDot, Tag } from "lucide-react";
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import { getColumnIcon } from "@/lib/column";
 import { getProjectLabels } from "@/lib/db/queries";
@@ -42,6 +43,15 @@ const DUE_DATE_OPTIONS = [
   { value: DUE_DATE_FILTER_VALUES.noDueDate, label: "No due date" },
 ] as const;
 
+function countBy<T>(items: Iterable<T>, key: (item: T) => string) {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    const value = key(item);
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return counts;
+}
+
 /**
  * Filter-menu subjects for the board: status, priority, labels, due date.
  * Counts come from the unfiltered task set; members and custom fields do
@@ -65,7 +75,7 @@ export function useBoardFilterSubjects(
   const palette = useLiveQuery(() => getProjectLabels(projectId), [projectId]);
   const { filters, toggleFilter, setNegated, clearSubject } = view;
 
-  const subject = (
+  const makeSubjectDef = (
     id: BoardFilterSubject,
     fields: Pick<BoardFilterSubjectDef, "label" | "icon" | "options">,
   ): BoardFilterSubjectDef => ({
@@ -78,40 +88,48 @@ export function useBoardFilterSubjects(
     ...fields,
   });
 
-  const statusCounts = new Map<string, number>();
-  const priorityCounts = new Map<string, number>();
-  for (const task of tasks) {
-    statusCounts.set(task.columnId, (statusCounts.get(task.columnId) ?? 0) + 1);
-    priorityCounts.set(task.priority, (priorityCounts.get(task.priority) ?? 0) + 1);
-  }
-  const labelCounts = new Map<string, number>();
-  for (const labels of labelsByTask.values()) {
-    for (const label of labels) {
-      labelCounts.set(label.id, (labelCounts.get(label.id) ?? 0) + 1);
-    }
-  }
+  const statusCounts = useMemo(
+    () => countBy(tasks, (task) => task.columnId),
+    [tasks],
+  );
+  const priorityCounts = useMemo(
+    () => countBy(tasks, (task) => task.priority),
+    [tasks],
+  );
+  const labelCounts = useMemo(() => {
+    const assigned: Label[] = [];
+    for (const labels of labelsByTask.values()) assigned.push(...labels);
+    return countBy(assigned, (label) => label.id);
+  }, [labelsByTask]);
 
-  const dueContext = { query: "", today: new Date(), weekStartsOn };
-  const dueCounts = new Map<string, number>();
-  for (const option of DUE_DATE_OPTIONS) {
-    let count = 0;
-    for (const task of tasks) {
-      if (
-        taskMatchesBoardFilters(
-          task,
-          labelsByTask.get(task.id)?.map((label) => label.id),
-          { ...EMPTY_BOARD_FILTERS, dueDate: [option.value] },
-          dueContext,
-        )
-      ) {
-        count += 1;
+  const dueCounts = useMemo(() => {
+    const dueContext = { query: "", today: new Date(), weekStartsOn };
+    const counts = new Map<string, number>();
+    for (const option of DUE_DATE_OPTIONS) {
+      const optionFilters = {
+        ...EMPTY_BOARD_FILTERS,
+        dueDate: [option.value],
+      };
+      let count = 0;
+      for (const task of tasks) {
+        if (
+          taskMatchesBoardFilters(
+            task,
+            labelsByTask.get(task.id)?.map((label) => label.id),
+            optionFilters,
+            dueContext,
+          )
+        ) {
+          count += 1;
+        }
       }
+      counts.set(option.value, count);
     }
-    dueCounts.set(option.value, count);
-  }
+    return counts;
+  }, [tasks, labelsByTask, weekStartsOn]);
 
   return [
-    subject("status", {
+    makeSubjectDef("status", {
       label: "Status",
       icon: <CircleDot />,
       options: columns.map((column) => ({
@@ -121,7 +139,7 @@ export function useBoardFilterSubjects(
         icon: getColumnIcon(column.slug, column.isFinal),
       })),
     }),
-    subject("priority", {
+    makeSubjectDef("priority", {
       label: "Priority",
       icon: getPriorityIcon("high"),
       options: PRIORITY_ORDER.map((priority) => ({
@@ -131,7 +149,7 @@ export function useBoardFilterSubjects(
         icon: getPriorityIcon(priority),
       })),
     }),
-    subject("labels", {
+    makeSubjectDef("labels", {
       label: "Labels",
       icon: <Tag />,
       options: (palette ?? []).map((label) => ({
@@ -147,7 +165,7 @@ export function useBoardFilterSubjects(
         ),
       })),
     }),
-    subject("dueDate", {
+    makeSubjectDef("dueDate", {
       label: "Due date",
       icon: <CalendarDays />,
       options: DUE_DATE_OPTIONS.map((option) => ({

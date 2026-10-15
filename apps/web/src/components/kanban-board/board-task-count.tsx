@@ -10,6 +10,7 @@ export function BoardTaskCount({
   const units = total === 1 ? "task" : "tasks";
   return (
     <span
+      aria-live="polite"
       className={
         className ?? "hidden truncate text-xs text-muted-foreground tabular-nums sm:inline"
       }
