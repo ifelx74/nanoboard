@@ -20,21 +20,18 @@ import { toast } from "@/lib/toast";
 import { taskKey } from "@/lib/task-key";
 import BoardColumn, { TaskCardView } from "./column";
 import CreateTaskDialog from "@/components/task/create-task-dialog";
-import BoardFilterBar from "./board-filter-bar";
+import { BoardActiveFiltersBar } from "./board-active-filters-bar";
+import { BoardFilterMenu } from "./board-filter-menu";
 import { BoardSearch } from "./board-search";
 import { BoardTaskCount } from "./board-task-count";
-import {
-  EMPTY_BOARD_FILTERS,
-  filterBoardGrouping,
-} from "./board-filter-model";
+import { filterBoardGrouping } from "./board-filter-model";
 import {
   groupingKey,
   isPreviewEchoed,
   mergePreviewLive,
 } from "./board-preview";
-import { useBoardLabelFilter } from "./use-board-label-filter";
-import { useBoardSearch } from "./use-board-search";
-import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
+import { useBoardFilterSubjects } from "./use-board-filter-subjects";
+import { useBoardTaskView } from "./use-board-task-view";
 import { boardCollisionDetection } from "./collision";
 import { type DropTarget, type Pointer, locateFromPointer } from "./locate";
 import { computeMove } from "./move";
@@ -135,15 +132,19 @@ export default function KanbanBoard({
 
   const liveGrouping = useMemo(() => groupTasks(tasks), [tasks]);
 
-  // Search + labels narrow the rendered lanes only. Drag math, drop
+  // Search + filters narrow the rendered lanes only. Drag math, drop
   // writes, and the echo handoff all stay on the full order so hidden
   // tasks keep their places.
   // A held preview carries the full order too and is merged with live data
   // (not a wholesale replacement) before intersecting here, so a task
   // created mid-echo stays visible and filtered-out tasks never flash.
-  const { selected, toggle, clear } = useBoardLabelFilter(projectId);
-  const { search, setSearch } = useBoardSearch(projectId);
-  const [weekStartsOn] = useWeekStartsOn();
+  const view = useBoardTaskView(projectId);
+  const subjects = useBoardFilterSubjects(view, {
+    columns,
+    tasks,
+    labelsByTask,
+    projectId,
+  });
   const heldGrouping = useMemo(
     () => (preview ? mergePreviewLive(liveGrouping, preview) : liveGrouping),
     [preview, liveGrouping],
@@ -153,12 +154,13 @@ export default function KanbanBoard({
       filterBoardGrouping(
         heldGrouping,
         labelsByTask,
-        { ...EMPTY_BOARD_FILTERS, labels: selected },
-        { query: search, today: new Date(), weekStartsOn },
+        view.filters,
+        view.context,
       ),
-    [heldGrouping, labelsByTask, selected, search, weekStartsOn],
+    [heldGrouping, labelsByTask, view.filters, view.context],
   );
-  const filterActive = selected !== null || search.trim() !== "";
+  const filterActive =
+    view.hasActiveFilters || view.search.trim() !== "";
   const shownCount = useMemo(
     () =>
       [...shownGrouping.values()].reduce((sum, list) => sum + list.length, 0),
@@ -317,8 +319,12 @@ export default function KanbanBoard({
         <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
           <BoardSearch
             key={projectId}
-            value={search}
-            onChange={setSearch}
+            value={view.search}
+            onChange={view.setSearch}
+          />
+          <BoardFilterMenu
+            subjects={subjects}
+            activeCount={view.activeFilterCount}
           />
           <BoardTaskCount
             shown={shownCount}
@@ -326,11 +332,9 @@ export default function KanbanBoard({
             className="ml-auto hidden truncate text-xs text-muted-foreground tabular-nums sm:inline"
           />
         </div>
-        <BoardFilterBar
-          projectId={projectId}
-          selected={selected}
-          onToggle={toggle}
-          onClear={clear}
+        <BoardActiveFiltersBar
+          subjects={subjects}
+          onClearAll={view.clearFilters}
         />
         <div className="min-h-0 flex-1 overflow-x-auto">
           <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">

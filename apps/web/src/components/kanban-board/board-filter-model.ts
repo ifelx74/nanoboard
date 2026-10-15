@@ -30,10 +30,15 @@ const PRIORITY_VALUES = [
 
 const DUE_DATE_VALUES = Object.values(DUE_DATE_FILTER_VALUES);
 
-/** Subjects that can be negated whole (is-not). */
-const NEGATABLE_SUBJECTS = ["status", "priority", "labels", "dueDate"] as const;
+/** Filterable subjects; also the whole-subject (is-not) negatable set. */
+export const BOARD_FILTER_SUBJECTS = [
+  "status",
+  "priority",
+  "labels",
+  "dueDate",
+] as const;
 
-export type BoardFilterSubject = (typeof NEGATABLE_SUBJECTS)[number];
+export type BoardFilterSubject = (typeof BOARD_FILTER_SUBJECTS)[number];
 
 export interface BoardFilters {
   /** Column identities (the lane-grouping key). */
@@ -57,6 +62,13 @@ export interface BoardFilterContext {
   query: string;
   today: Date;
   weekStartsOn: WeekStartsOnPreference;
+}
+
+/** Badge count: active subjects, not values; negation never inflates it. */
+export function countActiveBoardFilters(filters: BoardFilters): number {
+  return BOARD_FILTER_SUBJECTS.filter(
+    (key) => (filters[key]?.length ?? 0) > 0,
+  ).length;
 }
 
 function stringList(value: unknown): string[] | null {
@@ -89,7 +101,7 @@ export function normalizeBoardFilters(raw: unknown): BoardFilters {
     priority: stringListIn(candidate.priority, PRIORITY_VALUES),
     labels: stringList(candidate.labels),
     dueDate: stringListIn(candidate.dueDate, DUE_DATE_VALUES),
-    negated: stringListIn(candidate.negated, NEGATABLE_SUBJECTS),
+    negated: stringListIn(candidate.negated, BOARD_FILTER_SUBJECTS),
   };
 }
 
