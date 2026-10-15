@@ -5,7 +5,7 @@ import type { WeekStartsOnPreference } from "../calendar/use-week-starts-on";
 /**
  * Pure board-filter logic (normalize / toggle / match / apply), kept DOM-free
  * so the Node harness covers it directly. React + storage live in
- * `use-board-label-filter.ts`.
+ * `use-board-task-view.ts` (search in `use-board-search.ts`).
  */
 
 // Mirrors the task-priority vocabulary in lib/db/schema (kept local so this
@@ -87,11 +87,6 @@ function stringListIn<T extends string>(
   return kept && kept.length > 0 ? kept : null;
 }
 
-/** Labels-only stored shape from before the toolbar (tolerated, not migrated). */
-export function normalizeLabelFilter(raw: unknown): string[] | null {
-  return normalizeBoardFilters(raw).labels;
-}
-
 export function normalizeBoardFilters(raw: unknown): BoardFilters {
   if (!raw || typeof raw !== "object") return EMPTY_BOARD_FILTERS;
   const candidate = raw as Partial<Record<string, unknown>>;
@@ -105,13 +100,6 @@ export function normalizeBoardFilters(raw: unknown): BoardFilters {
   };
 }
 
-export function toggleLabelFilter(
-  current: string[] | null,
-  id: string,
-): string[] | null {
-  return toggleBoardFilterValue(current, id);
-}
-
 export function toggleBoardFilterValue(
   current: string[] | null,
   id: string,
@@ -122,15 +110,6 @@ export function toggleBoardFilterValue(
     return next.length > 0 ? next : null;
   }
   return [...ids, id];
-}
-
-/** `null` matches everything; otherwise match-any on the task's label ids. */
-export function taskMatchesLabelFilter(
-  taskLabelIds: string[] | undefined,
-  selected: string[] | null,
-): boolean {
-  if (selected === null) return true;
-  return (taskLabelIds ?? []).some((id) => selected.includes(id));
 }
 
 function matchesDueDateValue(
@@ -224,18 +203,6 @@ function intersectGrouping(
     );
   }
   return visible;
-}
-
-/** Render-only intersection: hidden tasks never reach the lanes. */
-export function filterGrouping(
-  grouping: Map<string, Task[]>,
-  labelsByTask: Map<string, Label[]>,
-  selected: string[] | null,
-): Map<string, Task[]> {
-  if (selected === null) return grouping;
-  return intersectGrouping(grouping, labelsByTask, (_task, labelIds) =>
-    taskMatchesLabelFilter(labelIds, selected),
-  );
 }
 
 /** Render-only intersection over the full v1 filter shape. */

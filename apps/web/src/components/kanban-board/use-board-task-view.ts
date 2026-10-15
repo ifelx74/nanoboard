@@ -90,7 +90,12 @@ export function useBoardTaskView(projectId: string) {
       negated: withoutNegation(prev.negated, subject),
     }));
 
-  const clearFilters = () => setFilters(EMPTY_BOARD_FILTERS);
+  const clearFilters = () => {
+    // Clearing restores the full board: search narrows too, so it resets
+    // alongside the persisted filters.
+    setFilters(EMPTY_BOARD_FILTERS);
+    setSearch("");
+  };
 
   const activeFilterCount = countActiveBoardFilters(filters);
   const context: BoardFilterContext = {
