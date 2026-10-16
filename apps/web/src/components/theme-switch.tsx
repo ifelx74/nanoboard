@@ -46,34 +46,48 @@ export function ThemeSwitch({ className }: { className?: string }) {
       : rect.left + rect.width / 2;
     const y = hasPointerCoords ? event.clientY : rect.top + rect.height / 2;
 
-    const transition = doc.startViewTransition?.(() => {
-      toggleTheme();
-    });
+    let transition: ViewTransition | undefined;
+    try {
+      transition = doc.startViewTransition?.(() => {
+        toggleTheme();
+      });
+    } catch {
+      transition = undefined;
+    }
     if (!transition) {
+      // startViewTransition missing, refused, or threw before running the
+      // update: same instant swap as the unsupported path, exactly once.
+      toggleTheme();
       return;
     }
 
-    void transition.ready.then(() => {
-      const endRadius = revealEndRadius(
-        x,
-        y,
-        window.innerWidth,
-        window.innerHeight,
-      );
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${endRadius}px at ${x}px ${y}px)`,
-          ],
-        },
-        {
-          duration: 450,
-          easing: "ease-out",
-          pseudoElement: "::view-transition-new(root)",
-        },
-      );
-    });
+    void transition.ready.then(
+      () => {
+        const endRadius = revealEndRadius(
+          x,
+          y,
+          window.innerWidth,
+          window.innerHeight,
+        );
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${endRadius}px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 450,
+            easing: "ease-out",
+            pseudoElement: "::view-transition-new(root)",
+          },
+        );
+      },
+      () => {
+        // Aborted (e.g. superseded by a newer transition): the update already
+        // flipped the store, so swallow to avoid an unhandled rejection.
+      },
+    );
   };
 
   return (
@@ -85,7 +99,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
           : "Switch to dark theme (currently light)"
       }
       className={cn(
-        "relative inline-grid h-7 cursor-pointer grid-cols-[1fr_1fr] items-center rounded-full bg-input/50 font-medium text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "relative inline-grid h-7 cursor-pointer grid-cols-[1fr_1fr] items-center rounded-full bg-input/50 font-medium text-sm outline-none transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         className,
       )}
       data-state={isDark ? "checked" : "unchecked"}
@@ -96,7 +110,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
       <span
         aria-hidden="true"
         className={cn(
-          "absolute top-0 left-0 h-full w-1/2 rounded-full bg-background shadow transition-transform duration-300 ease-out",
+          "absolute top-0 left-0 h-full w-1/2 rounded-full bg-background shadow transition-transform duration-300 ease-out motion-reduce:transition-none",
           isDark ? "translate-x-0" : "translate-x-full",
         )}
       />
