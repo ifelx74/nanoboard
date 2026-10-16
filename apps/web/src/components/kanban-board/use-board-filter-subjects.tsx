@@ -35,7 +35,13 @@ export interface BoardFilterSubjectDef {
   onClear: () => void;
 }
 
-const PRIORITY_ORDER = ["urgent", "high", "medium", "low", "no-priority"];
+const PRIORITY_ORDER: Task["priority"][] = [
+  "urgent",
+  "high",
+  "medium",
+  "low",
+  "no-priority",
+];
 
 const DUE_DATE_OPTIONS = [
   { value: DUE_DATE_FILTER_VALUES.dueThisWeek, label: "Due this week" },
@@ -144,9 +150,9 @@ export function useBoardFilterSubjects(
       icon: getPriorityIcon("high"),
       options: PRIORITY_ORDER.map((priority) => ({
         value: priority,
-        label: priorityLabel(priority as Task["priority"]),
+        label: priorityLabel(priority),
         count: priorityCounts.get(priority) ?? 0,
-        icon: getPriorityIcon(priority as Task["priority"]),
+        icon: getPriorityIcon(priority),
       })),
     }),
     makeSubjectDef("labels", {
