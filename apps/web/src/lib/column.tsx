@@ -23,14 +23,14 @@ export function getColumnIcon(slug: ColumnSlug, isFinal = false) {
     case "to-do":
       return <Circle className={className} aria-hidden="true" />;
     case "in-progress":
-      return <CircleDot className={cn(className, "text-yellow-500")} aria-hidden="true" />;
+      return <CircleDot className={cn(className, "text-yellow-500 dark:text-yellow-400")} aria-hidden="true" />;
     case "in-review":
-      return <ScanSearch className={cn(className, "text-blue-500")} aria-hidden="true" />;
+      return <ScanSearch className={cn(className, "text-blue-500 dark:text-blue-400")} aria-hidden="true" />;
     case "done":
-      return <CheckCircle2 className={cn(className, "text-green-500")} aria-hidden="true" />;
+      return <CheckCircle2 className={cn(className, "text-green-500 dark:text-green-400")} aria-hidden="true" />;
     default:
       return isFinal ? (
-        <CheckCircle2 className={cn(className, "text-green-500")} aria-hidden="true" />
+        <CheckCircle2 className={cn(className, "text-green-500 dark:text-green-400")} aria-hidden="true" />
       ) : (
         <Circle className={className} aria-hidden="true" />
       );
