@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import "@/index.css";
 import { db } from "@/lib/db/db";
 import { resetToSeed } from "@/lib/db/seed";
+import { applyThemeClass, useThemeStore } from "@/store/theme";
 import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
@@ -17,6 +18,10 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+
+// The inline pre-paint script in index.html applies the persisted theme before
+// first paint; keep the root class in sync for hydration and runtime flips.
+useThemeStore.subscribe((state) => applyThemeClass(state.theme));
 
 // Dev-only escape hatch: reseed demo content from the console with
 // `await resetNanoboardToSeed()`. Never present in production builds.

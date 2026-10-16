@@ -146,7 +146,7 @@ export function useBoardFilterSubjects(
         value: priority,
         label: priorityLabel(priority as Task["priority"]),
         count: priorityCounts.get(priority) ?? 0,
-        icon: getPriorityIcon(priority),
+        icon: getPriorityIcon(priority as Task["priority"]),
       })),
     }),
     makeSubjectDef("labels", {
