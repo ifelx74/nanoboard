@@ -5,6 +5,42 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + React</title>
+    <!--------------------------------------------------------------------->
+    <!-- persisted theme before first paint: stored-dark users never see -->
+    <!-- a flash of light. Parses the zustand-persist envelope and fails -->
+    <!-- closed to light on missing, corrupt, or foreign values.         -->
+    <script>
+      try {
+        var storedTheme = (function () {
+          try {
+            var raw = window.localStorage.getItem("nanoboard-theme");
+            if (!raw) return "light";
+            var parsed = JSON.parse(raw);
+            var state =
+              parsed && typeof parsed === "object" ? parsed.state : null;
+            var value =
+              state && typeof state === "object" ? state.theme : null;
+            return value === "dark" || value === "light" ? value : "light";
+          } catch (e) {
+            return "light";
+          }
+        })();
+        if (storedTheme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      } catch (e) {
+        /* fail closed to light */
+      }
+    </script>
+    <style>
+      html.dark {
+        background-color: #0a0a0a;
+        color-scheme: dark;
+      }
+    </style>
+    <!--------------------------------------------------------------------->
   </head>
   <body>
     <div id="app"></div>
