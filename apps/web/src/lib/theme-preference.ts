@@ -7,7 +7,7 @@
  */
 
 /** The only two theme values the app offers. Fresh users get light. */
-export type Theme = "light" | "dark";
+export type Theme = "light" | "dark" | "system";
 
 /** zustand persist storage key for the theme store envelope. */
 export const THEME_STORAGE_KEY = "nanoboard-theme";
