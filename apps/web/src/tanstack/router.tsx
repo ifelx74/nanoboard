@@ -5,7 +5,7 @@ const TanStackRouterDevtools: ComponentType = import.meta.env.PROD
   ? () => null
   : React.lazy(() =>
       import("@tanstack/react-router-devtools").then((res) => ({
-        default: res.TanStackRouterDevtools,
+        default: () => <res.TanStackRouterDevtools position="bottom-right" />,
       })),
     );
 
