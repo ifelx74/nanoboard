@@ -64,7 +64,7 @@ function ProjectCard({
       </div>
       <div className="h-1 overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full rounded-full bg-foreground/80"
+          className="h-full rounded-full bg-brand-900/80"
           style={{ width: `${completionPercentage}%` }}
         />
       </div>

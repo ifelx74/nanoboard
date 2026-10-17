@@ -81,8 +81,8 @@ export function ProjectLayout({
                 className={cn(
                   "flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors",
                   activeView === view.key
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-brand-100 dark:bg-brand-900 text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-brand-100 dark:hover:bg-brand-800 hover:text-foreground",
                 )}
               >
                 <view.icon className="size-3.5" aria-hidden="true" />
