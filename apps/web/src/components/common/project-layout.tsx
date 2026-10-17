@@ -5,9 +5,7 @@ import type { ReactNode } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -61,15 +59,7 @@ export function ProjectLayout({
             <Breadcrumb className="flex w-full items-center gap-1 text-xs">
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">
-                    <span className="text-xs font-normal text-card-foreground">
-                      nanoboard
-                    </span>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <span className="text-xs font-normal text-card-foreground">
+                  <span className="text-xs font-semibold text-card-foreground">
                     {project?.name ?? "Project"}
                   </span>
                 </BreadcrumbItem>
@@ -87,6 +77,7 @@ export function ProjectLayout({
                     params: { projectId },
                   })
                 }
+                title={view.title}
                 className={cn(
                   "flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors",
                   activeView === view.key
@@ -95,7 +86,7 @@ export function ProjectLayout({
                 )}
               >
                 <view.icon className="size-3.5" aria-hidden="true" />
-                {view.title}
+                <span className="hidden sm:block">{view.title}</span>
               </button>
             ))}
           </div>

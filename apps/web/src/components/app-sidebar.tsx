@@ -2,6 +2,7 @@ import type * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
+import { ThemeSwitch } from "@/components/theme-switch";
 import {
   Sidebar,
   SidebarContent,
@@ -27,7 +28,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects />
       </SidebarContent>
       <SidebarFooter>
-        <span className="px-2 text-xs text-muted-foreground">v0.0.0</span>
+        <div className="flex items-center justify-between px-2">
+          <span className="text-xs text-muted-foreground">v0.0.0</span>
+          <ThemeSwitch />
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
