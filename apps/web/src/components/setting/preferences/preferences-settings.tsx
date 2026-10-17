@@ -1,6 +1,6 @@
 // local imports
 import DefaultSettingPreferencesList from "./default-setting-perferences-list";
-// import { ProfileSettingsLanguageAndTimezonePreferencesList } from "./language-and-timezone-list";
+import LanguageAndTimezoneList from "./language-and-timezone-list";
 import { cn } from "@/lib/utils";
 
 export const PreferencesSettings = () => {
@@ -25,7 +25,7 @@ export const PreferencesSettings = () => {
         </section>
         <section className="flex flex-col gap-y-3">
           <div className="font-medium text-primary">Language & Time</div>
-          {/* <ProfileSettingsLanguageAndTimezonePreferencesList /> */}
+          <LanguageAndTimezoneList />
         </section>
       </div>
     </div>

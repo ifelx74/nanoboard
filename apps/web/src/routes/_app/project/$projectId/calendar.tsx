@@ -55,7 +55,7 @@ function RouteComponent() {
   const [visibleMonth, setVisibleMonth] = useState(() =>
     startOfMonth(new Date()),
   );
-  const [weekStartsOn, setWeekStartsOn] = useWeekStartsOn();
+  const [weekStartsOn] = useWeekStartsOn();
 
   // Kaneo's schedule normalizer: start ?? due feeds the bar's first day,
   // due ?? start its last; both-null tasks are excluded and a reversed range
@@ -145,8 +145,6 @@ function RouteComponent() {
             setVisibleMonth((current) => addMonths(current, 1))
           }
           onToday={() => setVisibleMonth(startOfMonth(new Date()))}
-          weekStartsOn={weekStartsOn}
-          onWeekStartsOnChange={setWeekStartsOn}
         />
         <MonthGrid
           weeks={weeks}
