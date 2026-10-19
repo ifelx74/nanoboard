@@ -10,6 +10,7 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { NavSecondary } from "./nav-secondary";
+import { BackgroundLogo } from "./common/logo";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -20,8 +21,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       <SidebarHeader className="pt-1 pb-1.5">
-        <span className="flex h-8 items-center px-2 font-heading text-lg font-semibold tracking-tight">
-          nanoboard
+        <span className="flex h-8 items-center px-2 font-heading text-primary text-lg font-semibold tracking-tight gap-2">
+          <BackgroundLogo /> Nanoboard
         </span>
       </SidebarHeader>
       <SidebarContent className="overflow-hidden gap-1 py-1">
