@@ -1,5 +1,6 @@
 // local imports
 import DefaultSettingPreferencesList from "./default-setting-perferences-list";
+import InstallAppList from "./install-app-list";
 import LanguageAndTimezoneList from "./language-and-timezone-list";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,10 @@ export const PreferencesSettings = () => {
         <section className="flex flex-col gap-y-3">
           <div className="font-medium text-primary">Language & Time</div>
           <LanguageAndTimezoneList />
+        </section>
+        <section className="mt-auto border-t border-border">
+          
+          <InstallAppList />
         </section>
       </div>
     </div>

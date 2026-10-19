@@ -1,6 +1,7 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { registerSW } from "virtual:pwa-register";
 import "@/index.css";
 import { db } from "@/lib/db/db";
 import { resetToSeed } from "@/lib/db/seed";
@@ -18,6 +19,8 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+
+registerSW({ immediate: true });
 
 // The inline pre-paint script in index.html applies the persisted theme before
 // first paint; keep the root class in sync for hydration and runtime flips.
