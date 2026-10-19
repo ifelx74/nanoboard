@@ -23,7 +23,16 @@ export function LogoIcon(props: LogoIconProps) {
       aria-label="nanoboard logo"
       {...props}
     >
-      <rect width="24" height="24" rx="5" fill="#ffffff" />
+      <rect
+        x="0.5"
+        y="0.5"
+        width="23"
+        height="23"
+        rx="4.5"
+        fill="#ffffff"
+        stroke="#e4e4e7"
+        strokeWidth="1"
+      />
       <rect x="4" y="4" width="4" height="16" rx="1.5" fill="#2E9F45" />
       <rect x="10" y="4" width="4" height="11" rx="1.5" fill="#2E9F45" />
       <rect x="16" y="4" width="4" height="5" rx="1.5" fill="#2E9F45" />
