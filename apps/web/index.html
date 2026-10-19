@@ -4,7 +4,21 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>Nanoboard — Minimalist, Local-First Project Management</title>
+    <meta
+      name="description"
+      content="nanoboard is a minimalist, open-source workspace with a Kanban board, whiteboard, calendar, and sticky notes. Fast, private, and 100% stored in your browser."
+    />
+    <!-- Open Graph / Social Sharing -->
+    <meta
+      property="og:title"
+      content="nanoboard — Minimalist, Local-First Workspace"
+    />
+    <meta
+      property="og:description"
+      content="Open-source Kanban board, whiteboard, calendar, and sticky notes. Fast, private, and stored locally in your browser."
+    />
+    <meta property="og:type" content="website" />
     <!--------------------------------------------------------------------->
     <!-- persisted theme before first paint: stored-dark users never see -->
     <!-- a flash of light. Parses the zustand-persist envelope and fails -->
@@ -18,8 +32,7 @@
             var parsed = JSON.parse(raw);
             var state =
               parsed && typeof parsed === "object" ? parsed.state : null;
-            var value =
-              state && typeof state === "object" ? state.theme : null;
+            var value = state && typeof state === "object" ? state.theme : null;
             return value === "dark" || value === "light" ? value : "light";
           } catch (e) {
             return "light";
