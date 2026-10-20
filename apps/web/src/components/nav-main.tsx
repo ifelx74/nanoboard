@@ -23,7 +23,7 @@ export function NavMain() {
               tooltip="Home"
               isActive={pathname === "" || pathname === "/"}
               size="default"
-              className="h-8 text-sm"
+              className="h-8 text-sm text-primary"
               onClick={() => navigate({ to: "/" })}
             >
               <House aria-hidden="true" />

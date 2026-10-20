@@ -12,10 +12,12 @@ import {
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarGroup,
   SidebarGroupAction,
@@ -103,77 +105,62 @@ function ProjectRow({
         {/* Gives way to the row menu, which sits here on hover. */}
         <ProjectProgress
           percentage={stats?.completionPercentage ?? 0}
-          className="text-muted-foreground max-md:hidden group-focus-within/menu-item:opacity-0 group-hover/menu-item:opacity-0 group-has-data-[state=open]/menu-item:opacity-0"
+          className="text-muted-foreground max-md:hidden group-focus-within/menu-item:opacity-0 group-hover/menu-item:opacity-0 group-has-data-[popup-open]/menu-item:opacity-0"
         />
       </SidebarMenuButton>
 
-      <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            aria-label={`More actions for ${project.name}`}
-            className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground ring-sidebar-ring transition-transform outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-[state=open]:opacity-100 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 md:opacity-0"
-          >
-            <MoreHorizontal className="size-4" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-44 p-1" align="start" side="right">
-          <button
-            type="button"
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenuTrigger
+          aria-label={`More actions for ${project.name}`}
+          className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground ring-sidebar-ring transition-transform outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-popup-open:opacity-100 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 md:opacity-0"
+        >
+          <MoreHorizontal className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-44" align="start" side="right">
+          <DropdownMenuItem
             onClick={() => {
               setMenuOpen(false);
               openBoard();
             }}
-            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50"
           >
             <Folder className="size-4 shrink-0" />
             <span>View project</span>
-          </button>
-          <button
-            type="button"
+          </DropdownMenuItem>
+          <DropdownMenuItem
             onClick={() => {
               setMenuOpen(false);
               setEditOpen(true);
             }}
-            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50"
           >
             <Pencil className="size-4 shrink-0" />
             <span>Edit project</span>
-          </button>
-          <button
-            type="button"
+          </DropdownMenuItem>
+          <DropdownMenuItem
             disabled={exporting}
             onClick={() => {
               setMenuOpen(false);
               void handleExport();
             }}
-            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50 disabled:pointer-events-none disabled:opacity-50"
           >
             <ArrowUpFromLine className="size-4 shrink-0" />
             <span>Export tasks</span>
-          </button>
-          <button
-            type="button"
+          </DropdownMenuItem>
+          <DropdownMenuItem
             onClick={() => {
               setMenuOpen(false);
               setImportOpen(true);
             }}
-            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50"
           >
             <FileDown className="size-4 shrink-0" />
             <span>Import tasks</span>
-          </button>
-          <div className="my-1 border-t border-border" />
-          <button
-            type="button"
-            onClick={handleDeleteRequest}
-            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm text-destructive transition-colors hover:bg-accent/50"
-          >
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={handleDeleteRequest}>
             <Trash2 className="size-4 shrink-0" />
             <span>Delete project</span>
-          </button>
-        </PopoverContent>
-      </Popover>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <ProjectDeleteDialog
         open={deleteOpen}
