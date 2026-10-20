@@ -7,6 +7,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import Stickies from "@/icons/stickies";
 
 export function NavMain() {
   const navigate = useNavigate();
@@ -28,6 +29,16 @@ export function NavMain() {
             >
               <House aria-hidden="true" />
               <span>Home</span>
+            </SidebarMenuButton>
+            <SidebarMenuButton
+              tooltip="Stickies"
+              isActive={pathname === "/stickies"}
+              size="default"
+              className="h-8 text-sm text-primary"
+              onClick={() => navigate({ to: "/stickies" })}
+            >
+              <Stickies className="shrink-0 size-4" aria-hidden="true" />
+              <span>Stickies</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
