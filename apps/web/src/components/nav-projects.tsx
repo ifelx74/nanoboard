@@ -1,6 +1,8 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
+  ArrowUpFromLine,
   ChevronRight,
+  FileDown,
   Folder,
   MoreHorizontal,
   Pencil,
@@ -27,10 +29,18 @@ import CreateProjectDialog from "@/components/project/create-project-dialog";
 import EditProjectDialog from "@/components/project/edit-project-dialog";
 import ProjectDeleteDialog from "@/components/project/project-delete-dialog";
 import { ProjectProgress } from "@/components/project/project-progress";
-import { getProjects, getProjectsStats } from "@/lib/db/queries";
+import { ImportTasksDialog } from "@/components/project/tasks-import-export/import-tasks-dialog";
+import { downloadTaskTransferDocument } from "@/components/project/tasks-import-export/download";
+import {
+  getProjects,
+  getProjectsStats,
+  readProjectTransferSource,
+} from "@/lib/db/queries";
 import type { ProjectStats } from "@/lib/db/queries";
 import type { Project } from "@/lib/db/schema";
+import { buildTaskTransferDocument } from "@/lib/task-transfer/export";
 import { getProjectIcon } from "@/lib/project-icons";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 function ProjectRow({
@@ -48,6 +58,8 @@ function ProjectRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const ProjectIcon = getProjectIcon(project.icon);
 
   function openBoard() {
@@ -60,6 +72,22 @@ function ProjectRow({
   function handleDeleteRequest() {
     setMenuOpen(false);
     setDeleteOpen(true);
+  }
+
+  async function handleExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const source = await readProjectTransferSource(project.id);
+      downloadTaskTransferDocument(await buildTaskTransferDocument(source));
+      toast.success("Tasks exported.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not export tasks.",
+      );
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -98,7 +126,7 @@ function ProjectRow({
             }}
             className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50"
           >
-            <Folder className="size-4 shrink-0 text-muted-foreground" />
+            <Folder className="size-4 shrink-0" />
             <span>View project</span>
           </button>
           <button
@@ -109,8 +137,31 @@ function ProjectRow({
             }}
             className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50"
           >
-            <Pencil className="size-4 shrink-0 text-muted-foreground" />
+            <Pencil className="size-4 shrink-0" />
             <span>Edit project</span>
+          </button>
+          <button
+            type="button"
+            disabled={exporting}
+            onClick={() => {
+              setMenuOpen(false);
+              void handleExport();
+            }}
+            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50 disabled:pointer-events-none disabled:opacity-50"
+          >
+            <ArrowUpFromLine className="size-4 shrink-0" />
+            <span>Export tasks</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              setImportOpen(true);
+            }}
+            className="flex h-7 w-full cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent/50"
+          >
+            <FileDown className="size-4 shrink-0" />
+            <span>Import tasks</span>
           </button>
           <div className="my-1 border-t border-border" />
           <button
@@ -135,6 +186,12 @@ function ProjectRow({
         projectId={project.id}
         open={editOpen}
         onClose={() => setEditOpen(false)}
+      />
+      <ImportTasksDialog
+        projectId={project.id}
+        projectName={project.name}
+        open={importOpen}
+        onOpenChange={setImportOpen}
       />
     </SidebarMenuItem>
   );
