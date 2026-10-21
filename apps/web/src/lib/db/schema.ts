@@ -126,3 +126,26 @@ export const DEFAULT_COLUMNS: {
   { name: "In Review", slug: columnSlug("in-review"), position: 3, isFinal: false },
   { name: "Completed", slug: columnSlug("done"), position: 4, isFinal: true },
 ];
+
+export const STICKY_COLORS = [
+  "gray",
+  "peach",
+  "pink",
+  "orange",
+  "green",
+  "light-blue",
+  "dark-blue",
+  "purple",
+] as const;
+
+export type StickyColorKey = (typeof STICKY_COLORS)[number];
+
+export interface Sticky {
+  id: string;
+  contentHtml: string;
+  backgroundColor: StickyColorKey;
+  position: number;
+  createdAt: number;
+  updatedAt: number;
+}
+

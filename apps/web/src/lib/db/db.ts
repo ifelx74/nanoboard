@@ -3,6 +3,7 @@ import type {
   Column,
   Label,
   Project,
+  Sticky,
   Task,
   TaskLabel,
   TaskResource,
@@ -16,6 +17,7 @@ export class NanoboardDB extends Dexie {
   labels!: Table<Label, string>;
   taskLabels!: Table<TaskLabel, [string, string]>;
   taskResources!: Table<TaskResource, string>;
+  stickies!: Table<Sticky, string>;
 
   constructor(name = "nanoboard") {
     super(name);
@@ -64,6 +66,17 @@ export class NanoboardDB extends Dexie {
       labels: "&id, projectId, &[projectId+name]",
       taskLabels: "&[taskId+labelId], taskId, labelId",
       taskResources: "&id, taskId",
+    });
+    // v5: global stickies note store.
+    this.version(5).stores({
+      projects: "&id, slug, position",
+      columns: "&id, projectId, [projectId+position]",
+      tasks:
+        "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
+      labels: "&id, projectId, &[projectId+name]",
+      taskLabels: "&[taskId+labelId], taskId, labelId",
+      taskResources: "&id, taskId",
+      stickies: "&id, position, createdAt, updatedAt",
     });
     this.on("populate", () => seedDatabase(this));
   }

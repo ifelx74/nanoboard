@@ -1,49 +1,108 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { useMemo } from "react";
+import type { Sticky } from "@/lib/db/schema";
+import { reorderStickies } from "@/lib/db/stickies";
+import { EmptySearchState, EmptyStickiesState } from "./empty-states";
+import { SortableStickyCard } from "./sortable-sticky-card";
 
-type TStickiesLayout = {
-  intersectionElement?: React.ReactNode | null;
+type Props = {
+  stickies: Sticky[];
+  searchQuery?: string;
+  onAddSticky?: () => void;
+  onClearSearch?: () => void;
+  isCreating?: boolean;
 };
 
-type TProps = TStickiesLayout & {
-  columnCount: number;
-};
+export function StickiesLayout({
+  stickies,
+  searchQuery = "",
+  onAddSticky,
+  onClearSearch,
+  isCreating = false,
+}: Props) {
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
-export const StickiesList = (props: TProps) => {};
-export function StickiesLayout(props: TStickiesLayout) {
-  // states
-  const [containerWidth, setContainerWidth] = useState<number | null>(null);
-  // refs
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!ref?.current) return;
-
-    setContainerWidth(ref?.current.offsetWidth);
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
+  const filteredStickies = useMemo(() => {
+    if (!searchQuery.trim()) return stickies;
+    const query = searchQuery.toLowerCase().trim();
+    return stickies.filter((sticky) => {
+      // Strip HTML tags for clean text matching
+      const textContent = sticky.contentHtml.replace(/<[^>]*>/g, " ");
+      return textContent.toLowerCase().includes(query);
     });
+  }, [stickies, searchQuery]);
 
-    resizeObserver.observe(ref?.current);
-    return () => resizeObserver.disconnect();
-  }, []);
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-  const getColumnCount = (width: number | null): number => {
-    if (width === null) return 4;
-
-    if (width < 640) return 2; // sm
-    if (width < 850) return 3; // md
-    if (width < 1024) return 4; // lg
-    if (width < 1280) return 5; // xl
-    return 6; // 2xl and above
+    try {
+      await reorderStickies(active.id.toString(), over.id.toString());
+    } catch (error) {
+      console.error("Failed to reorder stickies:", error);
+    }
   };
-  const columnCount = getColumnCount(containerWidth);
+
+  if (stickies.length === 0) {
+    return (
+      <EmptyStickiesState
+        onAddSticky={onAddSticky ?? (() => {})}
+        isCreating={isCreating}
+      />
+    );
+  }
+
+  if (filteredStickies.length === 0 && searchQuery.trim() !== "") {
+    return (
+      <EmptySearchState onClearSearch={onClearSearch ?? (() => {})} />
+    );
+  }
 
   return (
-    <div ref={ref} className="size-full">
-      {/* <StickiesList {...props} columnCount={columnCount} /> */}
-    </div>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={filteredStickies.map((s) => s.id)}
+        strategy={rectSortingStrategy}
+      >
+        <div className="w-full columns-1 gap-4 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 [&>*]:break-inside-avoid">
+          {filteredStickies.map((sticky) => (
+            <SortableStickyCard key={sticky.id} sticky={sticky} />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }
