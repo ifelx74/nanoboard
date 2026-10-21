@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppStickiesRouteImport } from './routes/_app/stickies'
 import { Route as AppProjectProjectIdIndexRouteImport } from './routes/_app/project/$projectId/index'
 import { Route as AppProjectProjectIdBoardRouteImport } from './routes/_app/project/$projectId/board'
 import { Route as AppProjectProjectIdCalendarRouteImport } from './routes/_app/project/$projectId/calendar'
@@ -23,6 +24,11 @@ const AppRoute = AppRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStickiesRoute = AppStickiesRouteImport.update({
+  id: '/stickies',
+  path: '/stickies',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProjectProjectIdIndexRoute =
@@ -51,12 +57,14 @@ const AppProjectProjectIdListRoute = AppProjectProjectIdListRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/stickies': typeof AppStickiesRoute
   '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
   '/project/$projectId/list': typeof AppProjectProjectIdListRoute
   '/project/$projectId/': typeof AppProjectProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
+  '/stickies': typeof AppStickiesRoute
   '/': typeof AppIndexRoute
   '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_app/stickies': typeof AppStickiesRoute
   '/_app/': typeof AppIndexRoute
   '/_app/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/_app/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
@@ -76,12 +85,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/stickies'
     | '/project/$projectId/board'
     | '/project/$projectId/calendar'
     | '/project/$projectId/list'
     | '/project/$projectId/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/stickies'
     | '/'
     | '/project/$projectId/board'
     | '/project/$projectId/calendar'
@@ -90,6 +101,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/_app/stickies'
     | '/_app/'
     | '/_app/project/$projectId/board'
     | '/_app/project/$projectId/calendar'
@@ -115,6 +127,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stickies': {
+      id: '/_app/stickies'
+      path: '/stickies'
+      fullPath: '/stickies'
+      preLoaderRoute: typeof AppStickiesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/project/$projectId/': {
@@ -149,6 +168,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppStickiesRoute: typeof AppStickiesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProjectProjectIdBoardRoute: typeof AppProjectProjectIdBoardRoute
   AppProjectProjectIdCalendarRoute: typeof AppProjectProjectIdCalendarRoute
@@ -157,6 +177,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppStickiesRoute: AppStickiesRoute,
   AppIndexRoute: AppIndexRoute,
   AppProjectProjectIdBoardRoute: AppProjectProjectIdBoardRoute,
   AppProjectProjectIdCalendarRoute: AppProjectProjectIdCalendarRoute,
