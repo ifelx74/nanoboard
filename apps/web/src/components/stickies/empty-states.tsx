@@ -37,10 +37,14 @@ export function EmptyStickiesState({
 }
 
 type EmptySearchProps = {
-  onClearSearch: () => void;
+  onAddSticky: () => void;
+  isCreating?: boolean;
 };
 
-export function EmptySearchState({ onClearSearch }: EmptySearchProps) {
+export function EmptySearchState({
+  onAddSticky,
+  isCreating = false,
+}: EmptySearchProps) {
   return (
     <div className="flex size-full flex-col items-center justify-center py-16 text-center">
       <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -50,10 +54,17 @@ export function EmptySearchState({ onClearSearch }: EmptySearchProps) {
         That doesn't match any of your stickies.
       </h3>
       <p className="mb-5 max-w-xs text-muted-foreground text-xs leading-relaxed sm:text-sm">
-        Try a different search term or clear the filter to see all your stickies.
+        Try a different term or let us know if you are sure your search is
+        right.
       </p>
-      <Button variant="outline" size="sm" onClick={onClearSearch}>
-        Clear search
+      <Button
+        onClick={onAddSticky}
+        disabled={isCreating}
+        size="sm"
+        className="gap-1.5"
+      >
+        <Plus className="size-3.5" />
+        <span>Add sticky</span>
       </Button>
     </div>
   );

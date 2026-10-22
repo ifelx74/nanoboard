@@ -29,7 +29,6 @@ type Props = {
   stickies: Sticky[];
   searchQuery?: string;
   onAddSticky?: () => void;
-  onClearSearch?: () => void;
   isCreating?: boolean;
 };
 
@@ -49,7 +48,6 @@ export function StickiesLayout({
   stickies,
   searchQuery = "",
   onAddSticky,
-  onClearSearch,
   isCreating = false,
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -116,7 +114,10 @@ export function StickiesLayout({
 
   if (filteredStickies.length === 0 && searchQuery.trim() !== "") {
     return (
-      <EmptySearchState onClearSearch={onClearSearch ?? (() => {})} />
+      <EmptySearchState
+        onAddSticky={onAddSticky ?? (() => {})}
+        isCreating={isCreating}
+      />
     );
   }
 

@@ -50,7 +50,6 @@ function RouteComponent() {
             stickies={stickies ?? []}
             searchQuery={searchQuery}
             onAddSticky={handleAddSticky}
-            onClearSearch={() => setSearchQuery("")}
             isCreating={isCreating}
           />
         </div>
