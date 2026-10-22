@@ -28,7 +28,7 @@ import { StickyCard } from "./sticky-card";
 type Props = {
   stickies: Sticky[];
   searchQuery?: string;
-  onAddSticky?: () => void;
+  onAddSticky: () => void;
   isCreating?: boolean;
 };
 
@@ -105,19 +105,13 @@ export function StickiesLayout({
 
   if (stickies.length === 0) {
     return (
-      <EmptyStickiesState
-        onAddSticky={onAddSticky ?? (() => {})}
-        isCreating={isCreating}
-      />
+      <EmptyStickiesState onAddSticky={onAddSticky} isCreating={isCreating} />
     );
   }
 
   if (filteredStickies.length === 0 && searchQuery.trim() !== "") {
     return (
-      <EmptySearchState
-        onAddSticky={onAddSticky ?? (() => {})}
-        isCreating={isCreating}
-      />
+      <EmptySearchState onAddSticky={onAddSticky} isCreating={isCreating} />
     );
   }
 

@@ -1,7 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +10,7 @@ import Stickies from "@/icons/stickies";
 import type { Sticky } from "@/lib/db/schema";
 import { createSticky } from "@/lib/db/stickies";
 import { toast } from "@/lib/toast";
+import { AddStickyButton } from "./add-sticky-button";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
 import { MasonryGrid, MasonryItem } from "./masonry";
 import { StickyCard } from "./sticky-card";
@@ -39,6 +38,7 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
     setIsCreating(true);
     try {
       await createSticky();
+      setSearchQuery("");
       toast.success("Sticky created");
     } catch (error: unknown) {
       if (
@@ -65,15 +65,10 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
 
           <div className="flex items-center gap-2 pr-6">
             <StickySearch value={searchQuery} onChange={setSearchQuery} />
-            <Button
-              size="sm"
+            <AddStickyButton
               onClick={handleAddSticky}
-              disabled={isCreating}
-              className="gap-1.5"
-            >
-              <Plus className="size-3.5" />
-              <span>Add sticky</span>
-            </Button>
+              isCreating={isCreating}
+            />
           </div>
         </DialogHeader>
 

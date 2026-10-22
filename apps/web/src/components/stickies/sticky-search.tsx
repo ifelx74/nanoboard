@@ -85,7 +85,7 @@ export function StickySearch({ value, onChange, className }: Props) {
             }}
             className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
           >
-            <X className="h-3 w-3" />
+            <X className="size-3" />
           </button>
         )}
       </div>

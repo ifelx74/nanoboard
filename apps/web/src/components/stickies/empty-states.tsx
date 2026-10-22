@@ -1,6 +1,6 @@
-import { Plus, SearchX } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SearchX } from "lucide-react";
 import Stickies from "@/icons/stickies";
+import { AddStickyButton } from "./add-sticky-button";
 
 type EmptyStickiesProps = {
   onAddSticky: () => void;
@@ -23,15 +23,7 @@ export function EmptyStickiesState({
         Capture your thoughts and ideas effortlessly by creating stickies that
         you can access anytime and from anywhere.
       </p>
-      <Button
-        onClick={onAddSticky}
-        disabled={isCreating}
-        size="sm"
-        className="gap-1.5"
-      >
-        <Plus className="size-3.5" />
-        <span>Add sticky</span>
-      </Button>
+      <AddStickyButton onClick={onAddSticky} isCreating={isCreating} />
     </div>
   );
 }
@@ -57,15 +49,7 @@ export function EmptySearchState({
         Try a different term or let us know if you are sure your search is
         right.
       </p>
-      <Button
-        onClick={onAddSticky}
-        disabled={isCreating}
-        size="sm"
-        className="gap-1.5"
-      >
-        <Plus className="size-3.5" />
-        <span>Add sticky</span>
-      </Button>
+      <AddStickyButton onClick={onAddSticky} isCreating={isCreating} />
     </div>
   );
 }
