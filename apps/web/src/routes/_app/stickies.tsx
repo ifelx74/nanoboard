@@ -21,6 +21,7 @@ function RouteComponent() {
     setIsCreating(true);
     try {
       await createSticky();
+      setSearchQuery("");
       toast.success("Sticky created");
     } catch (error: unknown) {
       if (

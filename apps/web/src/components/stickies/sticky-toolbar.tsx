@@ -1,5 +1,12 @@
 import type { Editor } from "@tiptap/react";
-import { Bold, Italic, ListTodo, Palette, Trash2 } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  ListTodo,
+  type LucideIcon,
+  Palette,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Kbd } from "@/components/ui/kbd";
 import {
@@ -11,6 +18,44 @@ import {
 import type { StickyColorKey } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
 import { ColorPalette } from "./color-palette";
+
+type FormattingAction = {
+  label: string;
+  shortcut: string;
+  icon: LucideIcon;
+  isActive: (editor: Editor) => boolean;
+  command: (editor: Editor) => void;
+};
+
+const FORMATTING_ACTIONS: FormattingAction[] = [
+  {
+    label: "Bold",
+    shortcut: "Cmd + B",
+    icon: Bold,
+    isActive: (editor) => editor.isActive("bold"),
+    command: (editor) => {
+      editor.chain().focus().toggleBold().run();
+    },
+  },
+  {
+    label: "Italic",
+    shortcut: "Cmd + I",
+    icon: Italic,
+    isActive: (editor) => editor.isActive("italic"),
+    command: (editor) => {
+      editor.chain().focus().toggleItalic().run();
+    },
+  },
+  {
+    label: "To-do list",
+    shortcut: "Cmd + Shift + 9",
+    icon: ListTodo,
+    isActive: (editor) => editor.isActive("taskList"),
+    command: (editor) => {
+      editor.chain().focus().toggleTaskList().run();
+    },
+  },
+];
 
 type Props = {
   editor: Editor | null;
@@ -76,74 +121,34 @@ export function StickyToolbar({
           {/* Formatting items */}
           <div className="my-auto flex w-fit items-stretch justify-between gap-4 rounded-sm p-1">
             <div className="my-auto flex items-stretch gap-4">
-              {/* Bold */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    disabled={!editor}
-                    aria-label="Bold"
-                    onClick={() => editor?.chain().focus().toggleBold().run()}
-                    className={cn(
-                      "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
-                      editor?.isActive("bold") && "text-foreground font-bold",
-                    )}
-                  >
-                    <Bold className="size-3.5" strokeWidth={2.5} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <span className="inline-flex items-center gap-1.5">
-                    Bold <Kbd>Cmd + B</Kbd>
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Italic */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    disabled={!editor}
-                    aria-label="Italic"
-                    onClick={() => editor?.chain().focus().toggleItalic().run()}
-                    className={cn(
-                      "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
-                      editor?.isActive("italic") && "text-foreground font-bold",
-                    )}
-                  >
-                    <Italic className="size-3.5" strokeWidth={2.5} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <span className="inline-flex items-center gap-1.5">
-                    Italic <Kbd>Cmd + I</Kbd>
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Checklist */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    disabled={!editor}
-                    aria-label="To-do list"
-                    onClick={() => editor?.chain().focus().toggleTaskList().run()}
-                    className={cn(
-                      "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
-                      editor?.isActive("taskList") && "text-foreground font-bold",
-                    )}
-                  >
-                    <ListTodo className="size-3.5" strokeWidth={2.5} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <span className="inline-flex items-center gap-1.5">
-                    To-do list <Kbd>Cmd + Shift + 9</Kbd>
-                  </span>
-                </TooltipContent>
-              </Tooltip>
+              {FORMATTING_ACTIONS.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Tooltip key={action.label}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={!editor}
+                        aria-label={action.label}
+                        onClick={() => editor && action.command(editor)}
+                        className={cn(
+                          "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
+                          editor &&
+                            action.isActive(editor) &&
+                            "text-foreground font-bold",
+                        )}
+                      >
+                        <Icon className="size-3.5" strokeWidth={2.5} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <span className="inline-flex items-center gap-1.5">
+                        {action.label} <Kbd>{action.shortcut}</Kbd>
+                      </span>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
             </div>
           </div>
         </div>

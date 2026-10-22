@@ -53,7 +53,7 @@ export default function StickyHeader({
           )}
           {onAddSticky && (
             <Button onClick={onAddSticky} disabled={isCreating}>
-              {isCreating && <Loader2 className="animate-spin" />}
+              {isCreating && <Loader2 className="size-3.5 animate-spin" />}
               <span>Add sticky</span>
             </Button>
           )}
