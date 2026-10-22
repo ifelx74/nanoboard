@@ -54,7 +54,7 @@ type Props = {
 
 export function ColorPalette({ selectedColor, onSelectColor }: Props) {
   return (
-    <div className="shadow-lg absolute bottom-6 left-0 z-20 mb-2 w-56 rounded-md border border-border bg-card p-2.5">
+    <div className="shadow-lg absolute bottom-5 left-0 z-20 mb-2 w-56 rounded-md border border-border bg-card p-2">
       <div className="mb-2 text-[13px] font-semibold text-muted-foreground">
         Background colors
       </div>
