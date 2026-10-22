@@ -13,6 +13,7 @@ import type { Sticky } from "@/lib/db/schema";
 import { createSticky } from "@/lib/db/stickies";
 import { toast } from "@/lib/toast";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
+import { MasonryGrid, MasonryItem } from "./masonry";
 import { StickyCard } from "./sticky-card";
 import { StickySearch } from "./sticky-search";
 
@@ -76,7 +77,7 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
           </div>
         </DialogHeader>
 
-        <div className="max-h-[550px] overflow-y-auto p-6">
+        <div className="max-h-[625px] overflow-y-auto p-6">
           {stickies.length === 0 ? (
             <EmptyStickiesState
               onAddSticky={handleAddSticky}
@@ -85,13 +86,13 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
           ) : filteredStickies.length === 0 && searchQuery.trim() !== "" ? (
             <EmptySearchState onClearSearch={() => setSearchQuery("")} />
           ) : (
-            <div className="columns-1 gap-4 sm:columns-2 md:columns-3 [&>*]:break-inside-avoid">
+            <MasonryGrid itemIds={filteredStickies.map((s) => s.id)}>
               {filteredStickies.map((sticky) => (
-                <div key={sticky.id} className="mb-4 break-inside-avoid">
+                <MasonryItem key={sticky.id} id={sticky.id}>
                   <StickyCard sticky={sticky} />
-                </div>
+                </MasonryItem>
               ))}
-            </div>
+            </MasonryGrid>
           )}
         </div>
 

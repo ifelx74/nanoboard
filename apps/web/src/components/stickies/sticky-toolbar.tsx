@@ -73,69 +73,71 @@ export function StickyToolbar({
           </Tooltip>
 
           {/* Formatting items */}
-          <div className="my-auto flex items-center gap-4">
-            {/* Bold */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  disabled={!editor}
-                  aria-label="Bold"
-                  onClick={() => editor?.chain().focus().toggleBold().run()}
-                  className={cn(
-                    "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
-                    editor?.isActive("bold") && "text-foreground font-bold",
-                  )}
-                >
-                  <Bold className="size-3.5" strokeWidth={2.5} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p className="text-xs">Bold</p>
-              </TooltipContent>
-            </Tooltip>
+          <div className="my-auto flex w-fit items-stretch justify-between gap-4 rounded-sm p-1">
+            <div className="my-auto flex items-stretch gap-4">
+              {/* Bold */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={!editor}
+                    aria-label="Bold"
+                    onClick={() => editor?.chain().focus().toggleBold().run()}
+                    className={cn(
+                      "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
+                      editor?.isActive("bold") && "text-foreground font-bold",
+                    )}
+                  >
+                    <Bold className="size-3.5" strokeWidth={2.5} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p className="text-xs">Bold</p>
+                </TooltipContent>
+              </Tooltip>
 
-            {/* Italic */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  disabled={!editor}
-                  aria-label="Italic"
-                  onClick={() => editor?.chain().focus().toggleItalic().run()}
-                  className={cn(
-                    "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
-                    editor?.isActive("italic") && "text-foreground font-bold",
-                  )}
-                >
-                  <Italic className="size-3.5" strokeWidth={2.5} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p className="text-xs">Italic</p>
-              </TooltipContent>
-            </Tooltip>
+              {/* Italic */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={!editor}
+                    aria-label="Italic"
+                    onClick={() => editor?.chain().focus().toggleItalic().run()}
+                    className={cn(
+                      "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
+                      editor?.isActive("italic") && "text-foreground font-bold",
+                    )}
+                  >
+                    <Italic className="size-3.5" strokeWidth={2.5} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p className="text-xs">Italic</p>
+                </TooltipContent>
+              </Tooltip>
 
-            {/* Checklist */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  disabled={!editor}
-                  aria-label="To-do list"
-                  onClick={() => editor?.chain().focus().toggleTaskList().run()}
-                  className={cn(
-                    "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
-                    editor?.isActive("taskList") && "text-foreground font-bold",
-                  )}
-                >
-                  <ListTodo className="size-3.5" strokeWidth={2.5} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p className="text-xs">To-do list</p>
-              </TooltipContent>
-            </Tooltip>
+              {/* Checklist */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={!editor}
+                    aria-label="To-do list"
+                    onClick={() => editor?.chain().focus().toggleTaskList().run()}
+                    className={cn(
+                      "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
+                      editor?.isActive("taskList") && "text-foreground font-bold",
+                    )}
+                  >
+                    <ListTodo className="size-3.5" strokeWidth={2.5} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p className="text-xs">To-do list</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </div>
 

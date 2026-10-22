@@ -76,8 +76,14 @@ export async function reorderStickies(
 
     if (activeIndex === -1 || overIndex === -1) return;
 
+    // Remove the dragged note first, then look the target up again: its index
+    // shifts by one when the dragged note came from before it. Inserting at
+    // the shifted index drops the note *in front of* the target, which is what
+    // the drag preview showed.
     const [moved] = stickies.splice(activeIndex, 1);
-    stickies.splice(overIndex, 0, moved);
+    const targetIndex = stickies.findIndex((s) => s.id === overId);
+    if (targetIndex === -1) return;
+    stickies.splice(targetIndex, 0, moved);
 
     // Re-index positions uniformly
     const updates = stickies.map((s, index) =>

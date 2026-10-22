@@ -1,7 +1,11 @@
 import {
   closestCenter,
+  defaultDropAnimationSideEffects,
   DndContext,
+  DragOverlay,
   type DragEndEvent,
+  type DragStartEvent,
+  type DropAnimation,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
@@ -13,11 +17,13 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Sticky } from "@/lib/db/schema";
 import { reorderStickies } from "@/lib/db/stickies";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
+import { MasonryGrid } from "./masonry";
 import { SortableStickyCard } from "./sortable-sticky-card";
+import { StickyCard } from "./sticky-card";
 
 type Props = {
   stickies: Sticky[];
@@ -27,6 +33,18 @@ type Props = {
   isCreating?: boolean;
 };
 
+const dropAnimation: DropAnimation = {
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: {
+        opacity: "0.4",
+      },
+    },
+  }),
+  duration: 250,
+  easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+};
+
 export function StickiesLayout({
   stickies,
   searchQuery = "",
@@ -34,15 +52,17 @@ export function StickiesLayout({
   onClearSearch,
   isCreating = false,
 }: Props) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 3,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 200,
+        delay: 150,
         tolerance: 5,
       },
     }),
@@ -55,14 +75,23 @@ export function StickiesLayout({
     if (!searchQuery.trim()) return stickies;
     const query = searchQuery.toLowerCase().trim();
     return stickies.filter((sticky) => {
-      // Strip HTML tags for clean text matching
       const textContent = sticky.contentHtml.replace(/<[^>]*>/g, " ");
       return textContent.toLowerCase().includes(query);
     });
   }, [stickies, searchQuery]);
 
+  const activeSticky = useMemo(
+    () => (activeId ? stickies.find((s) => s.id === activeId) : null),
+    [activeId, stickies],
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id.toString());
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
     if (!over || active.id === over.id) return;
 
     try {
@@ -70,6 +99,10 @@ export function StickiesLayout({
     } catch (error) {
       console.error("Failed to reorder stickies:", error);
     }
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
   };
 
   if (stickies.length === 0) {
@@ -91,18 +124,36 @@ export function StickiesLayout({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
       <SortableContext
         items={filteredStickies.map((s) => s.id)}
         strategy={rectSortingStrategy}
       >
-        <div className="w-full columns-1 gap-4 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 [&>*]:break-inside-avoid">
+        <MasonryGrid itemIds={filteredStickies.map((s) => s.id)}>
           {filteredStickies.map((sticky) => (
-            <SortableStickyCard key={sticky.id} sticky={sticky} />
+            <SortableStickyCard
+              key={sticky.id}
+              sticky={sticky}
+              maxEditorHeight={588}
+            />
           ))}
-        </div>
+        </MasonryGrid>
       </SortableContext>
+
+      {/* Plane's miniature drag preview: the note is scaled down to 50% and
+          capped at 150px so it reads as a thumbnail rather than a full card. */}
+      <DragOverlay dropAnimation={dropAnimation}>
+        {activeSticky ? (
+          <div className="origin-top-left scale-50">
+            <div className="-m-2 max-h-[150px] w-[290px]">
+              <StickyCard sticky={activeSticky} showToolbar={false} />
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

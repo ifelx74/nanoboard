@@ -4,7 +4,7 @@ import TaskList from "@tiptap/extension-task-list";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { GripVertical, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Sticky, StickyColorKey } from "@/lib/db/schema";
 import { deleteSticky, updateSticky } from "@/lib/db/stickies";
 import { toast } from "@/lib/toast";
@@ -21,6 +21,11 @@ type Props = {
   showToolbar?: boolean;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   isDragging?: boolean;
+  /**
+   * Height budget for the note body. Plane uses 588px on the stickies page
+   * and 540px everywhere else (popovers, the "all stickies" modal).
+   */
+  maxEditorHeight?: number;
 };
 
 export function StickyCard({
@@ -30,10 +35,9 @@ export function StickyCard({
   showToolbar = true,
   dragHandleProps,
   isDragging = false,
+  maxEditorHeight = 540,
 }: Props) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const backgroundColor =
@@ -72,7 +76,6 @@ export function StickyCard({
     onUpdate: ({ editor }) => {
       debouncedSave(editor.getHTML());
     },
-    onFocus: () => setIsFocused(true),
   });
 
   // Keep content in sync if updated externally while not focused
@@ -118,45 +121,42 @@ export function StickyCard({
       />
 
       <div
-        ref={cardRef}
-        onFocus={() => setIsFocused(true)}
-        onBlur={(e) => {
-          if (!cardRef.current?.contains(e.relatedTarget as Node)) {
-            setIsFocused(false);
-          }
-        }}
         className={cn(
           "group/sticky relative flex h-fit w-full flex-col overflow-y-scroll scrollbar-none rounded-sm",
           isDragging && "opacity-50",
           className,
         )}
-        style={{
-          backgroundColor,
-        }}
+        style={
+          {
+            backgroundColor,
+            "--nb-sticky-max-height": `${maxEditorHeight}px`,
+          } as CSSProperties
+        }
       >
-        {/* Top hover drag handle matching Plane */}
+        {/* Hover drag handle, matching Plane's `StickyItemDragHandle`. */}
         {dragHandleProps && (
           <div
             {...dragHandleProps}
             aria-label="Drag sticky"
             className={cn(
-              "absolute top-1.5 left-1/2 -translate-x-1/2 z-10 hidden rotate-90 cursor-grab items-center justify-center rounded-sm text-foreground/40 transition-colors hover:text-foreground active:cursor-grabbing group-hover/sticky:flex",
+              "absolute top-1 left-1/2 z-10 hidden -translate-x-1/2 rotate-90 cursor-grab items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground group-hover/sticky:flex",
               isDragging && "cursor-grabbing flex",
             )}
           >
-            <GripVertical className="size-3.5" />
+            <GripVertical className="size-3" />
           </div>
         )}
 
-        {/* Optional top-right close button (e.g. in floating widget popup) */}
+        {/* Close button sits on its own row, the way Plane renders it in the
+            floating popover. */}
         {onClose && (
           <button
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="absolute top-2.5 right-2.5 z-10 flex size-5 items-center justify-center rounded-sm text-foreground/50 transition-colors hover:text-foreground"
+            className="flex flex-shrink-0 justify-end p-2.5 text-muted-foreground transition-colors hover:text-foreground"
           >
-            <X className="size-3.5" />
+            <X className="size-4" />
           </button>
         )}
 
@@ -165,17 +165,10 @@ export function StickyCard({
           <EditorContent editor={editor} />
         </div>
 
-        {/* Plane animated bottom toolbar: smoothly expands on focus */}
+        {/* Plane keeps the formatting toolbar permanently visible at the
+            bottom of every note. */}
         {showToolbar && (
-          <div
-            className={cn(
-              "h-12.5 origin-top px-4 transition-all duration-300 ease-out",
-              {
-                "max-h-12.5 scale-y-100 opacity-100": isFocused,
-                "invisible max-h-0 scale-y-0 opacity-0 pointer-events-none": !isFocused,
-              },
-            )}
-          >
+          <div className="h-15 origin-top px-4">
             <StickyToolbar
               editor={editor}
               currentColor={sticky.backgroundColor}

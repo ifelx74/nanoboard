@@ -1,9 +1,17 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Sticky } from "@/lib/db/schema";
+import { cn } from "@/lib/utils";
+import { MasonryItem } from "./masonry";
 import { StickyCard } from "./sticky-card";
 
-export function SortableStickyCard({ sticky }: { sticky: Sticky }) {
+export function SortableStickyCard({
+  sticky,
+  maxEditorHeight,
+}: {
+  sticky: Sticky;
+  maxEditorHeight?: number;
+}) {
   const {
     attributes,
     listeners,
@@ -13,22 +21,25 @@ export function SortableStickyCard({ sticky }: { sticky: Sticky }) {
     isDragging,
   } = useSortable({ id: sticky.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="mb-4 box-border break-inside-avoid p-[2px]"
+    <MasonryItem
+      id={sticky.id}
+      itemRef={setNodeRef}
+      className={cn(
+        "transition-opacity duration-200",
+        isDragging && "opacity-25",
+      )}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
     >
       <StickyCard
         sticky={sticky}
         dragHandleProps={{ ...attributes, ...listeners }}
         isDragging={isDragging}
+        maxEditorHeight={maxEditorHeight}
       />
-    </div>
+    </MasonryItem>
   );
 }

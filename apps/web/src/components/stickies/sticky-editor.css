@@ -2,13 +2,13 @@
 
 .nb-sticky-editor .tiptap {
   min-height: 256px;
-  max-height: 588px;
+  max-height: var(--nb-sticky-max-height, 540px);
   overflow-y: auto;
   outline: none;
   font-size: 14px;
   line-height: 1.5;
   color: var(--color-foreground);
-  padding: 1.5rem 1rem 0.5rem 1rem;
+  padding: 1rem;
 }
 
 .nb-sticky-editor .tiptap > * + * {
