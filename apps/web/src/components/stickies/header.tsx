@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -52,13 +52,8 @@ export default function StickyHeader({
             <StickySearch value={searchQuery} onChange={onSearchChange} />
           )}
           {onAddSticky && (
-            <Button
-              size="sm"
-              onClick={onAddSticky}
-              disabled={isCreating}
-              className="gap-1.5"
-            >
-              <Plus className="size-3.5" />
+            <Button onClick={onAddSticky} disabled={isCreating}>
+              {isCreating && <Loader2 className="animate-spin" />}
               <span>Add sticky</span>
             </Button>
           )}
