@@ -41,7 +41,7 @@ export function StickySearch({ value, onChange, className }: Props) {
   return (
     <div
       ref={containerRef}
-      className={cn("my-auto flex items-center", className)}
+      className={cn("my-auto mr-2 flex items-center", className)}
     >
       {!isOpen && (
         <button
@@ -51,7 +51,7 @@ export function StickySearch({ value, onChange, className }: Props) {
             setIsOpen(true);
             setTimeout(() => inputRef.current?.focus(), 50);
           }}
-          className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="-mr-2 flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Search className="size-4" />
         </button>
@@ -59,11 +59,11 @@ export function StickySearch({ value, onChange, className }: Props) {
 
       <div
         className={cn(
-          "flex items-center gap-1.5 overflow-hidden rounded-md border border-border bg-background px-2.5 py-1 text-xs transition-all duration-200 ease-in-out",
-          isOpen ? "w-44 md:w-60 opacity-100" : "w-0 p-0 opacity-0 border-transparent",
+          "flex w-0 items-center justify-start gap-1 overflow-hidden rounded-md border border-transparent opacity-0 transition-[width] ease-linear",
+          isOpen && "w-[7.5rem] border-border px-2.5 py-1.5 opacity-100 md:w-64",
         )}
       >
-        <Search className="size-3.5 shrink-0 text-muted-foreground" />
+        <Search className="size-3.5 shrink-0" />
         <input
           ref={inputRef}
           type="text"
@@ -71,7 +71,7 @@ export function StickySearch({ value, onChange, className }: Props) {
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Search stickies"
-          className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+          className="w-full max-w-[234px] border-none bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         {isOpen && (
           <button
@@ -85,7 +85,7 @@ export function StickySearch({ value, onChange, className }: Props) {
             }}
             className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
           >
-            <X className="size-3" />
+            <X className="h-3 w-3" />
           </button>
         )}
       </div>
