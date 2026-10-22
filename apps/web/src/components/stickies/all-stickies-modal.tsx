@@ -84,7 +84,10 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
               isCreating={isCreating}
             />
           ) : filteredStickies.length === 0 && searchQuery.trim() !== "" ? (
-            <EmptySearchState onClearSearch={() => setSearchQuery("")} />
+            <EmptySearchState
+              onAddSticky={handleAddSticky}
+              isCreating={isCreating}
+            />
           ) : (
             <MasonryGrid itemIds={filteredStickies.map((s) => s.id)}>
               {filteredStickies.map((sticky) => (
