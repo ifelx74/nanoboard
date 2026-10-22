@@ -1,6 +1,7 @@
 import type { Editor } from "@tiptap/react";
 import { Bold, Italic, ListTodo, Palette, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Tooltip,
   TooltipContent,
@@ -92,7 +93,9 @@ export function StickyToolbar({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p className="text-xs">Bold</p>
+                  <span className="inline-flex items-center gap-1.5">
+                    Bold <Kbd>Cmd + B</Kbd>
+                  </span>
                 </TooltipContent>
               </Tooltip>
 
@@ -113,7 +116,9 @@ export function StickyToolbar({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p className="text-xs">Italic</p>
+                  <span className="inline-flex items-center gap-1.5">
+                    Italic <Kbd>Cmd + I</Kbd>
+                  </span>
                 </TooltipContent>
               </Tooltip>
 
@@ -134,7 +139,9 @@ export function StickyToolbar({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p className="text-xs">To-do list</p>
+                  <span className="inline-flex items-center gap-1.5">
+                    To-do list <Kbd>Cmd + Shift + 9</Kbd>
+                  </span>
                 </TooltipContent>
               </Tooltip>
             </div>

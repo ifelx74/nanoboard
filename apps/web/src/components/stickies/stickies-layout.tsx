@@ -148,7 +148,7 @@ export function StickiesLayout({
           capped at 150px so it reads as a thumbnail rather than a full card. */}
       <DragOverlay dropAnimation={dropAnimation}>
         {activeSticky ? (
-          <div className="origin-top-left scale-50">
+          <div className="scale-50">
             <div className="-m-2 max-h-[150px] w-[290px]">
               <StickyCard sticky={activeSticky} showToolbar={false} />
             </div>
