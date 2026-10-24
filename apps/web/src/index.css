@@ -195,11 +195,7 @@
   --chart-3: var(--color-amber-500);
   --chart-4: var(--color-purple-500);
   --chart-5: var(--color-rose-500);
-  --sidebar: color-mix(
-    in srgb,
-    var(--color-neutral-950) 95%,
-    var(--color-white)
-  );
+  --sidebar: color-mix(in srgb, var(--color-white) 4%, transparent);
   --sidebar-foreground: color-mix(
     in srgb,
     var(--color-neutral-100) 64%,
