@@ -12,17 +12,17 @@ import Layout from "../common/layout";
 import { StickySearch } from "./sticky-search";
 
 type Props = {
-  searchQuery?: string;
-  onSearchChange?: (query: string) => void;
-  onAddSticky?: () => void;
-  isCreating?: boolean;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  onAddSticky: () => void;
+  isCreating: boolean;
 };
 
-export default function StickyHeader({
-  searchQuery = "",
+export function StickyHeader({
+  searchQuery,
   onSearchChange,
   onAddSticky,
-  isCreating = false,
+  isCreating,
 }: Props) {
   return (
     <Layout.Header>
@@ -48,15 +48,11 @@ export default function StickyHeader({
         </div>
 
         <div className="flex items-center gap-2">
-          {onSearchChange && (
-            <StickySearch value={searchQuery} onChange={onSearchChange} />
-          )}
-          {onAddSticky && (
-            <Button onClick={onAddSticky} disabled={isCreating}>
-              {isCreating && <Loader2 className="size-3.5 animate-spin" />}
-              <span>Add sticky</span>
-            </Button>
-          )}
+          <StickySearch value={searchQuery} onChange={onSearchChange} />
+          <Button onClick={onAddSticky} disabled={isCreating}>
+            {isCreating && <Loader2 className="size-3.5 animate-spin" />}
+            <span>Add sticky</span>
+          </Button>
         </div>
       </div>
     </Layout.Header>

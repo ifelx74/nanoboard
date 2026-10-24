@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import Layout from "@/components/common/layout";
-import StickyHeader from "@/components/stickies/header";
+import { StickyHeader } from "@/components/stickies/header";
 import { StickiesLayout } from "@/components/stickies/stickies-layout";
-import { createSticky, getStickies } from "@/lib/db/stickies";
-import { toast } from "@/lib/toast";
+import { useCreateSticky } from "@/hooks/use-create-sticky";
+import { getStickies } from "@/lib/db/stickies";
 
 export const Route = createFileRoute("/_app/stickies")({
   component: RouteComponent,
@@ -14,27 +14,11 @@ export const Route = createFileRoute("/_app/stickies")({
 function RouteComponent() {
   const stickies = useLiveQuery(() => getStickies(), []);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+  const { isCreating, addSticky } = useCreateSticky();
 
   const handleAddSticky = async () => {
-    if (isCreating) return;
-    setIsCreating(true);
-    try {
-      await createSticky();
-      setSearchQuery("");
-      toast.success("Sticky created");
-    } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        error.message === "ALREADY_EXISTS_EMPTY"
-      ) {
-        toast.warning("There already exists a sticky with no description");
-      } else {
-        toast.error("Failed to create sticky");
-      }
-    } finally {
-      setIsCreating(false);
-    }
+    const result = await addSticky();
+    if (result.ok) setSearchQuery("");
   };
 
   return (

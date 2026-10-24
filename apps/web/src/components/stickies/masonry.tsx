@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
  */
 
 /** Cell padding, matching Plane's `p-[8px]`. */
-export const MASONRY_CELL_PADDING = 8;
+const MASONRY_CELL_PADDING = 8;
 
 export function getMasonryColumnCount(width: number | null): number {
   if (width === null) return 4;

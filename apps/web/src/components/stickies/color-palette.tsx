@@ -1,51 +1,59 @@
-import type { StickyColorKey } from "@/lib/db/schema";
+import { STICKY_COLORS, type StickyColorKey } from "@/lib/db/schema";
 
-export const STICKY_COLORS_LIST: {
-  key: StickyColorKey;
-  label: string;
-  backgroundColor: string;
-}[] = [
-  {
-    key: "gray",
+/**
+ * Display data for every color key. Typing it as a `Record` over
+ * `StickyColorKey` keeps it in lock-step with `STICKY_COLORS` in the schema:
+ * adding a key there is a compile error here until the entry exists.
+ */
+const STICKY_COLOR_RECORD: Record<
+  StickyColorKey,
+  { label: string; backgroundColor: string }
+> = {
+  gray: {
     label: "Gray",
     backgroundColor: "var(--editor-colors-gray-background)",
   },
-  {
-    key: "peach",
+  peach: {
     label: "Peach",
     backgroundColor: "var(--editor-colors-peach-background)",
   },
-  {
-    key: "pink",
+  pink: {
     label: "Pink",
     backgroundColor: "var(--editor-colors-pink-background)",
   },
-  {
-    key: "orange",
+  orange: {
     label: "Orange",
     backgroundColor: "var(--editor-colors-orange-background)",
   },
-  {
-    key: "green",
+  green: {
     label: "Green",
     backgroundColor: "var(--editor-colors-green-background)",
   },
-  {
-    key: "light-blue",
+  "light-blue": {
     label: "Light blue",
     backgroundColor: "var(--editor-colors-light-blue-background)",
   },
-  {
-    key: "dark-blue",
+  "dark-blue": {
     label: "Dark blue",
     backgroundColor: "var(--editor-colors-dark-blue-background)",
   },
-  {
-    key: "purple",
+  purple: {
     label: "Purple",
     backgroundColor: "var(--editor-colors-purple-background)",
   },
-];
+};
+
+const STICKY_COLORS_LIST = STICKY_COLORS.map((key) => ({
+  key,
+  ...STICKY_COLOR_RECORD[key],
+}));
+
+export function stickyBackgroundColor(key: StickyColorKey): string {
+  return (
+    STICKY_COLOR_RECORD[key]?.backgroundColor ??
+    STICKY_COLORS_LIST[0].backgroundColor
+  );
+}
 
 type Props = {
   selectedColor?: StickyColorKey;

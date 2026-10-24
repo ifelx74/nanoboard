@@ -8,38 +8,42 @@ export function getRandomStickyColor(): StickyColorKey {
   return STICKY_COLORS[randomIndex];
 }
 
+/** Plain-text projection of a note's HTML, for emptiness checks and search. */
+export function stickyTextContent(contentHtml?: string): string {
+  return (contentHtml ?? "").replace(/<[^>]*>/g, " ");
+}
+
 export function isStickyEmpty(content?: string): boolean {
-  if (!content) return true;
-  const stripped = content.replace(/<[^>]*>/g, "").trim();
-  return stripped === "";
+  return stickyTextContent(content).trim() === "";
 }
 
 export async function getStickies(): Promise<Sticky[]> {
   return db.stickies.orderBy("position").toArray();
 }
 
-export async function getSticky(id: string): Promise<Sticky | undefined> {
-  return db.stickies.get(id);
+/** Thrown by `createSticky` while the newest note is still empty (Plane behavior). */
+export class EmptyStickyExistsError extends Error {
+  constructor() {
+    super("An empty sticky already exists");
+    this.name = "EmptyStickyExistsError";
+  }
 }
 
-export async function createSticky(data?: Partial<Sticky>): Promise<Sticky> {
+export async function createSticky(): Promise<Sticky> {
   const stickies = await db.stickies.orderBy("position").toArray();
+  const newestSticky = stickies[0];
 
-  // If the newest sticky is empty, prevent creating another empty sticky (Plane behavior)
-  if (stickies.length > 0) {
-    const firstSticky = stickies[0];
-    if (isStickyEmpty(firstSticky.contentHtml)) {
-      throw new Error("ALREADY_EXISTS_EMPTY");
-    }
+  if (newestSticky && isStickyEmpty(newestSticky.contentHtml)) {
+    throw new EmptyStickyExistsError();
   }
 
-  const minPosition = stickies.length > 0 ? stickies[0].position : 0;
+  const minPosition = newestSticky ? newestSticky.position : 0;
   const now = Date.now();
 
   const newSticky: Sticky = {
-    id: data?.id ?? createId(),
-    contentHtml: data?.contentHtml ?? "<p></p>",
-    backgroundColor: data?.backgroundColor ?? getRandomStickyColor(),
+    id: createId(),
+    contentHtml: "<p></p>",
+    backgroundColor: getRandomStickyColor(),
     position: minPosition - 1000,
     createdAt: now,
     updatedAt: now,

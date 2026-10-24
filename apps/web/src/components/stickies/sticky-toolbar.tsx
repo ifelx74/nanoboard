@@ -7,7 +7,7 @@ import {
   Palette,
   Trash2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Kbd } from "@/components/ui/kbd";
 import {
   Tooltip,
@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useClickOutside } from "@/hooks/use-click-outside";
 import type { StickyColorKey } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
 import { ColorPalette } from "./color-palette";
@@ -73,18 +74,7 @@ export function StickyToolbar({
   const [showColorPalette, setShowColorPalette] = useState(false);
   const colorPaletteRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        colorPaletteRef.current &&
-        !colorPaletteRef.current.contains(e.target as Node)
-      ) {
-        setShowColorPalette(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  useClickOutside(colorPaletteRef, () => setShowColorPalette(false));
 
   return (
     <TooltipProvider>

@@ -1,15 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useCreateSticky } from "@/hooks/use-create-sticky";
 import Stickies from "@/icons/stickies";
 import type { Sticky } from "@/lib/db/schema";
-import { createSticky } from "@/lib/db/stickies";
-import { toast } from "@/lib/toast";
+import { stickyTextContent } from "@/lib/db/stickies";
 import { AddStickyButton } from "./add-sticky-button";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
 import { MasonryGrid, MasonryItem } from "./masonry";
@@ -24,34 +24,19 @@ type Props = {
 
 export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+  const { isCreating, addSticky } = useCreateSticky();
 
-  const filteredStickies = stickies.filter((sticky) => {
-    if (!searchQuery.trim()) return true;
+  const filteredStickies = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
-    const textContent = sticky.contentHtml.replace(/<[^>]*>/g, " ");
-    return textContent.toLowerCase().includes(query);
-  });
+    if (!query) return stickies;
+    return stickies.filter((sticky) =>
+      stickyTextContent(sticky.contentHtml).toLowerCase().includes(query),
+    );
+  }, [stickies, searchQuery]);
 
   const handleAddSticky = async () => {
-    if (isCreating) return;
-    setIsCreating(true);
-    try {
-      await createSticky();
-      setSearchQuery("");
-      toast.success("Sticky created");
-    } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        error.message === "ALREADY_EXISTS_EMPTY"
-      ) {
-        toast.warning("There already exists a sticky with no description");
-      } else {
-        toast.error("Failed to create sticky");
-      }
-    } finally {
-      setIsCreating(false);
-    }
+    const result = await addSticky();
+    if (result.ok) setSearchQuery("");
   };
 
   return (

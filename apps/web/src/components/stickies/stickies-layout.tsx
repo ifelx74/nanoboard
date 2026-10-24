@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useMemo, useState } from "react";
 import type { Sticky } from "@/lib/db/schema";
-import { reorderStickies } from "@/lib/db/stickies";
+import { reorderStickies, stickyTextContent } from "@/lib/db/stickies";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
 import { MasonryGrid } from "./masonry";
 import { SortableStickyCard } from "./sortable-sticky-card";
@@ -57,16 +57,15 @@ export function StickiesLayout({
   );
 
   const filteredStickies = useMemo(() => {
-    if (!searchQuery.trim()) return stickies;
     const query = searchQuery.toLowerCase().trim();
-    return stickies.filter((sticky) => {
-      const textContent = sticky.contentHtml.replace(/<[^>]*>/g, " ");
-      return textContent.toLowerCase().includes(query);
-    });
+    if (!query) return stickies;
+    return stickies.filter((sticky) =>
+      stickyTextContent(sticky.contentHtml).toLowerCase().includes(query),
+    );
   }, [stickies, searchQuery]);
 
   const handleDragStart = (event: DragStartEvent) => {
-    const id = event.active.id.toString();
+    const id = event.active.id;
     setActiveSticky(stickies.find((sticky) => sticky.id === id) ?? null);
   };
 

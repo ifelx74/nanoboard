@@ -9,7 +9,7 @@ import type { Sticky, StickyColorKey } from "@/lib/db/schema";
 import { deleteSticky, updateSticky } from "@/lib/db/stickies";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { STICKY_COLORS_LIST } from "./color-palette";
+import { stickyBackgroundColor } from "./color-palette";
 import { StickyDeleteDialog } from "./sticky-delete-dialog";
 import "./sticky-editor.css";
 import { StickyToolbar } from "./sticky-toolbar";
@@ -39,23 +39,31 @@ export function StickyCard({
 }: Props) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingHtmlRef = useRef<string | null>(null);
 
-  const backgroundColor =
-    STICKY_COLORS_LIST.find((c) => c.key === sticky.backgroundColor)
-      ?.backgroundColor ?? STICKY_COLORS_LIST[0].backgroundColor;
+  const backgroundColor = stickyBackgroundColor(sticky.backgroundColor);
+
+  const saveContent = useCallback(
+    async (html: string) => {
+      try {
+        await updateSticky(sticky.id, { contentHtml: html });
+      } catch (error) {
+        console.error("Failed to update sticky:", error);
+      }
+    },
+    [sticky.id],
+  );
 
   const debouncedSave = useCallback(
     (html: string) => {
+      pendingHtmlRef.current = html;
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(async () => {
-        try {
-          await updateSticky(sticky.id, { contentHtml: html });
-        } catch (error) {
-          console.error("Failed to update sticky:", error);
-        }
+      saveTimeoutRef.current = setTimeout(() => {
+        pendingHtmlRef.current = null;
+        void saveContent(html);
       }, 500);
     },
-    [sticky.id],
+    [saveContent],
   );
 
   const editor = useEditor({
@@ -85,13 +93,15 @@ export function StickyCard({
     }
   }, [editor, sticky.contentHtml]);
 
+  // Flush a pending save on unmount instead of dropping it — e.g. when the
+  // search filter removes the card mid-debounce.
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      const pendingHtml = pendingHtmlRef.current;
+      if (pendingHtml !== null) void saveContent(pendingHtml);
     };
-  }, []);
+  }, [saveContent]);
 
   const handleColorChange = async (color: StickyColorKey) => {
     try {

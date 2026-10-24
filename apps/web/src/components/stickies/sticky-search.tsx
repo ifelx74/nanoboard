@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useClickOutside } from "@/hooks/use-click-outside";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -13,20 +14,11 @@ export function StickySearch({ value, onChange, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        if (value.trim() === "") {
-          setIsOpen(false);
-        }
-      }
+  useClickOutside(containerRef, () => {
+    if (value.trim() === "") {
+      setIsOpen(false);
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [value]);
+  });
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
@@ -49,7 +41,7 @@ export function StickySearch({ value, onChange, className }: Props) {
           aria-label="Search stickies"
           onClick={() => {
             setIsOpen(true);
-            setTimeout(() => inputRef.current?.focus(), 50);
+            inputRef.current?.focus({ preventScroll: true });
           }}
           className="-mr-2 flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >

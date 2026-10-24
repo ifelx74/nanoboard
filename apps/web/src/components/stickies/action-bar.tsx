@@ -1,7 +1,7 @@
 import { useLocation } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Plus, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -13,17 +13,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useClickOutside } from "@/hooks/use-click-outside";
+import { useCreateSticky } from "@/hooks/use-create-sticky";
 import Stickies from "@/icons/stickies";
-import { createSticky, getStickies } from "@/lib/db/stickies";
-import { toast } from "@/lib/toast";
+import { getStickies } from "@/lib/db/stickies";
 import { cn } from "@/lib/utils";
 import { AllStickiesModal } from "./all-stickies-modal";
-import { STICKY_COLORS_LIST } from "./color-palette";
+import { stickyBackgroundColor } from "./color-palette";
 import { StickyCard } from "./sticky-card";
 
 export function StickyActionBar() {
   const location = useLocation();
   const stickies = useLiveQuery(() => getStickies(), []);
+  const { addSticky } = useCreateSticky();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [activePopupStickyId, setActivePopupStickyId] = useState<string | null>(
@@ -40,45 +42,24 @@ export function StickyActionBar() {
   const recentSticky = stickies && stickies.length > 0 ? stickies[0] : null;
 
   const recentStickyBackgroundColor = recentSticky
-    ? STICKY_COLORS_LIST.find((c) => c.key === recentSticky.backgroundColor)
-        ?.backgroundColor ?? STICKY_COLORS_LIST[0].backgroundColor
+    ? stickyBackgroundColor(recentSticky.backgroundColor)
     : undefined;
 
-  // Close when clicking outside
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setIsExpanded(false);
-        setActivePopupStickyId(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  useClickOutside(containerRef, () => {
+    setIsExpanded(false);
+    setActivePopupStickyId(null);
+  });
 
   if (isStickiesPage) return null;
 
   const handleQuickAdd = async () => {
-    try {
-      const newSticky = await createSticky();
-      setActivePopupStickyId(newSticky.id);
+    const result = await addSticky();
+    if (result.ok) {
+      setActivePopupStickyId(result.sticky.id);
       setIsExpanded(false);
-    } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        error.message === "ALREADY_EXISTS_EMPTY"
-      ) {
-        toast.warning("There already exists a sticky with no description");
-        if (recentSticky) {
-          setActivePopupStickyId(recentSticky.id);
-          setIsExpanded(false);
-        }
-      } else {
-        toast.error("Failed to create sticky");
-      }
+    } else if (result.reason === "empty-exists" && recentSticky) {
+      setActivePopupStickyId(recentSticky.id);
+      setIsExpanded(false);
     }
   };
 
