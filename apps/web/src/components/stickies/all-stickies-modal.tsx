@@ -9,7 +9,7 @@ import {
 import { useCreateSticky } from "@/hooks/use-create-sticky";
 import Stickies from "@/icons/stickies";
 import type { Sticky } from "@/lib/db/schema";
-import { stickyTextContent } from "@/lib/db/stickies";
+import { stickySearchIndex } from "@/lib/db/stickies";
 import { AddStickyButton } from "./add-sticky-button";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
 import { MasonryGrid, MasonryItem } from "./masonry";
@@ -26,13 +26,20 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const { isCreating, addSticky } = useCreateSticky();
 
+  const searchIndex = useMemo(() => stickySearchIndex(stickies), [stickies]);
+
   const filteredStickies = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return stickies;
     return stickies.filter((sticky) =>
-      stickyTextContent(sticky.contentHtml).toLowerCase().includes(query),
+      searchIndex.get(sticky.id)?.includes(query),
     );
-  }, [stickies, searchQuery]);
+  }, [stickies, searchIndex, searchQuery]);
+
+  const filteredIds = useMemo(
+    () => filteredStickies.map((sticky) => sticky.id),
+    [filteredStickies],
+  );
 
   const handleAddSticky = async () => {
     const result = await addSticky();
@@ -69,7 +76,7 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
               isCreating={isCreating}
             />
           ) : (
-            <MasonryGrid itemIds={filteredStickies.map((s) => s.id)}>
+            <MasonryGrid itemIds={filteredIds}>
               {filteredStickies.map((sticky) => (
                 <MasonryItem key={sticky.id} id={sticky.id}>
                   <StickyCard sticky={sticky} />

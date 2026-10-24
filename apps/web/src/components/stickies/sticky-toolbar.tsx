@@ -76,6 +76,12 @@ export function StickyToolbar({
 
   useClickOutside(colorPaletteRef, () => setShowColorPalette(false));
 
+  // Toolbar buttons suppress their mousedown so clicking a control never
+  // pulls focus off the editor (which would exit edit mode).
+  const keepEditorFocus = (event: React.MouseEvent) => {
+    event.preventDefault();
+  };
+
   return (
     <TooltipProvider>
       <div className="flex h-full w-full items-center justify-between">
@@ -97,6 +103,7 @@ export function StickyToolbar({
               <button
                 type="button"
                 aria-label="Background color"
+                onMouseDown={keepEditorFocus}
                 onClick={() => setShowColorPalette(!showColorPalette)}
                 className="flex text-foreground/50 transition-colors hover:text-foreground focus:outline-none"
               >
@@ -120,6 +127,7 @@ export function StickyToolbar({
                         type="button"
                         disabled={!editor}
                         aria-label={action.label}
+                        onMouseDown={keepEditorFocus}
                         onClick={() => editor && action.command(editor)}
                         className={cn(
                           "grid aspect-square place-items-center rounded-xs p-0.5 text-foreground/50 transition-colors hover:text-foreground focus:outline-none",
@@ -146,12 +154,13 @@ export function StickyToolbar({
         {/* Delete */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              type="button"
-              aria-label="Delete"
-              onClick={onDelete}
-              className="my-auto text-foreground/50 transition-colors hover:text-destructive focus:outline-none"
-            >
+          <button
+            type="button"
+            aria-label="Delete"
+            onMouseDown={keepEditorFocus}
+            onClick={onDelete}
+            className="my-auto text-foreground/50 transition-colors hover:text-destructive focus:outline-none"
+          >
               <Trash2 className="size-4" />
             </button>
           </TooltipTrigger>

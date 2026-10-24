@@ -1,18 +1,32 @@
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { GripVertical, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { Sticky, StickyColorKey } from "@/lib/db/schema";
-import { deleteSticky, updateSticky } from "@/lib/db/stickies";
+import { deleteSticky, isStickyEmpty, updateSticky } from "@/lib/db/stickies";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { stickyBackgroundColor } from "./color-palette";
 import { StickyDeleteDialog } from "./sticky-delete-dialog";
 import "./sticky-editor.css";
 import { StickyToolbar } from "./sticky-toolbar";
+
+/**
+ * Static markup for an empty note; rendered as a placeholder by the
+ * `.is-editor-empty` rule in sticky-editor.css.
+ */
+const EMPTY_NOTE_HTML =
+  '<p class="is-editor-empty" data-placeholder="Click to type here"></p>';
 
 type Props = {
   sticky: Sticky;
@@ -28,7 +42,12 @@ type Props = {
   maxEditorHeight?: number;
 };
 
-export function StickyCard({
+/**
+ * A note renders its HTML statically and mounts a tiptap editor only while
+ * focused, so a board of N notes keeps at most one ProseMirror instance
+ * alive (the drag preview and unfocused cards never pay for one).
+ */
+export const StickyCard = memo(function StickyCard({
   sticky,
   onClose,
   className,
@@ -37,71 +56,23 @@ export function StickyCard({
   isDragging = false,
   maxEditorHeight = 540,
 }: Props) {
+  const [isEditing, setIsEditing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingHtmlRef = useRef<string | null>(null);
+  const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
 
   const backgroundColor = stickyBackgroundColor(sticky.backgroundColor);
 
-  const saveContent = useCallback(
-    async (html: string) => {
-      try {
-        await updateSticky(sticky.id, { contentHtml: html });
-      } catch (error) {
-        console.error("Failed to update sticky:", error);
-      }
-    },
-    [sticky.id],
-  );
+  const handleEditStart = useCallback(() => {
+    setIsEditing(true);
+  }, []);
 
-  const debouncedSave = useCallback(
-    (html: string) => {
-      pendingHtmlRef.current = html;
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(() => {
-        pendingHtmlRef.current = null;
-        void saveContent(html);
-      }, 500);
-    },
-    [saveContent],
-  );
+  const handleEditEnd = useCallback(() => {
+    setIsEditing(false);
+  }, []);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: false,
-        codeBlock: false,
-        blockquote: false,
-        horizontalRule: false,
-      }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      Placeholder.configure({
-        placeholder: "Click to type here",
-      }),
-    ],
-    content: sticky.contentHtml,
-    onUpdate: ({ editor }) => {
-      debouncedSave(editor.getHTML());
-    },
-  });
-
-  // Keep content in sync if updated externally while not focused
-  useEffect(() => {
-    if (editor && !editor.isFocused && sticky.contentHtml !== editor.getHTML()) {
-      editor.commands.setContent(sticky.contentHtml, { emitUpdate: false });
-    }
-  }, [editor, sticky.contentHtml]);
-
-  // Flush a pending save on unmount instead of dropping it — e.g. when the
-  // search filter removes the card mid-debounce.
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      const pendingHtml = pendingHtmlRef.current;
-      if (pendingHtml !== null) void saveContent(pendingHtml);
-    };
-  }, [saveContent]);
+  const handleEditorReady = useCallback((editor: Editor | null) => {
+    setActiveEditor(editor);
+  }, []);
 
   const handleColorChange = async (color: StickyColorKey) => {
     try {
@@ -169,17 +140,35 @@ export function StickyCard({
           </button>
         )}
 
-        {/* TipTap editor body */}
+        {/* Note body: static HTML until focused, then a live editor. */}
         <div className="nb-sticky-editor flex-1">
-          <EditorContent editor={editor} />
+          {isEditing ? (
+            <StickyEditor
+              sticky={sticky}
+              onEditorReady={handleEditorReady}
+              onEditEnd={handleEditEnd}
+            />
+          ) : (
+            <div
+              className="tiptap nb-sticky-static"
+              tabIndex={0}
+              onFocus={handleEditStart}
+              dangerouslySetInnerHTML={{
+                __html: isStickyEmpty(sticky.contentHtml)
+                  ? EMPTY_NOTE_HTML
+                  : sticky.contentHtml,
+              }}
+            />
+          )}
         </div>
 
         {/* Plane keeps the formatting toolbar permanently visible at the
-            bottom of every note. */}
+            bottom of every note; formatting actions wait for a focused
+            editor, while color and delete work on the static card. */}
         {showToolbar && (
           <div className="h-15 origin-top px-4">
             <StickyToolbar
-              editor={editor}
+              editor={activeEditor}
               currentColor={sticky.backgroundColor}
               onColorChange={handleColorChange}
               onDelete={() => setDeleteDialogOpen(true)}
@@ -189,4 +178,124 @@ export function StickyCard({
       </div>
     </>
   );
+});
+
+type StickyEditorProps = {
+  sticky: Sticky;
+  onEditorReady: (editor: Editor | null) => void;
+  onEditEnd: () => void;
+};
+
+/** Editing surface for a focused note; owns the debounced-save lifecycle. */
+function StickyEditor({ sticky, onEditorReady, onEditEnd }: StickyEditorProps) {
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingHtmlRef = useRef<string | null>(null);
+  const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveContent = useCallback(
+    async (html: string) => {
+      try {
+        await updateSticky(sticky.id, { contentHtml: html });
+      } catch (error) {
+        console.error("Failed to update sticky:", error);
+      }
+    },
+    [sticky.id],
+  );
+
+  const flushSave = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    const pendingHtml = pendingHtmlRef.current;
+    pendingHtmlRef.current = null;
+    if (pendingHtml !== null) void saveContent(pendingHtml);
+  }, [saveContent]);
+
+  const debouncedSave = useCallback(
+    (html: string) => {
+      pendingHtmlRef.current = html;
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        saveTimeoutRef.current = null;
+        pendingHtmlRef.current = null;
+        void saveContent(html);
+      }, 500);
+    },
+    [saveContent],
+  );
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: false,
+        codeBlock: false,
+        blockquote: false,
+        horizontalRule: false,
+      }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Placeholder.configure({
+        placeholder: "Click to type here",
+      }),
+    ],
+    content: sticky.contentHtml,
+    autofocus: "end",
+    onUpdate: ({ editor }) => {
+      debouncedSave(editor.getHTML());
+    },
+    // Toolbar controls suppress their own mousedown, so focus leaving the
+    // editor means the user clicked elsewhere: flush and drop back to the
+    // static view. Deferred so a control that refocuses wins the race.
+    onBlur: ({ editor }) => {
+      if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
+      exitTimeoutRef.current = setTimeout(() => {
+        exitTimeoutRef.current = null;
+        if (!editor.isDestroyed && !editor.isFocused) {
+          flushSave();
+          onEditEnd();
+        }
+      }, 150);
+    },
+    onFocus: () => {
+      if (exitTimeoutRef.current) {
+        clearTimeout(exitTimeoutRef.current);
+        exitTimeoutRef.current = null;
+      }
+    },
+    editorProps: {
+      handleKeyDown: (_, event) => {
+        if (event.key === "Escape") {
+          flushSave();
+          onEditEnd();
+          return true;
+        }
+        return false;
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (editor) onEditorReady(editor);
+    return () => onEditorReady(null);
+  }, [editor, onEditorReady]);
+
+  // Keep content in sync if updated externally while not focused
+  useEffect(() => {
+    if (editor && !editor.isFocused && sticky.contentHtml !== editor.getHTML()) {
+      editor.commands.setContent(sticky.contentHtml, { emitUpdate: false });
+    }
+  }, [editor, sticky.contentHtml]);
+
+  // Flush a pending save on unmount instead of dropping it — e.g. when the
+  // search filter removes the card mid-debounce.
+  useEffect(() => {
+    return () => {
+      if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
+      flushSave();
+    };
+  }, [flushSave]);
+
+  return <EditorContent editor={editor} />;
 }

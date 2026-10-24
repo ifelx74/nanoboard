@@ -55,3 +55,9 @@
   border-radius: 2px;
   accent-color: currentColor;
 }
+
+/* Static (non-editing) note views are read-only: interactive elements don't
+   respond until the note is focused and the live editor takes over. */
+.nb-sticky-static input {
+  pointer-events: none;
+}

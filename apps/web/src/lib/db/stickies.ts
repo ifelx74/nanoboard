@@ -9,8 +9,21 @@ export function getRandomStickyColor(): StickyColorKey {
 }
 
 /** Plain-text projection of a note's HTML, for emptiness checks and search. */
-export function stickyTextContent(contentHtml?: string): string {
+function stickyTextContent(contentHtml?: string): string {
   return (contentHtml ?? "").replace(/<[^>]*>/g, " ");
+}
+
+/**
+ * Lowercase plain text per sticky id. Memoize on the `stickies` array so a
+ * search keystroke never re-extracts HTML — only data changes rebuild it.
+ */
+export function stickySearchIndex(stickies: Sticky[]): Map<string, string> {
+  return new Map(
+    stickies.map((sticky) => [
+      sticky.id,
+      stickyTextContent(sticky.contentHtml).toLowerCase(),
+    ]),
+  );
 }
 
 export function isStickyEmpty(content?: string): boolean {
@@ -89,10 +102,35 @@ export async function reorderStickies(
     if (targetIndex === -1) return;
     stickies.splice(targetIndex, 0, moved);
 
-    // Re-index positions uniformly
-    const updates = stickies.map((s, index) =>
-      db.stickies.update(s.id, { position: index * 1000 }),
+    // Re-seat only the dragged note between its new neighbours instead of
+    // rewriting every row. Once repeated halving leaves no gap between the
+    // neighbours, fall back to a uniform re-index.
+    const before = stickies[targetIndex - 1];
+    const after = stickies[targetIndex + 1];
+    if (before && after && after.position - before.position >= 1) {
+      await db.stickies.update(activeId, {
+        position: (before.position + after.position) / 2,
+      });
+      return;
+    }
+    if (!before && after) {
+      await db.stickies.update(activeId, {
+        position: after.position - 1000,
+      });
+      return;
+    }
+    if (before && !after) {
+      await db.stickies.update(activeId, {
+        position: before.position + 1000,
+      });
+      return;
+    }
+    if (!before && !after) return;
+
+    await Promise.all(
+      stickies.map((sticky, index) =>
+        db.stickies.update(sticky.id, { position: index * 1000 }),
+      ),
     );
-    await Promise.all(updates);
   });
 }

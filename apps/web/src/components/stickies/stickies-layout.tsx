@@ -4,6 +4,8 @@ import {
   DragOverlay,
   type DragEndEvent,
   type DragStartEvent,
+  type DraggableMeasuring,
+  type MeasuringConfiguration,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
@@ -17,7 +19,10 @@ import {
 } from "@dnd-kit/sortable";
 import { useMemo, useState } from "react";
 import type { Sticky } from "@/lib/db/schema";
-import { reorderStickies, stickyTextContent } from "@/lib/db/stickies";
+import {
+  reorderStickies,
+  stickySearchIndex,
+} from "@/lib/db/stickies";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
 import { MasonryGrid } from "./masonry";
 import { SortableStickyCard } from "./sortable-sticky-card";
@@ -28,6 +33,22 @@ type Props = {
   searchQuery?: string;
   onAddSticky: () => void;
   isCreating?: boolean;
+};
+
+// dnd-kit measures drag sources and droppables "transform-agnostically" by
+// default: it cancels the element's own CSS transform before reporting the
+// rect. Masonry positions cells via transform, so that default measures every
+// cell at the grid origin — the drag preview would jump to the first column
+// and collision rects would all stack up. Measure the real on-screen rects.
+const measureViewportRect: DraggableMeasuring["measure"] = (element) => {
+  const { top, left, right, bottom, width, height } =
+    element.getBoundingClientRect();
+  return { top, left, right, bottom, width, height };
+};
+
+const measuring: MeasuringConfiguration = {
+  draggable: { measure: measureViewportRect },
+  droppable: { measure: measureViewportRect },
 };
 
 export function StickiesLayout({
@@ -56,13 +77,22 @@ export function StickiesLayout({
     }),
   );
 
+  // Search stays live: the text index is memoized on the stickies array so
+  // each keystroke is an includes() per note, not an HTML re-extraction.
+  const searchIndex = useMemo(() => stickySearchIndex(stickies), [stickies]);
+
   const filteredStickies = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return stickies;
     return stickies.filter((sticky) =>
-      stickyTextContent(sticky.contentHtml).toLowerCase().includes(query),
+      searchIndex.get(sticky.id)?.includes(query),
     );
-  }, [stickies, searchQuery]);
+  }, [stickies, searchIndex, searchQuery]);
+
+  const filteredIds = useMemo(
+    () => filteredStickies.map((sticky) => sticky.id),
+    [filteredStickies],
+  );
 
   const handleDragStart = (event: DragStartEvent) => {
     const id = event.active.id;
@@ -101,15 +131,13 @@ export function StickiesLayout({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      measuring={measuring}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <SortableContext
-        items={filteredStickies.map((s) => s.id)}
-        strategy={rectSortingStrategy}
-      >
-        <MasonryGrid itemIds={filteredStickies.map((s) => s.id)}>
+      <SortableContext items={filteredIds} strategy={rectSortingStrategy}>
+        <MasonryGrid itemIds={filteredIds}>
           {filteredStickies.map((sticky) => (
             <SortableStickyCard
               key={sticky.id}

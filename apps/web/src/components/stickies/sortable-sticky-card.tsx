@@ -1,11 +1,14 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { memo } from "react";
 import type { Sticky } from "@/lib/db/schema";
 import { MasonryItem } from "./masonry";
 import { StickyCard } from "./sticky-card";
 import { cn } from "@/lib/utils";
 
-export function SortableStickyCard({
+// Memoized so a search keystroke (which re-renders the layout) skips every
+// card whose sticky is unchanged.
+export const SortableStickyCard = memo(function SortableStickyCard({
   sticky,
   maxEditorHeight,
 }: {
@@ -42,4 +45,4 @@ export function SortableStickyCard({
       />
     </MasonryItem>
   );
-}
+});

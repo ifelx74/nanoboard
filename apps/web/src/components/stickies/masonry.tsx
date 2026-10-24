@@ -197,20 +197,34 @@ export function MasonryItem({
     [itemRef],
   );
 
+  // The masonry offset rides on `transform` (compositor-friendly — animating
+  // left/top would trigger layout for every card on each reorder frame) and
+  // composes with any drag transform passed in through `style`.
+  const masonryTransform = position
+    ? `translate3d(${position.left}px, ${position.top}px, 0)`
+    : undefined;
+  const dragTransform =
+    typeof style?.transform === "string" ? style.transform : undefined;
+  const transform =
+    dragTransform !== undefined
+      ? `${masonryTransform ?? ""} ${dragTransform}`.trim()
+      : masonryTransform;
+
   return (
     <div
       ref={setRef}
       className={cn(
-        "box-border flex flex-col transition-[left,top] duration-300 ease-out",
+        "box-border flex flex-col transition-transform duration-300 ease-out",
         className,
       )}
       style={{
         position: "absolute",
-        left: position?.left ?? 0,
-        top: position?.top ?? 0,
+        top: 0,
+        left: 0,
         width: position?.width ?? 0,
         padding: MASONRY_CELL_PADDING,
         ...style,
+        transform,
       }}
     >
       {children}

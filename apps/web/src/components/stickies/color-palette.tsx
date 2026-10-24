@@ -74,6 +74,9 @@ export function ColorPalette({ selectedColor, onSelectColor }: Props) {
               key={color.key}
               type="button"
               aria-label={color.label}
+              // Suppress mousedown so picking a swatch keeps the editor
+              // focused (the palette opens from the note's toolbar).
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => onSelectColor(color.key)}
               className={`h-6 w-6 cursor-pointer rounded-md transition-all hover:ring-2 hover:ring-primary focus:ring-2 focus:ring-primary focus:outline-none ${
                 isSelected ? "ring-2 ring-primary" : ""

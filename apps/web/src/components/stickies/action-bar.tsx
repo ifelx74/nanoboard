@@ -1,7 +1,7 @@
 import { useLocation } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Plus, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -18,9 +18,19 @@ import { useCreateSticky } from "@/hooks/use-create-sticky";
 import Stickies from "@/icons/stickies";
 import { getStickies } from "@/lib/db/stickies";
 import { cn } from "@/lib/utils";
-import { AllStickiesModal } from "./all-stickies-modal";
 import { stickyBackgroundColor } from "./color-palette";
-import { StickyCard } from "./sticky-card";
+
+// The action bar renders on every authenticated page, so the card and modal
+// (which pull in tiptap/ProseMirror) load lazily on first use instead of
+// shipping with the app shell.
+const StickyCard = lazy(() =>
+  import("./sticky-card").then((m) => ({ default: m.StickyCard })),
+);
+const AllStickiesModal = lazy(() =>
+  import("./all-stickies-modal").then((m) => ({
+    default: m.AllStickiesModal,
+  })),
+);
 
 export function StickyActionBar() {
   const location = useLocation();
@@ -32,6 +42,9 @@ export function StickyActionBar() {
     null,
   );
   const [allStickiesOpen, setAllStickiesOpen] = useState(false);
+  // Latched on first open so the lazy modal chunk loads on demand but the
+  // dialog then stays mounted (keeping its open/close animations).
+  const [hasOpenedModal, setHasOpenedModal] = useState(false);
   const [recentPreviewOpen, setRecentPreviewOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,11 +89,13 @@ export function StickyActionBar() {
         {/* Floating Quick Sticky Note Popup matching Plane's w-[290px] */}
         {activePopupSticky && (
           <div className="absolute right-0 bottom-14 z-50 mb-2 w-72.5 animate-in fade-in zoom-in-95 duration-200">
-            <StickyCard
-              sticky={activePopupSticky}
-              onClose={() => setActivePopupStickyId(null)}
-              className="shadow-xl"
-            />
+            <Suspense fallback={null}>
+              <StickyCard
+                sticky={activePopupSticky}
+                onClose={() => setActivePopupStickyId(null)}
+                className="shadow-xl"
+              />
+            </Suspense>
           </div>
         )}
 
@@ -101,6 +116,7 @@ export function StickyActionBar() {
                   type="button"
                   aria-label="All stickies"
                   onClick={() => {
+                    setHasOpenedModal(true);
                     setAllStickiesOpen(true);
                     setIsExpanded(false);
                   }}
@@ -208,11 +224,15 @@ export function StickyActionBar() {
       </div>
 
       {/* All Stickies Modal */}
-      <AllStickiesModal
-        open={allStickiesOpen}
-        onOpenChange={setAllStickiesOpen}
-        stickies={stickies ?? []}
-      />
+      {hasOpenedModal && (
+        <Suspense fallback={null}>
+          <AllStickiesModal
+            open={allStickiesOpen}
+            onOpenChange={setAllStickiesOpen}
+            stickies={stickies ?? []}
+          />
+        </Suspense>
+      )}
     </>
   );
 }
