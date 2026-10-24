@@ -76,9 +76,7 @@ export function StickyActionBar() {
     }
   };
 
-  const activePopupSticky = stickies?.find(
-    (s) => s.id === activePopupStickyId,
-  );
+  const activePopupSticky = stickies?.find((s) => s.id === activePopupStickyId);
 
   return (
     <>
@@ -100,108 +98,112 @@ export function StickyActionBar() {
         )}
 
         <TooltipProvider>
-          {/* Expanded Action Menu */}
           <div
             className={cn(
-              "mb-2 flex origin-bottom flex-col gap-2 transition-all duration-300 ease-in-out",
+              "grid transition-[grid-template-rows,margin,opacity] duration-300 ease-in-out",
               isExpanded
-                ? "scale-y-100 opacity-100"
-                : "pointer-events-none h-0 scale-y-0 opacity-0",
+                ? "mb-2 grid-rows-[1fr] opacity-100"
+                : "pointer-events-none grid-rows-[0fr] opacity-0",
             )}
           >
-            {/* All stickies button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="All stickies"
-                  onClick={() => {
-                    setHasOpenedModal(true);
-                    setAllStickiesOpen(true);
-                    setIsExpanded(false);
-                  }}
-                  className="flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus:outline-none"
-                >
-                  <Stickies className="size-4 shrink-0" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p className="text-xs">All stickies</p>
-              </TooltipContent>
-            </Tooltip>
+            <div
+              className={cn(
+                "flex origin-bottom flex-col gap-2 overflow-hidden transition-transform duration-300 ease-in-out min-h-0 *:shrink-0",
+                isExpanded ? "scale-y-100" : "scale-y-0",
+              )}
+            >
+              {/* All stickies button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="All stickies"
+                    onClick={() => {
+                      setHasOpenedModal(true);
+                      setAllStickiesOpen(true);
+                      setIsExpanded(false);
+                    }}
+                    className="flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus:outline-none"
+                  >
+                    <Stickies className="size-4 shrink-0" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">All stickies</p>
+                </TooltipContent>
+              </Tooltip>
 
-            {/* Recent sticky button (with preview popover) */}
-            {recentSticky && (
-              <Popover
-                open={recentPreviewOpen && isExpanded}
-                onOpenChange={setRecentPreviewOpen}
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Recent sticky"
-                        onMouseEnter={() => setRecentPreviewOpen(true)}
-                        onMouseLeave={() => setRecentPreviewOpen(false)}
-                        onClick={() => {
-                          setActivePopupStickyId(recentSticky.id);
-                          setIsExpanded(false);
-                        }}
-                        className="flex size-10 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-colors hover:bg-muted focus:outline-none"
-                      >
-                        <div
-                          className="size-3.5 rounded-xs"
-                          style={{
-                            backgroundColor: recentStickyBackgroundColor,
+              {/* Recent sticky button (with preview popover) */}
+              {recentSticky && (
+                <Popover
+                  open={recentPreviewOpen && isExpanded}
+                  onOpenChange={setRecentPreviewOpen}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Recent sticky"
+                          onMouseEnter={() => setRecentPreviewOpen(true)}
+                          onMouseLeave={() => setRecentPreviewOpen(false)}
+                          onClick={() => {
+                            setActivePopupStickyId(recentSticky.id);
+                            setIsExpanded(false);
                           }}
-                        />
-                      </button>
-                    </PopoverTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent side="left">
-                    <p className="text-xs">Recent sticky</p>
-                  </TooltipContent>
-                </Tooltip>
+                          className="flex size-10 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-colors hover:bg-muted focus:outline-none"
+                        >
+                          <div
+                            className="size-3.5 rounded-xs"
+                            style={{
+                              backgroundColor: recentStickyBackgroundColor,
+                            }}
+                          />
+                        </button>
+                      </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      <p className="text-xs">Recent sticky</p>
+                    </TooltipContent>
+                  </Tooltip>
 
-                <PopoverContent
-                  side="left"
-                  align="center"
-                  className="w-64 overflow-hidden p-0 shadow-lg pointer-events-none"
-                >
-                  <div className="relative max-h-35 overflow-hidden p-3 text-xs">
-                    <div
-                      className="font-medium line-clamp-4"
-                      dangerouslySetInnerHTML={{
-                        __html:
-                          recentSticky.contentHtml ||
-                          "<p class='italic text-muted-foreground'>Empty sticky note</p>",
-                      }}
-                    />
-                    <div
-                      className="absolute inset-0 bg-linear-to-t from-background/90 via-transparent to-transparent pointer-events-none"
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
+                  <PopoverContent
+                    side="left"
+                    align="center"
+                    className="w-64 overflow-hidden p-0 shadow-lg pointer-events-none"
+                  >
+                    <div className="relative max-h-35 overflow-hidden p-3 text-xs">
+                      <div
+                        className="font-medium line-clamp-4"
+                        dangerouslySetInnerHTML={{
+                          __html:
+                            recentSticky.contentHtml ||
+                            "<p class='italic text-muted-foreground'>Empty sticky note</p>",
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-linear-to-t from-background/90 via-transparent to-transparent pointer-events-none" />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
 
-            {/* Add sticky button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Add sticky"
-                  onClick={handleQuickAdd}
-                  className="flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus:outline-none"
-                >
-                  <Plus className="size-4.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p className="text-xs">Add sticky</p>
-              </TooltipContent>
-            </Tooltip>
+              {/* Add sticky button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Add sticky"
+                    onClick={handleQuickAdd}
+                    className="flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus:outline-none"
+                  >
+                    <Plus className="size-4.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">Add sticky</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
 
           {/* Main FAB Toggle Button */}
