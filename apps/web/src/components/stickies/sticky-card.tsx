@@ -123,7 +123,6 @@ export function StickyCard({
       <div
         className={cn(
           "group/sticky relative flex h-fit w-full flex-col overflow-y-scroll scrollbar-none rounded-sm",
-          isDragging && "opacity-50",
           className,
         )}
         style={

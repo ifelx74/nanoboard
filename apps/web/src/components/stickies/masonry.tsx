@@ -115,7 +115,8 @@ export function MasonryGrid({
     for (const id of itemIds) {
       let column = 0;
       for (let candidate = 1; candidate < columnCount; candidate += 1) {
-        if (columnHeights[candidate] < columnHeights[column]) column = candidate;
+        if (columnHeights[candidate] < columnHeights[column])
+          column = candidate;
       }
       const top = columnHeights[column];
       positions.set(id, {

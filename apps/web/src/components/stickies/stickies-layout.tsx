@@ -1,11 +1,9 @@
 import {
   closestCenter,
-  defaultDropAnimationSideEffects,
   DndContext,
   DragOverlay,
   type DragEndEvent,
   type DragStartEvent,
-  type DropAnimation,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
@@ -32,25 +30,14 @@ type Props = {
   isCreating?: boolean;
 };
 
-const dropAnimation: DropAnimation = {
-  sideEffects: defaultDropAnimationSideEffects({
-    styles: {
-      active: {
-        opacity: "0.4",
-      },
-    },
-  }),
-  duration: 250,
-  easing: "cubic-bezier(0.23, 1, 0.32, 1)",
-};
-
 export function StickiesLayout({
   stickies,
   searchQuery = "",
   onAddSticky,
   isCreating = false,
 }: Props) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // Plane renders the preview from a snapshot taken at drag start.
+  const [activeSticky, setActiveSticky] = useState<Sticky | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -78,18 +65,14 @@ export function StickiesLayout({
     });
   }, [stickies, searchQuery]);
 
-  const activeSticky = useMemo(
-    () => (activeId ? stickies.find((s) => s.id === activeId) : null),
-    [activeId, stickies],
-  );
-
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id.toString());
+    const id = event.active.id.toString();
+    setActiveSticky(stickies.find((sticky) => sticky.id === id) ?? null);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
+    setActiveSticky(null);
     if (!over || active.id === over.id) return;
 
     try {
@@ -100,7 +83,7 @@ export function StickiesLayout({
   };
 
   const handleDragCancel = () => {
-    setActiveId(null);
+    setActiveSticky(null);
   };
 
   if (stickies.length === 0) {
@@ -138,14 +121,13 @@ export function StickiesLayout({
         </MasonryGrid>
       </SortableContext>
 
-      {/* Plane's miniature drag preview: the note is scaled down to 50% and
-          capped at 150px so it reads as a thumbnail rather than a full card. */}
-      <DragOverlay dropAnimation={dropAnimation}>
+      {/* Plane's drag preview is a full-size snapshot of the note rendered
+          through the browser's native drag-image API. dnd-kit renders the
+          overlay directly, so painting the card at full size reproduces it. */}
+      <DragOverlay dropAnimation={null}>
         {activeSticky ? (
-          <div className="scale-50">
-            <div className="-m-2 max-h-[150px] w-[290px]">
-              <StickyCard sticky={activeSticky} showToolbar={false} />
-            </div>
+          <div className="m-2">
+            <StickyCard sticky={activeSticky} showToolbar={false} />
           </div>
         ) : null}
       </DragOverlay>

@@ -1,9 +1,9 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Sticky } from "@/lib/db/schema";
-import { cn } from "@/lib/utils";
 import { MasonryItem } from "./masonry";
 import { StickyCard } from "./sticky-card";
+import { cn } from "@/lib/utils";
 
 export function SortableStickyCard({
   sticky,
