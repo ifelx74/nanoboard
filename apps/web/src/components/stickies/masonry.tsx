@@ -30,16 +30,13 @@ import { cn } from "@/lib/utils";
 /** Cell padding, matching Plane's `p-[8px]`. */
 export const MASONRY_CELL_PADDING = 8;
 
-/**
- * Plane's column breakpoints, measured against the container width:
- * <640 → 2, <850 → 3, <1024 → 4, <1280 → 5, anything wider → 6.
- */
 export function getMasonryColumnCount(width: number | null): number {
   if (width === null) return 4;
-  if (width < 640) return 2;
-  if (width < 850) return 3;
-  if (width < 1024) return 4;
-  if (width < 1280) return 5;
+  if (width < 480) return 1;
+  if (width < 850) return 2;
+  if (width < 1024) return 3;
+  if (width < 1280) return 4;
+  if (width < 1536) return 5;
   return 6;
 }
 
