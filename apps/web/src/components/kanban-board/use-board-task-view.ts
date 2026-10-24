@@ -85,7 +85,10 @@ export function useBoardTaskView(projectId: string) {
     setFilters((prev) => ({
       ...prev,
       negated: negated
-        ? [...(prev.negated ?? []).filter((entry) => entry !== subject), subject]
+        ? [
+            ...(prev.negated ?? []).filter((entry) => entry !== subject),
+            subject,
+          ]
         : withoutNegation(prev.negated, subject),
     }));
 

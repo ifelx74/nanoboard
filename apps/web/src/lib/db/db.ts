@@ -37,8 +37,7 @@ export class NanoboardDB extends Dexie {
     // palette for pre-existing profiles.
     //
     // startDate needs no version bump or upgrade: it is an unindexed
-    // optional property (Kaneo likewise carries no startDate-only index),
-    // so pre-existing rows simply read it as absent.
+    // optional property, so pre-existing rows simply read it as absent.
     this.version(3)
       .stores({
         projects: "&id, slug, position",
@@ -56,7 +55,7 @@ export class NanoboardDB extends Dexie {
         );
         await tx.table("labels").bulkAdd(labels);
       });
-    // v4: per-task manual URL links (Kaneo's external_link minus the
+    // v4: per-task manual URL links (external_link minus the
     // integration columns). A new empty table needs no upgrade function.
     this.version(4).stores({
       projects: "&id, slug, position",

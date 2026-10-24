@@ -2,10 +2,7 @@ import { format } from "date-fns";
 import type { DueDateString, StartDateString } from "@/lib/db/schema";
 
 export type DueDateStatus =
-  | "overdue"
-  | "due-soon"
-  | "far-future"
-  | "no-due-date";
+  "overdue" | "due-soon" | "far-future" | "no-due-date";
 
 /** Formats a local date as a `yyyy-mm-dd` day string (no UTC shift). */
 export function toDayString(date: Date): string {
@@ -18,12 +15,12 @@ export function parseDayString(isoDate: string): Date {
   return new Date(year, (month ?? 1) - 1, day);
 }
 
-/** Kaneo's bar/overflow range label, even for single-day bars. */
+/** bar/overflow range label, even for single-day bars. */
 export function formatDayRange(start: Date, end: Date): string {
   return `${format(start, "MMM d")} – ${format(end, "MMM d")}`;
 }
 
-/** Kaneo's short drawer date: "Jan 5", no year. */
+/** short drawer date: "Jan 5", no year. */
 export function formatDateShort(date: Date): string {
   return date.toLocaleDateString(undefined, {
     month: "short",
@@ -32,7 +29,7 @@ export function formatDateShort(date: Date): string {
 }
 
 /**
- * Kaneo-style relative chip label for list rows: Today / Tomorrow /
+ * relative chip label for list rows: Today / Tomorrow /
  * Yesterday / in N days / N days ago, short date beyond 30 days out.
  */
 export function formatRelativeDueDate(due: Date, today = new Date()): string {

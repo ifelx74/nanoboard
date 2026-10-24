@@ -29,7 +29,7 @@ import { SectionHeader } from "./sections/section-header";
 import { sectionRowClass } from "./sections/section-row-class";
 
 /**
- * Kaneo's Resources section (current `ExternalLinksAccordion`), adapted:
+ * Task Resources section (current `ExternalLinksAccordion`), adapted:
  * no workspace permissions (single profile, so the add button and dialog
  * always render) and no integration icon/badge branches (every link here
  * is manual). Section header with count, host-line rows with hover-revealed

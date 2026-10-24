@@ -35,10 +35,6 @@ type Props = {
   showToolbar?: boolean;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   isDragging?: boolean;
-  /**
-   * Height budget for the note body. Plane uses 588px on the stickies page
-   * and 540px everywhere else (popovers, the "all stickies" modal).
-   */
   maxEditorHeight?: number;
 };
 
@@ -113,7 +109,6 @@ export const StickyCard = memo(function StickyCard({
           } as CSSProperties
         }
       >
-        {/* Hover drag handle, matching Plane's `StickyItemDragHandle`. */}
         {dragHandleProps && (
           <div
             {...dragHandleProps}
@@ -127,8 +122,6 @@ export const StickyCard = memo(function StickyCard({
           </div>
         )}
 
-        {/* Close button sits on its own row, the way Plane renders it in the
-            floating popover. */}
         {onClose && (
           <button
             type="button"
@@ -162,9 +155,6 @@ export const StickyCard = memo(function StickyCard({
           )}
         </div>
 
-        {/* Plane keeps the formatting toolbar permanently visible at the
-            bottom of every note; formatting actions wait for a focused
-            editor, while color and delete work on the static card. */}
         {showToolbar && (
           <div className="h-15 origin-top px-4">
             <StickyToolbar
@@ -283,7 +273,11 @@ function StickyEditor({ sticky, onEditorReady, onEditEnd }: StickyEditorProps) {
 
   // Keep content in sync if updated externally while not focused
   useEffect(() => {
-    if (editor && !editor.isFocused && sticky.contentHtml !== editor.getHTML()) {
+    if (
+      editor &&
+      !editor.isFocused &&
+      sticky.contentHtml !== editor.getHTML()
+    ) {
       editor.commands.setContent(sticky.contentHtml, { emitUpdate: false });
     }
   }, [editor, sticky.contentHtml]);

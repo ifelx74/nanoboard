@@ -84,7 +84,6 @@ export function StickyActionBar() {
         ref={containerRef}
         className="fixed right-6 bottom-6 z-40 flex flex-col items-end"
       >
-        {/* Floating Quick Sticky Note Popup matching Plane's w-[290px] */}
         {activePopupSticky && (
           <div className="absolute right-0 bottom-14 z-50 mb-2 w-72.5 animate-in fade-in zoom-in-95 duration-200">
             <Suspense fallback={null}>

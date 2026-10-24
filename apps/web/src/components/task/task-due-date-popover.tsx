@@ -53,7 +53,9 @@ export default function TaskDueDatePopover({
           selected={task.dueDate ? parseDueDate(task.dueDate) : undefined}
           onSelect={(date) => void handleDateChange(date)}
           disabled={
-            task.startDate ? { before: parseStartDate(task.startDate) } : undefined
+            task.startDate
+              ? { before: parseStartDate(task.startDate) }
+              : undefined
           }
           className="w-full bg-popover"
         />

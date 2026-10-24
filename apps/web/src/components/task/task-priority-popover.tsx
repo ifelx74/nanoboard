@@ -1,9 +1,6 @@
 import { updateTaskPriority } from "@/lib/db/queries";
 import { TASK_PRIORITIES, type Task, type TaskPriority } from "@/lib/db/schema";
-import {
-  getPriorityIcon,
-  priorityLabel,
-} from "@/lib/priority";
+import { getPriorityIcon, priorityLabel } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import TaskOptionPopover from "./task-option-popover";
 

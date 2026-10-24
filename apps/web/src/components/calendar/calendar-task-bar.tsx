@@ -47,8 +47,6 @@ export default function CalendarTaskBar({
     continuesAfter,
   } = segment;
 
-  // Kaneo always labels the bar with the full range, even for single-day
-  // bars ("Jan 5 – Jan 5").
   const range = formatDayRange(task.scheduleStart, task.scheduleEnd);
   const prefix = task.key ? `${task.key} · ${task.title}` : task.title;
 

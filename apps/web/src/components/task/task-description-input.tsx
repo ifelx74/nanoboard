@@ -12,7 +12,6 @@ import "./task-description.css";
  * extension preset as the drawer (bubble toolbar + slash menu), but
  * uncontrolled — markdown is lifted via `onMarkdown` and persisted once
  * on submit. Remount via `key` to reset (see the dialog's reset flow).
- * Borderless like Kaneo's create modal; size via `className`.
  */
 export default function TaskDescriptionInput({
   onMarkdown,

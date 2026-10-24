@@ -20,11 +20,6 @@ import { createProject, suggestProjectKey } from "@/lib/db/queries";
 import { toast } from "@/lib/toast";
 import ProjectIconPicker from "./project-icon-picker";
 
-/**
- * Kaneo's create-project modal, adapted: no workspace (single profile, so
- * the breadcrumb shows the app name), short uppercase key. Icon
- * grid, 2xl name, key box, and footer match.
- */
 export default function CreateProjectDialog({
   open,
   onClose,
@@ -103,7 +98,10 @@ export default function CreateProjectDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
+        <form
+          onSubmit={(event) => void handleSubmit(event)}
+          className="space-y-4"
+        >
           <div className="space-y-6 px-3 pt-2">
             <ProjectIconPicker
               selected={selectedIcon}

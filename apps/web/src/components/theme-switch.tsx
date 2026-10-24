@@ -41,9 +41,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
     // Keyboard activation reports 0,0 — reveal from the control's center.
     const rect = event.currentTarget.getBoundingClientRect();
     const hasPointerCoords = event.clientX !== 0 || event.clientY !== 0;
-    const x = hasPointerCoords
-      ? event.clientX
-      : rect.left + rect.width / 2;
+    const x = hasPointerCoords ? event.clientX : rect.left + rect.width / 2;
     const y = hasPointerCoords ? event.clientY : rect.top + rect.height / 2;
 
     let transition: ViewTransition | undefined;

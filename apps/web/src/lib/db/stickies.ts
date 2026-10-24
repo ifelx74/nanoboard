@@ -34,7 +34,6 @@ export async function getStickies(): Promise<Sticky[]> {
   return db.stickies.orderBy("position").toArray();
 }
 
-/** Thrown by `createSticky` while the newest note is still empty (Plane behavior). */
 export class EmptyStickyExistsError extends Error {
   constructor() {
     super("An empty sticky already exists");

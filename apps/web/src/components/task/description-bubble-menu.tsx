@@ -51,16 +51,7 @@ function MenuButton({
   );
 }
 
-/**
- * Selection bubble toolbar: block group (heading, lists, quote, code)
- * then mark group (bold → link), Kaneo's order. The link button opens
- * an inline URL field instead of Kaneo's separate bubble-link editor.
- */
-export default function DescriptionBubbleMenu({
-  editor,
-}: {
-  editor: Editor;
-}) {
+export default function DescriptionBubbleMenu({ editor }: { editor: Editor }) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [href, setHref] = useState("");
 
@@ -72,7 +63,12 @@ export default function DescriptionBubbleMenu({
   function applyLink() {
     const normalized = normalizeHref(href);
     if (normalized) {
-      editor.chain().focus().extendMarkRange("link").setLink({ href: normalized }).run();
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange("link")
+        .setLink({ href: normalized })
+        .run();
     } else {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
     }
@@ -199,7 +195,12 @@ export default function DescriptionBubbleMenu({
             <MenuButton
               label="Remove link"
               onRun={() => {
-                editor.chain().focus().extendMarkRange("link").unsetLink().run();
+                editor
+                  .chain()
+                  .focus()
+                  .extendMarkRange("link")
+                  .unsetLink()
+                  .run();
                 setLinkOpen(false);
               }}
             >

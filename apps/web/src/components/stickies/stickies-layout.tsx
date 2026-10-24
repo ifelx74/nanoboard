@@ -19,10 +19,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useMemo, useState } from "react";
 import type { Sticky } from "@/lib/db/schema";
-import {
-  reorderStickies,
-  stickySearchIndex,
-} from "@/lib/db/stickies";
+import { reorderStickies, stickySearchIndex } from "@/lib/db/stickies";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
 import { MasonryGrid } from "./masonry";
 import { SortableStickyCard } from "./sortable-sticky-card";
@@ -57,7 +54,6 @@ export function StickiesLayout({
   onAddSticky,
   isCreating = false,
 }: Props) {
-  // Plane renders the preview from a snapshot taken at drag start.
   const [activeSticky, setActiveSticky] = useState<Sticky | null>(null);
 
   const sensors = useSensors(
@@ -148,9 +144,6 @@ export function StickiesLayout({
         </MasonryGrid>
       </SortableContext>
 
-      {/* Plane's drag preview is a full-size snapshot of the note rendered
-          through the browser's native drag-image API. dnd-kit renders the
-          overlay directly, so painting the card at full size reproduces it. */}
       <DragOverlay dropAnimation={null}>
         {activeSticky ? (
           <div className="m-2">

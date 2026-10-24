@@ -1,12 +1,9 @@
 import { resolveLabelColor } from "@/lib/label-color";
 import type { Label } from "@/lib/db/schema";
 
-/** Kaneo-exact board chips: color dot + name, sorted by name. */
 export function TaskLabels({ labels }: { labels: Label[] }) {
   if (!labels.length) return null;
 
-  // Kaneo sorts with a base-sensitivity numeric collator; match it so chip
-  // order agrees with the reference app.
   const sortedLabels = [...labels].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, {
       sensitivity: "base",

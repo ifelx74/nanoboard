@@ -4,14 +4,8 @@ import type { TaskResource } from "./schema";
 
 export const RESOURCE_TITLE_MAX = 200;
 
-/** Kaneo writes `resourceType: "url"` for every manual link. */
 const MANUAL_RESOURCE_TYPE = "url";
 
-/**
- * Kaneo's Zod rule (`z.string().url()` refined to `^https?://`): only
- * http(s) links, blank rejected. Duplicates stay allowed — Kaneo has no
- * unique index on the manual route.
- */
 function assertValidResourceUrl(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) {
@@ -29,7 +23,6 @@ function assertValidResourceUrl(raw: string): string {
   return trimmed;
 }
 
-/** Kaneo's rule: blank title stores null, hard cap of 200 characters. */
 function normalizeResourceTitle(raw: string | undefined): string | null {
   const trimmed = (raw ?? "").trim();
   if (!trimmed) return null;
@@ -41,10 +34,6 @@ function normalizeResourceTitle(raw: string | undefined): string | null {
   return trimmed;
 }
 
-/**
- * Kaneo has no `ORDER BY` on this read; `(createdAt, id)` pins insertion
- * order deterministically.
- */
 export async function getTaskResources(
   taskId: string,
 ): Promise<TaskResource[]> {
@@ -82,10 +71,6 @@ export async function createTaskResource(
   return id;
 }
 
-/**
- * Mirrors Kaneo's manual-route guard: only `resourceType: "url"` rows are
- * deletable here (Kaneo 404s integration-managed links on that route).
- */
 export async function deleteTaskResource(
   taskId: string,
   id: string,

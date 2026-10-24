@@ -41,7 +41,10 @@ async function assertUniqueLabelName(
   name: string,
   exceptId?: string,
 ): Promise<void> {
-  const siblings = await db.labels.where("projectId").equals(projectId).toArray();
+  const siblings = await db.labels
+    .where("projectId")
+    .equals(projectId)
+    .toArray();
   const clash = siblings.some(
     (sibling) =>
       sibling.id !== exceptId &&
@@ -200,4 +203,3 @@ export async function detachLabel(
 ): Promise<void> {
   await db.taskLabels.delete([taskId, labelId]);
 }
-

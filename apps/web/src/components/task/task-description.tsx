@@ -14,8 +14,7 @@ const AUTOSAVE_DELAY = 700;
 type SaveStatus = "idle" | "saving" | "saved" | "failed";
 
 /**
- * Task description editor (TipTap over the Markdown `description`
- * column, Kaneo-style): bubble toolbar + slash menu, debounced autosave
+ * Task description editor: bubble toolbar + slash menu, debounced autosave
  * with status and retry. The drawer remounts per task (`key={task.id}`),
  * so hydration runs once on mount without undo pollution.
  */
@@ -35,7 +34,10 @@ export default function TaskDescription({ task }: { task: Task }) {
       onUpdate: () => {
         if (timerRef.current) clearTimeout(timerRef.current);
         setStatus("saving");
-        timerRef.current = setTimeout(() => persistRef.current?.(), AUTOSAVE_DELAY);
+        timerRef.current = setTimeout(
+          () => persistRef.current?.(),
+          AUTOSAVE_DELAY,
+        );
       },
     },
     [],

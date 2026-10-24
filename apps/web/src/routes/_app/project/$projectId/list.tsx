@@ -82,9 +82,7 @@ function TaskRow({
 }) {
   const stats = getChecklistStats(task.description);
   const dueStatus =
-    task.dueDate === undefined
-      ? null
-      : getDueDateStatus(task.dueDate, isFinal);
+    task.dueDate === undefined ? null : getDueDateStatus(task.dueDate, isFinal);
 
   return (
     <div
@@ -173,9 +171,10 @@ function RouteComponent() {
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
-  const labelsByTask = useLiveQuery(() => getProjectTaskLabels(projectId), [
-    projectId,
-  ]);
+  const labelsByTask = useLiveQuery(
+    () => getProjectTaskLabels(projectId),
+    [projectId],
+  );
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [createColumn, setCreateColumn] = useState<Column | null>(null);
 

@@ -100,11 +100,11 @@ export interface TaskResource {
   id: string;
   taskId: string;
   /**
-   * Always `"url"` here — Kaneo's manual-link row shape minus the
+   * The type of the resource, e.g. "url" for manual links.
    * integration columns, which cannot exist without a server.
    */
   resourceType: string;
-  /** Mirrors `url` for manual links; Kaneo's display fallback. */
+  /** Mirrors `url` for manual links; display fallback. */
   externalId: string;
   url: string;
   title: string | null;
@@ -122,8 +122,18 @@ export const DEFAULT_COLUMNS: {
 }[] = [
   { name: "Backlog", slug: columnSlug("backlog"), position: 0, isFinal: false },
   { name: "To Do", slug: columnSlug("to-do"), position: 1, isFinal: false },
-  { name: "In Progress", slug: columnSlug("in-progress"), position: 2, isFinal: false },
-  { name: "In Review", slug: columnSlug("in-review"), position: 3, isFinal: false },
+  {
+    name: "In Progress",
+    slug: columnSlug("in-progress"),
+    position: 2,
+    isFinal: false,
+  },
+  {
+    name: "In Review",
+    slug: columnSlug("in-review"),
+    position: 3,
+    isFinal: false,
+  },
   { name: "Completed", slug: columnSlug("done"), position: 4, isFinal: true },
 ];
 
@@ -148,4 +158,3 @@ export interface Sticky {
   createdAt: number;
   updatedAt: number;
 }
-

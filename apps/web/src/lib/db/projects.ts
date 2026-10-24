@@ -27,10 +27,7 @@ const PROJECT_SLUG_PATTERN = /^[A-Z][A-Z0-9]*$/;
 
 function assertValidProjectName(name: string): string {
   const trimmed = name.trim();
-  if (
-    trimmed.length < PROJECT_NAME_MIN ||
-    trimmed.length > PROJECT_NAME_MAX
-  ) {
+  if (trimmed.length < PROJECT_NAME_MIN || trimmed.length > PROJECT_NAME_MAX) {
     throw new Error(
       `Project name must be ${PROJECT_NAME_MIN}–${PROJECT_NAME_MAX} characters after trimming.`,
     );
@@ -78,12 +75,6 @@ async function assertUniqueProjectSlug(
   }
 }
 
-/**
- * Kaneo-style key suggestion: single word contributes its head, multiple
- * words their initials (both capped so the key fits the max). Words split
- * on spaces, underscores, and dashes, so `mobile-app` suggests `MA`;
- * specials never survive — keys are bare alphanumerics.
- */
 export function suggestProjectKey(name: string): ProjectKey {
   const words = name
     .normalize("NFKC")
@@ -128,13 +119,9 @@ export interface CreateProjectInput {
   icon?: string;
 }
 
-/**
- * Project creation write: the project row plus the 4 default columns in
- * one transaction. Position appends past the last project. An omitted slug
- * is suggested from the name and deduped; an explicit taken slug conflicts
- * (Kaneo's 409). Returns the id.
- */
-export async function createProject(input: CreateProjectInput): Promise<string> {
+export async function createProject(
+  input: CreateProjectInput,
+): Promise<string> {
   const name = assertValidProjectName(input.name);
   const icon = input.icon ?? DEFAULT_PROJECT_ICON;
   assertValidProjectIcon(icon);
@@ -144,7 +131,9 @@ export async function createProject(input: CreateProjectInput): Promise<string> 
   const suggested = input.slug === undefined;
 
   const requested =
-    input.slug === undefined ? suggestProjectKey(name) : assertValidProjectSlug(input.slug);
+    input.slug === undefined
+      ? suggestProjectKey(name)
+      : assertValidProjectSlug(input.slug);
 
   await db.transaction("rw", [db.projects, db.columns], async () => {
     if (!suggested) {
@@ -153,7 +142,9 @@ export async function createProject(input: CreateProjectInput): Promise<string> 
     const slug = suggested ? await resolveUniqueSlug(requested) : requested;
     const ordered = await db.projects.orderBy("position").toArray();
     const position =
-      ordered.length === 0 ? 0 : (ordered[ordered.length - 1]?.position ?? -1) + 1;
+      ordered.length === 0
+        ? 0
+        : (ordered[ordered.length - 1]?.position ?? -1) + 1;
 
     await db.projects.add({
       id,
@@ -215,11 +206,6 @@ export async function updateProject(
   await db.projects.update(id, next);
 }
 
-/**
- * Hard delete with the transitive closure of today's stores: label joins,
- * tasks, labels, columns, then the project. Relations and activities join
- * the closure with the v4 task-detail tables. No guards — Kaneo has none.
- */
 export async function deleteProject(id: string): Promise<void> {
   const existing = await db.projects.get(id);
   if (!existing) {
@@ -258,14 +244,19 @@ export async function reorderProjects(ids: string[]): Promise<void> {
   if (ids.length !== all.length || !ids.every((id) => allIds.has(id))) {
     throw new Error("Reorder list must cover every project exactly once.");
   }
-  const positionById = new Map(all.map((project) => [project.id, project.position]));
+  const positionById = new Map(
+    all.map((project) => [project.id, project.position]),
+  );
   const now = Date.now();
   await db.transaction("rw", db.projects, async () => {
     for (let index = 0; index < ids.length; index += 1) {
       const projectId = ids[index];
       if (projectId === undefined) continue;
       if (positionById.get(projectId) !== index) {
-        await db.projects.update(projectId, { position: index, updatedAt: now });
+        await db.projects.update(projectId, {
+          position: index,
+          updatedAt: now,
+        });
       }
     }
   });
@@ -281,13 +272,17 @@ export interface ProjectStats {
 }
 
 /** Computed read backing the sidebar progress donut; no stored aggregates. */
-export async function getProjectStats(projectId: string): Promise<ProjectStats> {
-  return (await getProjectsStats()).get(projectId) ?? {
-    totalTasks: 0,
-    doneTasks: 0,
-    completionPercentage: 0,
-    dueDate: null,
-  };
+export async function getProjectStats(
+  projectId: string,
+): Promise<ProjectStats> {
+  return (
+    (await getProjectsStats()).get(projectId) ?? {
+      totalTasks: 0,
+      doneTasks: 0,
+      completionPercentage: 0,
+      dueDate: null,
+    }
+  );
 }
 
 /**
@@ -302,7 +297,10 @@ export async function getProjectsStats(): Promise<Map<string, ProjectStats>> {
   const finalIds = new Set(
     columns.filter((column) => column.isFinal).map((column) => column.id),
   );
-  const byProject = new Map<string, { total: number; done: number; dues: DueDateString[] }>();
+  const byProject = new Map<
+    string,
+    { total: number; done: number; dues: DueDateString[] }
+  >();
   for (const task of tasks) {
     let entry = byProject.get(task.projectId);
     if (!entry) {
@@ -326,4 +324,3 @@ export async function getProjectsStats(): Promise<Map<string, ProjectStats>> {
   }
   return stats;
 }
-

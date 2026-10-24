@@ -52,7 +52,8 @@ export function StickySearch({ value, onChange, className }: Props) {
       <div
         className={cn(
           "flex w-0 items-center justify-start gap-1 overflow-hidden rounded-md border border-transparent opacity-0 transition-[width] ease-linear",
-          isOpen && "w-[7.5rem] border-border px-2.5 py-1.5 opacity-100 md:w-64",
+          isOpen &&
+            "w-[7.5rem] border-border px-2.5 py-1.5 opacity-100 md:w-64",
         )}
       >
         <Search className="size-3.5 shrink-0" />

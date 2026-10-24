@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Plane lays its stickies out with `react-masonry-component`: every note is
+ *  lays its stickies out with `react-masonry-component`: every note is
  * absolutely positioned and dropped into the currently shortest column, so the
  * top row reads left-to-right and the columns keep ragged bottoms.
  *
@@ -26,8 +26,6 @@ import { cn } from "@/lib/utils";
  * This module reproduces both without depending on the unmaintained
  * `react-masonry-component` package.
  */
-
-/** Cell padding, matching Plane's `p-[8px]`. */
 const MASONRY_CELL_PADDING = 8;
 
 export function getMasonryColumnCount(width: number | null): number {
@@ -106,8 +104,6 @@ export function MasonryGrid({
     const positions = new Map<string, MasonryPosition>();
     if (columnWidth === 0) return { positions, containerHeight: 0 };
 
-    // Plane's masonry drops each note into the shortest column, which keeps
-    // the first row reading left-to-right.
     const columnHeights = new Array<number>(columnCount).fill(0);
     for (const id of itemIds) {
       let column = 0;

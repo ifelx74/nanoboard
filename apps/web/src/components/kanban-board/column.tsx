@@ -10,10 +10,7 @@ import { Calendar, CalendarClock, CalendarX, Plus } from "lucide-react";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { getColumnIcon } from "@/lib/column";
-import {
-  getDueDateStatus,
-  parseLocalDate,
-} from "@/lib/due-date-status";
+import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
 import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
@@ -27,10 +24,13 @@ const dueDateTextColors = {
 } as const;
 
 /**
- * Kaneo card chrome: clamp-3 medium title, labels, then the priority / due
- * meta row. Finished columns step back (dimmed, meta hidden — Kaneo treats
- * finished work as settled). Assignees, numbers, context menus, and
- * integration badges stay out: unimplemented features.
+ * A single task card in the Kanban board. This component displays the task's
+ * title, labels, and priority/due date information.
+ *
+ * The card is designed to be a compact representation of a task, with a
+ * maximum of three lines of text. The priority and due date information is
+ * displayed in a separate row below the title and labels.
+ *
  */
 export function TaskCardView({
   task,
@@ -167,7 +167,13 @@ function SortableTaskCard({
       tabIndex={0}
       className="cursor-pointer touch-none outline-none"
     >
-      <TaskCardView task={task} labels={labels} isFinal={isFinal} dimmed={isDragging} taskKey={taskKey} />
+      <TaskCardView
+        task={task}
+        labels={labels}
+        isFinal={isFinal}
+        dimmed={isDragging}
+        taskKey={taskKey}
+      />
     </div>
   );
 }

@@ -85,7 +85,10 @@ export function StickyToolbar({
   return (
     <TooltipProvider>
       <div className="flex h-full w-full items-center justify-between">
-        <div className="relative my-auto flex items-center gap-4" ref={colorPaletteRef}>
+        <div
+          className="relative my-auto flex items-center gap-4"
+          ref={colorPaletteRef}
+        >
           {/* Color palette popover */}
           {showColorPalette && (
             <ColorPalette
@@ -154,13 +157,13 @@ export function StickyToolbar({
         {/* Delete */}
         <Tooltip>
           <TooltipTrigger asChild>
-          <button
-            type="button"
-            aria-label="Delete"
-            onMouseDown={keepEditorFocus}
-            onClick={onDelete}
-            className="my-auto text-foreground/50 transition-colors hover:text-destructive focus:outline-none"
-          >
+            <button
+              type="button"
+              aria-label="Delete"
+              onMouseDown={keepEditorFocus}
+              onClick={onDelete}
+              className="my-auto text-foreground/50 transition-colors hover:text-destructive focus:outline-none"
+            >
               <Trash2 className="size-4" />
             </button>
           </TooltipTrigger>

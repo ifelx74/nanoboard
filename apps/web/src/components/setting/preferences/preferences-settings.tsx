@@ -29,7 +29,6 @@ export const PreferencesSettings = () => {
           <LanguageAndTimezoneList />
         </section>
         <section className="mt-auto border-t border-border">
-          
           <InstallAppList />
         </section>
       </div>

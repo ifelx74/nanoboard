@@ -27,12 +27,6 @@ function notifyError(error: unknown, fallback: string) {
   toast.error(error instanceof Error ? error.message : fallback);
 }
 
-/**
- * Kaneo's labels popover (search, check-toggle, create-then-color), plus
- * inline pencil-rename and delete — Kaneo keeps those on a settings page
- * this app does not have. Multi-toggle: the popover stays open across
- * attaches/detaches and only closes after create; failures toast and stay.
- */
 export default function TaskLabelsPopover({
   task,
   children,
@@ -52,9 +46,10 @@ export default function TaskLabelsPopover({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const taskLabels = useLiveQuery(() => getTaskLabels(task.id), [task.id]);
-  const projectLabels = useLiveQuery(() => getProjectLabels(task.projectId), [
-    task.projectId,
-  ]);
+  const projectLabels = useLiveQuery(
+    () => getProjectLabels(task.projectId),
+    [task.projectId],
+  );
 
   const taskLabelIds = useMemo(
     () => new Set((taskLabels ?? []).map((label) => label.id)),
@@ -63,7 +58,7 @@ export default function TaskLabelsPopover({
 
   const filteredLabels = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
-    // Kaneo preserves palette (creation) order; only the search filters.
+    // Filter project labels by search query (case-insensitive) and return the
     return (projectLabels ?? []).filter((label) =>
       label.name.toLowerCase().includes(query),
     );
@@ -179,8 +174,7 @@ export default function TaskLabelsPopover({
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter")
-                      void commitRename(label);
+                    if (e.key === "Enter") void commitRename(label);
                     if (e.key === "Escape") setEditingId(null);
                   }}
                   aria-label={`Rename ${label.name}`}

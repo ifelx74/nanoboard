@@ -66,9 +66,8 @@ export interface BoardFilterContext {
 
 /** Badge count: active subjects, not values; negation never inflates it. */
 export function countActiveBoardFilters(filters: BoardFilters): number {
-  return BOARD_FILTER_SUBJECTS.filter(
-    (key) => (filters[key]?.length ?? 0) > 0,
-  ).length;
+  return BOARD_FILTER_SUBJECTS.filter((key) => (filters[key]?.length ?? 0) > 0)
+    .length;
 }
 
 function stringList(value: unknown): string[] | null {
@@ -172,7 +171,10 @@ export function taskMatchesBoardFilters(
   }
   if (
     filters.priority?.length &&
-    !passes("priority", filters.priority.includes(task.priority ?? "no-priority"))
+    !passes(
+      "priority",
+      filters.priority.includes(task.priority ?? "no-priority"),
+    )
   ) {
     return false;
   }
@@ -189,7 +191,9 @@ export function taskMatchesBoardFilters(
     filters.dueDate?.length &&
     !passes(
       "dueDate",
-      filters.dueDate.some((value) => matchesDueDateValue(task, value, context)),
+      filters.dueDate.some((value) =>
+        matchesDueDateValue(task, value, context),
+      ),
     )
   ) {
     return false;
@@ -207,7 +211,10 @@ function intersectGrouping(
     visible.set(
       columnId,
       columnTasks.filter((task) =>
-        matches(task, labelsByTask.get(task.id)?.map((label) => label.id)),
+        matches(
+          task,
+          labelsByTask.get(task.id)?.map((label) => label.id),
+        ),
       ),
     );
   }

@@ -25,7 +25,6 @@ export const Route = createFileRoute("/_app/project/$projectId/calendar")({
 const MAX_LANES_DESKTOP = 3;
 const MAX_LANES_MOBILE = 2;
 
-/** Mirrors Kaneo's desktop/mobile lane cap without a viewport hook. */
 function useMaxLanes(): number {
   const [isDesktop, setIsDesktop] = useState(
     () =>
@@ -57,9 +56,6 @@ function RouteComponent() {
   );
   const [weekStartsOn] = useWeekStartsOn();
 
-  // Kaneo's schedule normalizer: start ?? due feeds the bar's first day,
-  // due ?? start its last; both-null tasks are excluded and a reversed range
-  // is swapped, never dropped.
   const scheduledTasks: CalendarTask[] = useMemo(
     () =>
       (tasks ?? []).flatMap((task) => {
@@ -72,7 +68,8 @@ function RouteComponent() {
         if (!scheduleStart || !scheduleEnd) return [];
         const earlier =
           scheduleStart <= scheduleEnd ? scheduleStart : scheduleEnd;
-        const later = scheduleStart <= scheduleEnd ? scheduleEnd : scheduleStart;
+        const later =
+          scheduleStart <= scheduleEnd ? scheduleEnd : scheduleStart;
         return [
           {
             id: task.id,

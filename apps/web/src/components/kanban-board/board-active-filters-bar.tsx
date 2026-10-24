@@ -52,7 +52,9 @@ export function BoardActiveFiltersBar({
               {subject.negated && (
                 <span className="shrink-0 text-muted-foreground">not</span>
               )}
-              <span className="min-w-0 truncate">{labelFor(subject, value)}</span>
+              <span className="min-w-0 truncate">
+                {labelFor(subject, value)}
+              </span>
               <button
                 type="button"
                 onClick={() => subject.onToggle(value)}

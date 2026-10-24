@@ -151,7 +151,8 @@ export default function TaskDrawer({
             <Button
               variant="ghost"
               size="sm"
-              aria-label="Copy link to task" title="Copy link to task"
+              aria-label="Copy link to task"
+              title="Copy link to task"
               onClick={handleCopyLink}
               className="text-foreground"
             >
@@ -160,7 +161,8 @@ export default function TaskDrawer({
             <Button
               variant="ghost"
               size="sm"
-              aria-label="Duplicate task" title="Duplicate task"
+              aria-label="Duplicate task"
+              title="Duplicate task"
               disabled={!task || duplicating}
               onClick={() => void handleDuplicate()}
               className="text-foreground"
@@ -170,7 +172,8 @@ export default function TaskDrawer({
             <Button
               variant="ghost"
               size="sm"
-              aria-label="Delete task" title="Delete task"
+              aria-label="Delete task"
+              title="Delete task"
               disabled={!task}
               onClick={() => setDeleteOpen(true)}
               className="text-foreground"
@@ -180,7 +183,8 @@ export default function TaskDrawer({
             <Button
               variant="ghost"
               size="sm"
-              aria-label="Close" title="Close"
+              aria-label="Close"
+              title="Close"
               onClick={onClose}
               className="text-foreground"
             >

@@ -17,8 +17,17 @@ export const Route = createFileRoute("/_app/project/$projectId/board")({
   }),
 });
 
-const skeletonColumnKeys = ["skeleton-col-0", "skeleton-col-1", "skeleton-col-2", "skeleton-col-3"];
-const skeletonCardKeys = ["skeleton-card-0", "skeleton-card-1", "skeleton-card-2"];
+const skeletonColumnKeys = [
+  "skeleton-col-0",
+  "skeleton-col-1",
+  "skeleton-col-2",
+  "skeleton-col-3",
+];
+const skeletonCardKeys = [
+  "skeleton-card-0",
+  "skeleton-card-1",
+  "skeleton-card-2",
+];
 
 function BoardSkeleton() {
   return (
@@ -56,9 +65,10 @@ function RouteComponent() {
   const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
   const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
-  const labelsByTask = useLiveQuery(() => getProjectTaskLabels(projectId), [
-    projectId,
-  ]);
+  const labelsByTask = useLiveQuery(
+    () => getProjectTaskLabels(projectId),
+    [projectId],
+  );
 
   function openTask(taskId: string) {
     void navigate({
@@ -76,7 +86,12 @@ function RouteComponent() {
     });
   }
 
-  if (columns === undefined || tasks === undefined || labelsByTask === undefined || project === undefined) {
+  if (
+    columns === undefined ||
+    tasks === undefined ||
+    labelsByTask === undefined ||
+    project === undefined
+  ) {
     return (
       <ProjectLayout projectId={projectId} activeView="board">
         <BoardSkeleton />

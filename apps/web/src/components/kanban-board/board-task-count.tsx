@@ -15,9 +15,7 @@ export function BoardTaskCount({
         className ?? "truncate text-xs text-muted-foreground tabular-nums"
       }
     >
-      {shown === total
-        ? `${total} ${units}`
-        : `${shown} of ${total} shown`}
+      {shown === total ? `${total} ${units}` : `${shown} of ${total} shown`}
     </span>
   );
 }

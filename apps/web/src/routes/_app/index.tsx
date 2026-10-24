@@ -75,11 +75,6 @@ function ProjectCard({
   );
 }
 
-/**
- * Kaneo's workspace home, mapped: greeting header plus the projects
- * section. WeekStrip/UpNext need assignees, the feed needs activity, and
- * the New-task button needs a project picker — all unimplemented, all cut.
- */
 function RouteComponent() {
   const projects = useLiveQuery(() => getProjects(), []);
   const statsByProject = useLiveQuery(() => getProjectsStats(), []);
@@ -111,9 +106,7 @@ function RouteComponent() {
     <>
       <Layout.Header>
         <div className="flex items-center gap-1">
-          <span className="text-xs font-normal text-card-foreground">
-            Home
-          </span>
+          <span className="text-xs font-normal text-card-foreground">Home</span>
         </div>
       </Layout.Header>
       <Layout.Content>
@@ -133,9 +126,7 @@ function RouteComponent() {
             <section className="flex flex-col gap-3">
               <SectionHeader title="Projects" />
               {projects.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No projects yet
-                </p>
+                <p className="text-sm text-muted-foreground">No projects yet</p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-3">
                   {projects.map((project) => (

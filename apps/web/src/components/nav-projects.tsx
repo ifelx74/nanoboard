@@ -184,12 +184,6 @@ function ProjectRow({
   );
 }
 
-/**
- * Kaneo's project list, mapped: flat rows into the board, per-project
- * icons, progress wedge, hover menu (view/edit/delete), Plus to create.
- * Deliberately absent: drag reorder (seam ready, UI follow-up) and the
- * server-only nav items.
- */
 export function NavProjects() {
   const navigate = useNavigate();
   const { projectId: activeProjectId } = useParams({ strict: false });

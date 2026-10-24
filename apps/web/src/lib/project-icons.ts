@@ -61,10 +61,6 @@ import {
   Zap,
 } from "lucide-react";
 
-/**
- * Kaneo's 60 project icon keys verbatim. Stored as the string key on the
- * project row; `Layout` is the default and the fallback for unknown keys.
- */
 export const PROJECT_ICONS = {
   Layout,
   Briefcase,

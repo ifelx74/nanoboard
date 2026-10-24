@@ -7,7 +7,7 @@ import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
 
 /**
- * Shared description extensions, Kaneo-style: StarterKit (headings 1–3,
+ * Shared description extensions: StarterKit (headings 1–3,
  * no trailing node) plus task lists, placeholder, GFM markdown, and a
  * render-only image node. StarterKit v3 already bundles link and
  * underline, so they are configured — not added — to avoid duplicate

@@ -80,7 +80,7 @@ function assertValidStartDate(startDate: StartDateString): void {
 }
 
 /**
- * Mirrors Kaneo's `validateDateRange`: a start after the due date is
+ * Mirrors `validateDateRange`: a start after the due date is
  * rejected, never swapped or clamped. Day strings compare
  * lexicographically in yyyy-mm-dd form.
  */
@@ -188,7 +188,10 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
         }
       }
 
-      const position = await nextColumnPosition(input.projectId, input.columnId);
+      const position = await nextColumnPosition(
+        input.projectId,
+        input.columnId,
+      );
       const number = project.lastTaskNumber + 1;
 
       await db.tasks.add({
@@ -219,7 +222,10 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
   return id;
 }
 
-export async function updateTaskTitle(id: string, title: string): Promise<void> {
+export async function updateTaskTitle(
+  id: string,
+  title: string,
+): Promise<void> {
   const trimmed = assertValidTitle(title);
   const existing = await requireTask(id);
   if (existing.title === trimmed) return;
@@ -245,7 +251,7 @@ export async function updateTaskPriority(
 
 /**
  * A string sets the start date, `null` clears it. Rejects a start after the
- * task's current due date, mirroring Kaneo's range validation.
+ * task's current due date, mirroring range validation.
  */
 export async function updateTaskStartDate(
   id: string,
@@ -253,10 +259,7 @@ export async function updateTaskStartDate(
 ): Promise<void> {
   if (startDate !== null) assertValidStartDate(startDate);
   const existing = await requireTask(id);
-  assertValidDateRange(
-    startDate ?? undefined,
-    existing.dueDate,
-  );
+  assertValidDateRange(startDate ?? undefined, existing.dueDate);
   await db.tasks.update(id, {
     startDate: startDate ?? undefined,
     updatedAt: Date.now(),
@@ -265,7 +268,7 @@ export async function updateTaskStartDate(
 
 /**
  * A string sets the due date, `null` clears it. Rejects a due before the
- * task's current start date, mirroring Kaneo's range validation.
+ * task's current start date, mirroring range validation.
  */
 export async function updateTaskDueDate(
   id: string,
@@ -273,11 +276,11 @@ export async function updateTaskDueDate(
 ): Promise<void> {
   if (dueDate !== null) assertValidDueDate(dueDate);
   const existing = await requireTask(id);
-  assertValidDateRange(
-    existing.startDate,
-    dueDate ?? undefined,
-  );
-  await db.tasks.update(id, { dueDate: dueDate ?? undefined, updatedAt: Date.now() });
+  assertValidDateRange(existing.startDate, dueDate ?? undefined);
+  await db.tasks.update(id, {
+    dueDate: dueDate ?? undefined,
+    updatedAt: Date.now(),
+  });
 }
 
 /**
@@ -319,11 +322,17 @@ export async function moveTaskToColumn(
  */
 export async function deleteTask(id: string): Promise<void> {
   await requireTask(id);
-  await db.transaction("rw", db.tasks, db.taskLabels, db.taskResources, async () => {
-    await db.taskLabels.where("taskId").equals(id).delete();
-    await db.taskResources.where("taskId").equals(id).delete();
-    await db.tasks.delete(id);
-  });
+  await db.transaction(
+    "rw",
+    db.tasks,
+    db.taskLabels,
+    db.taskResources,
+    async () => {
+      await db.taskLabels.where("taskId").equals(id).delete();
+      await db.taskResources.where("taskId").equals(id).delete();
+      await db.tasks.delete(id);
+    },
+  );
 }
 
 export interface ReorderItem {
@@ -425,7 +434,10 @@ export async function duplicateTask(
       throw new Error("Project not found.");
     }
 
-    const position = await nextColumnPosition(source.projectId, source.columnId);
+    const position = await nextColumnPosition(
+      source.projectId,
+      source.columnId,
+    );
     const number = project.lastTaskNumber + 1;
 
     await db.tasks.add({
@@ -451,4 +463,3 @@ export async function duplicateTask(
 
   return id;
 }
-

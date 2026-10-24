@@ -14,11 +14,7 @@ import { BackgroundLogo } from "./common/logo";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar
-      collapsible="offcanvas"
-      className="border-none"
-      {...props}
-    >
+    <Sidebar collapsible="offcanvas" className="border-none" {...props}>
       <SidebarHeader className="pt-1 pb-1.5">
         <span className="flex h-8 items-center px-2 font-heading text-primary text-lg font-semibold tracking-tight gap-2">
           <BackgroundLogo /> Nanoboard

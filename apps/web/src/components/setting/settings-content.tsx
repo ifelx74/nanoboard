@@ -1,15 +1,6 @@
-/**
- * Copyright (c) 2023-present Plane Software, Inc. and contributors
- * SPDX-License-Identifier: AGPL-3.0-only
- * See the LICENSE file for details.
- */
-
-// plane imports
 import { cn } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { PreferencesSettings } from "./preferences/preferences-settings";
-
-// local imports
 
 type Props = {
   className?: string;

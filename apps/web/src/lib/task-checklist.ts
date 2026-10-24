@@ -5,11 +5,6 @@ export interface ChecklistStats {
 
 const ITEM_PATTERN = /^\s*[-*+]\s+\[([ xX])\]/;
 
-/**
- * Counts GFM task-list items in a Markdown description. Lines inside
- * fenced code blocks don't count. Returns null when there are no items
- * so the chip stays hidden (Kaneo renders it conditionally).
- */
 export function getChecklistStats(markdown: string): ChecklistStats | null {
   let done = 0;
   let total = 0;

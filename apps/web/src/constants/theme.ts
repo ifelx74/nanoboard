@@ -45,7 +45,7 @@ export const THEME_OPTIONS: I_THEME_OPTION[] = [
       color1: "#191B1B",
       color2: "#2e9f45",
     },
-  }
+  },
   // {
   //   key: "light_contrast",
   //   value: "light-contrast",

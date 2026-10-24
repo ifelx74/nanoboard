@@ -5,11 +5,6 @@ export type WeekStartsOnPreference = 0 | 1 | 6;
 const STORAGE_KEY = "nanoboard:week-starts-on";
 
 /**
- * Kaneo keeps weekStartsOn in a persisted user-preferences store (default
- * Sunday, set from the account preferences page we don't clone). Here it is
- * a localStorage-backed global preference with the same three options and
- * default; the settings preferences own the toggle UI.
- *
  * The value is shared through a module-level store rather than per-component
  * state: the toggle (settings dialog) and the consumers (calendar grid, board
  * due-date filters) live in different trees, so a local `useState` would leave

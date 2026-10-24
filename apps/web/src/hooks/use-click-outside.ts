@@ -21,7 +21,6 @@ export function useClickOutside(
       }
     }
     document.addEventListener("mousedown", handleMouseDown);
-    return () =>
-      document.removeEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
   }, [ref]);
 }

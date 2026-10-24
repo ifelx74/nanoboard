@@ -74,12 +74,6 @@ function LabelDot({ color }: { color: string }) {
   );
 }
 
-/**
- * Kaneo's create-task modal, adapted: rich description editor, no assignee
- * / project picker / custom fields / uploads (unimplemented features).
- * Labels stage as local ids; the palette entry is created
- * immediately on color pick and attached at submit — Kaneo's semantics.
- */
 export default function CreateTaskDialog({
   projectId,
   column,
@@ -111,8 +105,7 @@ export default function CreateTaskDialog({
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [labelsStep, setLabelsStep] = useState<LabelsStep>("select");
   const [searchValue, setSearchValue] = useState("");
-  const [selectedColor, setSelectedColor] =
-    useState<LabelColorValue>("gray");
+  const [selectedColor, setSelectedColor] = useState<LabelColorValue>("gray");
   const [newLabelName, setNewLabelName] = useState("");
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -134,11 +127,11 @@ export default function CreateTaskDialog({
 
   const hasUnsavedChanges = Boolean(
     title.trim() ||
-      description.trim() ||
-      priority !== "no-priority" ||
-      startDate ||
-      dueDate ||
-      labelIds.length > 0,
+    description.trim() ||
+    priority !== "no-priority" ||
+    startDate ||
+    dueDate ||
+    labelIds.length > 0,
   );
 
   useEffect(() => {
@@ -149,7 +142,7 @@ export default function CreateTaskDialog({
     return undefined;
   }, [labelsOpen, labelsStep]);
 
-  // Kaneo submits on Cmd/Ctrl+Enter from anywhere in the dialog.
+  // Submits on Cmd/Ctrl+Enter from anywhere in the dialog.
   useEffect(() => {
     if (!open || discardOpen) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -196,7 +189,9 @@ export default function CreateTaskDialog({
         title: title.trim(),
         description: description.trim(),
         priority,
-        startDate: startDate ? startDateString(toISODate(startDate)) : undefined,
+        startDate: startDate
+          ? startDateString(toISODate(startDate))
+          : undefined,
         dueDate: dueDate ? toISODate(dueDate) : undefined,
         labelIds,
       });
@@ -415,9 +410,7 @@ export default function CreateTaskDialog({
                     )}
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
-                    <span>
-                      {dueDate ? formatMedium(dueDate) : "Due date"}
-                    </span>
+                    <span>{dueDate ? formatMedium(dueDate) : "Due date"}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0" align="start">

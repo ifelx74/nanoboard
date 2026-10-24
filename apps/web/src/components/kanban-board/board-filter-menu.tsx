@@ -1,13 +1,12 @@
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  ListFilter,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -62,7 +61,11 @@ function SubjectPanel({
           <ChevronLeft className="h-3 w-3 shrink-0" aria-hidden="true" />
           <span className="truncate">{subject.label}</span>
         </button>
-        <div role="group" aria-label="Match operator" className="flex shrink-0 gap-1 pr-1">
+        <div
+          role="group"
+          aria-label="Match operator"
+          className="flex shrink-0 gap-1 pr-1"
+        >
           {(
             [
               { value: false, label: "Is" },
@@ -164,10 +167,7 @@ export function BoardFilterMenu({
                     variant="ghost"
                     size="icon-sm"
                     aria-label={triggerLabel}
-                    className={cn(
-                      "relative",
-                      activeCount > 0 && "bg-accent",
-                    )}
+                    className={cn("relative", activeCount > 0 && "bg-accent")}
                   />
                 }
               />

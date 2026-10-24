@@ -1,8 +1,3 @@
-/**
- * The nine palette colors, verbatim from Kaneo (`label-colors.ts` there).
- * Single-sourced here: Kaneo duplicates this list inside its labels popover.
- * Display names are Kaneo's own English labels; this app has no i18n.
- */
 export const LABEL_COLORS = [
   { value: "gray", label: "Stone", color: "var(--color-stone-500)" },
   { value: "dark-gray", label: "Slate", color: "var(--color-slate-500)" },
@@ -20,7 +15,6 @@ export type LabelColorValue = (typeof LABEL_COLORS)[number]["value"];
 const FALLBACK_LABEL_COLOR = "var(--color-neutral-400)";
 const HEX_COLOR = /^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i;
 
-/** Port of Kaneo's `resolveLabelColor`: palette value, hex, CSS color, fallback. */
 export function resolveLabelColor(value: string): string {
   const mapped = LABEL_COLORS.find((color) => color.value === value)?.color;
   if (mapped) return mapped;

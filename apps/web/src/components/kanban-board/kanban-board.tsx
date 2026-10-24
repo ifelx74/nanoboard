@@ -159,8 +159,7 @@ export default function KanbanBoard({
       ),
     [heldGrouping, labelsByTask, view.filters, view.context],
   );
-  const filterActive =
-    view.hasActiveFilters || view.search.trim() !== "";
+  const filterActive = view.hasActiveFilters || view.search.trim() !== "";
   const shownCount = useMemo(
     () =>
       [...shownGrouping.values()].reduce((sum, list) => sum + list.length, 0),
@@ -341,7 +340,10 @@ export default function KanbanBoard({
         <div className="min-h-0 flex-1 overflow-x-auto">
           <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
             {columns.map((column) => (
-              <div key={column.id} className="h-full max-w-96 min-w-80 shrink-0 flex-1">
+              <div
+                key={column.id}
+                className="h-full max-w-96 min-w-80 shrink-0 flex-1"
+              >
                 <BoardColumn
                   column={column}
                   tasks={shownGrouping.get(column.id) ?? []}

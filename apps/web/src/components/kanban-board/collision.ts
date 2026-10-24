@@ -21,7 +21,10 @@ export const boardCollisionDetection: CollisionDetection = (args) => {
   } = args;
   if (!pointer) return closestCorners(args);
 
-  const lanes: { id: string; rect: { top: number; bottom: number; left: number; right: number } }[] = [];
+  const lanes: {
+    id: string;
+    rect: { top: number; bottom: number; left: number; right: number };
+  }[] = [];
   const byId = new Map<string, DroppableContainer>();
   for (const container of droppableContainers) {
     if ((container.data.current as LaneData | undefined)?.type !== "column") {
@@ -39,8 +42,7 @@ export const boardCollisionDetection: CollisionDetection = (args) => {
 
   let closest: { id: string } = { id: String(column.id) };
   let closestDistance = Number.POSITIVE_INFINITY;
-  const taskIds =
-    (column.data.current as LaneData | undefined)?.taskIds ?? [];
+  const taskIds = (column.data.current as LaneData | undefined)?.taskIds ?? [];
   for (const taskId of taskIds) {
     const rect = droppableRects.get(taskId);
     if (!rect || rect.bottom < columnRect.top || rect.top > columnRect.bottom) {
