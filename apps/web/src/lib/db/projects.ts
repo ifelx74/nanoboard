@@ -216,7 +216,7 @@ export async function deleteProject(id: string): Promise<void> {
   );
   await db.transaction(
     "rw",
-    [db.projects, db.columns, db.tasks, db.labels, db.taskLabels],
+    [db.projects, db.columns, db.tasks, db.labels, db.taskLabels, db.whiteboards],
     async () => {
       // One indexed join wipe instead of a per-task loop (perf).
       await db.taskLabels.where("taskId").anyOf(taskIds).delete();
@@ -225,6 +225,9 @@ export async function deleteProject(id: string): Promise<void> {
       // task (same-project attach rule), all removed above.
       await db.labels.where("projectId").equals(id).delete();
       await db.columns.where("projectId").equals(id).delete();
+      // The scene row is unique per project (`&[projectId]`), so this deletes
+      // at most one row; a project that never drew stores nothing.
+      await db.whiteboards.where({ projectId: id }).delete();
       await db.projects.delete(id);
     },
   );

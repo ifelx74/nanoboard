@@ -1,6 +1,10 @@
 import { getNonDeletedElements } from "@excalidraw/excalidraw";
 import type { AppState } from "@excalidraw/excalidraw/types";
-import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import type {
+  ExcalidrawElement,
+  ExcalidrawImageElement,
+  FileId,
+} from "@excalidraw/excalidraw/element/types";
 import type { Whiteboard } from "@/lib/db/schema";
 
 /**
@@ -77,7 +81,10 @@ export function sanitizeAppStateForStorage(
 /**
  * Builds the persisted scene payload: non-deleted elements only (cross-session
  * undo does not exist, so deleted elements are pure dead weight), sanitized
- * appState, and the files map passed through as-is.
+ * appState, and files pruned to the fileIds still referenced by live image
+ * elements — deleting an image from the canvas reclaims its bytes on the next
+ * save. Undoing a deletion still works in-session because Excalidraw keeps the
+ * file in memory; only the persisted payload is pruned.
  */
 export function buildScenePayload({
   elements,
@@ -88,9 +95,20 @@ export function buildScenePayload({
   appState: Partial<AppState>;
   files: Whiteboard["files"];
 }): Pick<Whiteboard, "elements" | "appState" | "files"> {
+  const liveElements = getNonDeletedElements(elements);
+  const usedFileIds = new Set<FileId>(
+    liveElements
+      .filter(
+        (element): element is ExcalidrawImageElement =>
+          element.type === "image",
+      )
+      .flatMap((element) => (element.fileId ? [element.fileId] : [])),
+  );
   return {
-    elements: getNonDeletedElements(elements),
+    elements: liveElements,
     appState: sanitizeAppStateForStorage(appState),
-    files,
+    files: Object.fromEntries(
+      Object.entries(files).filter(([id]) => usedFileIds.has(id as FileId)),
+    ),
   };
 }
