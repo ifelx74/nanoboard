@@ -2,6 +2,12 @@
 // (no workspace, auth/session, or user references). Timestamps are epoch
 // milliseconds; start/due dates stay `yyyy-mm-dd` strings so board/list/calendar
 // grouping works unchanged.
+//
+// Excalidraw types arrive through type-only subpath imports: they are erased at
+// build time, so the editor stays out of every bundle that only needs the row
+// shape (only the lazy whiteboard chunk imports the library at runtime).
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 
 export const TASK_PRIORITIES = [
   "no-priority",
@@ -155,6 +161,25 @@ export interface Sticky {
   contentHtml: string;
   backgroundColor: StickyColorKey;
   position: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * One freeform whiteboard scene per project. `elements`/`appState`/`files` are
+ * Excalidraw's scene triple, persisted together in this single row so a save
+ * can never leave elements referencing files that didn't persist (which is why
+ * none of the reference app's split-file-store machinery applies here).
+ */
+export interface Whiteboard {
+  id: string;
+  projectId: string;
+  /** Non-deleted elements only; deleted ones are stripped before persisting. */
+  elements: readonly ExcalidrawElement[];
+  /** Sanitized to the durable whitelist (no selection/dialog/cursor state). */
+  appState: Partial<AppState>;
+  /** Image files by FileId (data URLs), pruned to live canvas references. */
+  files: BinaryFiles;
   createdAt: number;
   updatedAt: number;
 }

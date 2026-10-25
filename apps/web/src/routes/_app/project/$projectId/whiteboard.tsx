@@ -1,5 +1,12 @@
 import { ProjectLayout } from "@/components/common/project-layout";
+import { lazy, Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+
+// The Excalidraw editor is heavy; lazy-loading keeps it out of every other
+// route's bundle. All its runtime imports live inside the chunk.
+const WhiteboardCanvas = lazy(
+  () => import("@/components/whiteboard/whiteboard-canvas"),
+);
 
 export const Route = createFileRoute("/_app/project/$projectId/whiteboard")({
   component: RouteComponent,
@@ -9,7 +16,9 @@ function RouteComponent() {
   const { projectId } = Route.useParams();
   return (
     <ProjectLayout projectId={projectId} activeView="whiteboard">
-      <div>Hello "/_app/project/$projectId/whiteboard"!</div>
+      <Suspense fallback={null}>
+        <WhiteboardCanvas projectId={projectId} />
+      </Suspense>
     </ProjectLayout>
   );
 }

@@ -7,6 +7,7 @@ import type {
   Task,
   TaskLabel,
   TaskResource,
+  Whiteboard,
 } from "./schema";
 import { buildLabelSeedRows, seedDatabase } from "./seed";
 
@@ -18,6 +19,7 @@ export class NanoboardDB extends Dexie {
   taskLabels!: Table<TaskLabel, [string, string]>;
   taskResources!: Table<TaskResource, string>;
   stickies!: Table<Sticky, string>;
+  whiteboards!: Table<Whiteboard, string>;
 
   constructor(name = "nanoboard") {
     super(name);
@@ -76,6 +78,23 @@ export class NanoboardDB extends Dexie {
       taskLabels: "&[taskId+labelId], taskId, labelId",
       taskResources: "&id, taskId",
       stickies: "&id, position, createdAt, updatedAt",
+    });
+    // v6: per-project whiteboard scenes. The unique compound index `&[projectId]`
+    // keeps one scene row per project at the store level; it is declared in
+    // compound form (not `&projectId`) so multi-board support later is a matter
+    // of widening it to e.g. &[projectId+name] — no data migration. The row is
+    // created lazily on the first save, so projects whose whiteboard was never
+    // opened store nothing. A new empty table needs no upgrade function.
+    this.version(6).stores({
+      projects: "&id, slug, position",
+      columns: "&id, projectId, [projectId+position]",
+      tasks:
+        "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
+      labels: "&id, projectId, &[projectId+name]",
+      taskLabels: "&[taskId+labelId], taskId, labelId",
+      taskResources: "&id, taskId",
+      stickies: "&id, position, createdAt, updatedAt",
+      whiteboards: "&id, &[projectId]",
     });
     this.on("populate", () => seedDatabase(this));
   }
