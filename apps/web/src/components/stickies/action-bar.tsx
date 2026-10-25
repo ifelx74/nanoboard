@@ -52,6 +52,10 @@ export function StickyActionBar() {
   // Auto-hide when on the dedicated stickies page
   const isStickiesPage = location.pathname.startsWith("/stickies");
 
+  // The whiteboard's bottom-right corner belongs to Excalidraw's help button;
+  // lift the bar above it instead of parking on top.
+  const isWhiteboardPage = location.pathname.endsWith("/whiteboard");
+
   const recentSticky = stickies && stickies.length > 0 ? stickies[0] : null;
 
   const recentStickyBackgroundColor = recentSticky
@@ -82,7 +86,10 @@ export function StickyActionBar() {
     <>
       <div
         ref={containerRef}
-        className="fixed right-6 bottom-6 z-40 flex flex-col items-end"
+        className={cn(
+          "fixed right-4 z-40 flex flex-col items-end transition-[bottom] duration-300 ease-in-out",
+          isWhiteboardPage ? "bottom-15" : "bottom-6",
+        )}
       >
         {activePopupSticky && (
           <div className="absolute right-0 bottom-14 z-50 mb-2 w-72.5 animate-in fade-in zoom-in-95 duration-200">
