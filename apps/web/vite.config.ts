@@ -26,6 +26,14 @@ export default defineConfig(({ mode }) => {
         },
         includeAssets: ["favicon.svg", "apple-touch-icon.png"],
         workbox: {
+          // Precache every built asset, including lazily-loaded feature chunks
+          // (whiteboard/Excalidraw adds ~3.5MB). Deliberate: this is an
+          // offline-first app and a first-visit-while-offline whiteboard must
+          // work. Content hashing keeps the recurring update cost near zero —
+          // the big chunks only re-download on dependency bumps. If install
+          // size ever matters measurably, switch to excluding feature chunks
+          // plus a CacheFirst runtimeCaching rule (offline then only after
+          // first online visit).
           globPatterns: ["**/*.{js,css,html,woff,woff2}"],
           cleanupOutdatedCaches: true,
         },
