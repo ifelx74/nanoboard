@@ -9,12 +9,14 @@ import type { Whiteboard } from "@/lib/db/schema";
 
 /**
  * Replicates the reference app's `clearAppStateForLocalStorage`, which the npm
- * package does not re-export at runtime: it keeps only the appState keys the
- * upstream storage config marks `browser: true` — durable settings (theme,
- * scroll/zoom, grid, tool defaults) — and drops transient state (selection,
- * open dialogs, cursors, in-progress elements). Key set = that upstream config
- * intersected with the installed package's `AppState`; the `satisfies` clause
- * makes renamed or removed keys a build error when bumping the package.
+ * package does not re-export at runtime: it keeps only durable settings
+ * (theme, scroll/zoom, grid, tool defaults, export prefs, board name) and
+ * drops transient state — selection/group-editing/cursor state is excluded
+ * even where upstream persists it, per the spec, and restore() simply falls
+ * back to defaults without it. Hand-maintained: re-verify against upstream
+ * `APP_STATE_STORAGE_CONF` when bumping the package; the `satisfies` clause
+ * makes renamed or removed keys a build error (new keys added upstream are
+ * silently absent until reviewed — check the diff on upgrades).
  */
 const PERSISTED_APP_STATE_KEYS = [
   "activeTool",
@@ -32,9 +34,7 @@ const PERSISTED_APP_STATE_KEYS = [
   "currentItemStrokeStyle",
   "currentItemStrokeWidth",
   "currentItemTextAlign",
-  "cursorButton",
   "defaultSidebarDockedPreference",
-  "editingGroupId",
   "exportBackground",
   "exportEmbedScene",
   "exportScale",
@@ -42,21 +42,15 @@ const PERSISTED_APP_STATE_KEYS = [
   "gridModeEnabled",
   "gridSize",
   "gridStep",
-  "isBindingEnabled",
-  "lastPointerDownWith",
   "name",
   "objectsSnapModeEnabled",
   "openMenu",
   "openSidebar",
   "penDetected",
   "penMode",
-  "previousSelectedElementIds",
   "scrollX",
   "scrollY",
   "scrolledOutside",
-  "selectedElementIds",
-  "selectedGroupIds",
-  "selectedLinearElement",
   "showWelcomeScreen",
   "shouldCacheIgnoreZoom",
   "stats",

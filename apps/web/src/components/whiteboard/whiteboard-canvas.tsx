@@ -5,6 +5,7 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getWhiteboard, saveWhiteboardScene } from "@/lib/db/whiteboards";
+import type { Whiteboard } from "@/lib/db/schema";
 import { useThemeStore } from "@/store/theme";
 import { buildScenePayload } from "./persistence";
 
@@ -16,18 +17,15 @@ type InitialData = Exclude<
   Promise<unknown> | null | undefined
 >;
 
-type PendingScene = {
-  elements: readonly ExcalidrawElement[];
-  appState: Partial<AppState>;
-  files: BinaryFiles;
-};
+type PendingScene = Pick<Whiteboard, "elements" | "appState" | "files">;
 
 /**
  * The per-project Excalidraw canvas. This component is the lazy whiteboard
  * chunk: every runtime import of the editor lives here (the db layer only
  * touches Excalidraw types, which are erased at build time). The scene is
  * hydrated once on mount and saved with a ~500ms debounce, flushed on unmount
- * so navigating away never drops the last strokes.
+ * so navigating away never drops the last strokes. The route remounts this
+ * component per project (key={projectId}), so refs never outlive their scene.
  */
 export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
   const theme = useThemeStore((state) => state.theme);
@@ -47,15 +45,20 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
     [projectId],
   );
 
+  const takePendingScene = useCallback(() => {
+    const pending = pendingSceneRef.current;
+    pendingSceneRef.current = null;
+    return pending;
+  }, []);
+
   const flushSave = useCallback(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
-    const pending = pendingSceneRef.current;
-    pendingSceneRef.current = null;
+    const pending = takePendingScene();
     if (pending) void saveScene(pending);
-  }, [saveScene]);
+  }, [saveScene, takePendingScene]);
 
   const handleChange = useCallback(
     (elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
@@ -63,26 +66,29 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(() => {
         saveTimeoutRef.current = null;
-        const pending = pendingSceneRef.current;
-        pendingSceneRef.current = null;
+        const pending = takePendingScene();
         if (pending) void saveScene(pending);
       }, SAVE_DEBOUNCE_MS);
     },
-    [saveScene],
+    [saveScene, takePendingScene],
   );
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const whiteboard = await getWhiteboard(projectId);
-      if (cancelled) return;
-      setInitialData({
-        elements: restoreElements(whiteboard?.elements ?? null, null),
-        appState: whiteboard?.appState
-          ? restoreAppState(whiteboard.appState, null)
-          : null,
-        files: whiteboard?.files,
-      });
+      try {
+        const whiteboard = await getWhiteboard(projectId);
+        if (cancelled) return;
+        setInitialData({
+          elements: restoreElements(whiteboard?.elements ?? null, null),
+          appState: whiteboard?.appState
+            ? restoreAppState(whiteboard.appState, null)
+            : null,
+          files: whiteboard?.files,
+        });
+      } catch (error) {
+        console.error("Failed to load whiteboard:", error);
+      }
     })();
     return () => {
       cancelled = true;

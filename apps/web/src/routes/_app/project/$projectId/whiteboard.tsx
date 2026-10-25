@@ -17,7 +17,10 @@ function RouteComponent() {
   return (
     <ProjectLayout projectId={projectId} activeView="whiteboard">
       <Suspense fallback={null}>
-        <WhiteboardCanvas projectId={projectId} />
+        {/* Remount per project: TanStack Router reuses the component across
+            param changes, and a stale scene must never render — let alone
+            autosave — under the next project's id. */}
+        <WhiteboardCanvas key={projectId} projectId={projectId} />
       </Suspense>
     </ProjectLayout>
   );
