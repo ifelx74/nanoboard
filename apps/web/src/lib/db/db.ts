@@ -82,9 +82,12 @@ export class NanoboardDB extends Dexie {
     // v6: per-project whiteboard scenes. The unique compound index `&[projectId]`
     // keeps one scene row per project at the store level; it is declared in
     // compound form (not `&projectId`) so multi-board support later is a matter
-    // of widening it to e.g. &[projectId+name] — no data migration. The row is
-    // created lazily on the first save, so projects whose whiteboard was never
-    // opened store nothing. A new empty table needs no upgrade function.
+    // of widening it to e.g. &[projectId+name] — no data migration. The plain
+    // `projectId` index exists for lookups: Dexie's where() cannot match a
+    // single-key compound index, so reads go through the simple index while the
+    // uniqueness constraint stays on the compound one. The row is created
+    // lazily on the first save, so projects whose whiteboard was never opened
+    // store nothing. A new empty table needs no upgrade function.
     this.version(6).stores({
       projects: "&id, slug, position",
       columns: "&id, projectId, [projectId+position]",
@@ -94,7 +97,7 @@ export class NanoboardDB extends Dexie {
       taskLabels: "&[taskId+labelId], taskId, labelId",
       taskResources: "&id, taskId",
       stickies: "&id, position, createdAt, updatedAt",
-      whiteboards: "&id, &[projectId]",
+      whiteboards: "&id, projectId, &[projectId]",
     });
     this.on("populate", () => seedDatabase(this));
   }

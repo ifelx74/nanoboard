@@ -227,7 +227,7 @@ export async function deleteProject(id: string): Promise<void> {
       await db.columns.where("projectId").equals(id).delete();
       // The scene row is unique per project (`&[projectId]`), so this deletes
       // at most one row; a project that never drew stores nothing.
-      await db.whiteboards.where({ projectId: id }).delete();
+      await db.whiteboards.where("projectId").equals(id).delete();
       await db.projects.delete(id);
     },
   );

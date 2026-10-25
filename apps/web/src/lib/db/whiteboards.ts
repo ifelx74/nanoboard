@@ -6,7 +6,7 @@ export async function getWhiteboard(
   projectId: string,
 ): Promise<Whiteboard | undefined> {
   // The `&[projectId]` unique index guarantees at most one row per project.
-  return db.whiteboards.where({ projectId }).first();
+  return db.whiteboards.where("projectId").equals(projectId).first();
 }
 
 /**
@@ -21,7 +21,10 @@ export async function saveWhiteboardScene(
   scene: Pick<Whiteboard, "elements" | "appState" | "files">,
 ): Promise<void> {
   await db.transaction("rw", db.whiteboards, async () => {
-    const existing = await db.whiteboards.where({ projectId }).first();
+    const existing = await db.whiteboards
+      .where("projectId")
+      .equals(projectId)
+      .first();
     const now = Date.now();
     if (existing) {
       await db.whiteboards.update(existing.id, {
