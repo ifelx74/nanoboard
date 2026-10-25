@@ -26,15 +26,29 @@ export default defineConfig(({ mode }) => {
         },
         includeAssets: ["favicon.svg", "apple-touch-icon.png"],
         workbox: {
-          // Precache every built asset, including lazily-loaded feature chunks
-          // (whiteboard/Excalidraw adds ~3.5MB). Deliberate: this is an
-          // offline-first app and a first-visit-while-offline whiteboard must
-          // work. Content hashing keeps the recurring update cost near zero —
-          // the big chunks only re-download on dependency bumps. If install
-          // size ever matters measurably, switch to excluding feature chunks
-          // plus a CacheFirst runtimeCaching rule (offline then only after
-          // first online visit).
           globPatterns: ["**/*.{js,css,html,woff,woff2}"],
+          // // Heavy lazily-loaded chunks (the whiteboard/Excalidraw subtree:
+          // // 435kB–1.8MB per chunk, ~4MB total) are excluded from the
+          // // install-time precache by size — every app-shell chunk is under
+          // // 330kB, so a 400kB threshold cleanly separates the two without
+          // // naming fragile hashed filenames. Users who never open a
+          // // whiteboard never download them; the CacheFirst rule below caches
+          // // them on first whiteboard visit, after which offline works. The
+          // // one trade: a whiteboard opened offline *before* its first online
+          // // visit can't load. Revisit the threshold if a future app-shell
+          // // chunk grows past it (the build warning will show what got cut).
+          // maximumFileSizeToCacheInBytes: 400 * 1024,
+          // runtimeCaching: [
+          //   {
+          //     // Precached URLs are served by the precache route first; this
+          //     // only catches the size-excluded lazy chunks on first fetch.
+          //     urlPattern: /\/assets\/.+\.(js|css|woff2?)$/,
+          //     handler: "CacheFirst",
+          //     options: {
+          //       cacheName: "lazy-chunks",
+          //     },
+          //   },
+          // ],
           cleanupOutdatedCaches: true,
         },
         manifest: {
