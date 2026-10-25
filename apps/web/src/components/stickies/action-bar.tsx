@@ -87,8 +87,8 @@ export function StickyActionBar() {
       <div
         ref={containerRef}
         className={cn(
-          "fixed right-4 z-40 flex flex-col items-end transition-[bottom] duration-300 ease-in-out",
-          isWhiteboardPage ? "bottom-15" : "bottom-6",
+          "fixed z-40 flex flex-col items-end transition-[bottom] duration-300 ease-in-out bottom-3.5",
+          isWhiteboardPage ? "right-15" : "right-4",
         )}
       >
         {activePopupSticky && (

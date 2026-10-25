@@ -1,4 +1,9 @@
-import { Excalidraw, restoreAppState, restoreElements } from "@excalidraw/excalidraw";
+import {
+  Excalidraw,
+  restoreAppState,
+  restoreElements,
+  WelcomeScreen,
+} from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
@@ -62,7 +67,11 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
   }, [saveScene, takePendingScene]);
 
   const handleChange = useCallback(
-    (elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
+    (
+      elements: readonly ExcalidrawElement[],
+      appState: AppState,
+      files: BinaryFiles,
+    ) => {
       pendingSceneRef.current = { elements, appState, files };
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(() => {
@@ -128,7 +137,23 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
         theme={appTheme}
         initialData={initialData}
         onChange={handleChange}
-      />
+      >
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Heading>
+              Welcome to the Whiteboard
+            </WelcomeScreen.Center.Heading>
+            <WelcomeScreen.Center.Menu>
+              <WelcomeScreen.Center.MenuItemLoadScene />
+              <WelcomeScreen.Center.MenuItemHelp />
+            </WelcomeScreen.Center.Menu>
+          </WelcomeScreen.Center>
+
+          <WelcomeScreen.Hints.ToolbarHint />
+          <WelcomeScreen.Hints.MenuHint />
+          <WelcomeScreen.Hints.HelpHint />
+        </WelcomeScreen>
+      </Excalidraw>
     </div>
   );
 }
