@@ -1,4 +1,5 @@
 import { ProjectLayout } from "@/components/common/project-layout";
+import { WhiteboardSkeleton } from "@/components/whiteboard/skeleton";
 import { lazy, Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -16,7 +17,7 @@ function RouteComponent() {
   const { projectId } = Route.useParams();
   return (
     <ProjectLayout projectId={projectId} activeView="whiteboard">
-      <Suspense fallback={null}>
+      <Suspense fallback={<WhiteboardSkeleton />}>
         {/* Remount per project: TanStack Router reuses the component across
             param changes, and a stale scene must never render — let alone
             autosave — under the next project's id. */}

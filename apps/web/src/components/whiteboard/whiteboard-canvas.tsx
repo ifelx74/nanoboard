@@ -8,6 +8,7 @@ import { getWhiteboard, saveWhiteboardScene } from "@/lib/db/whiteboards";
 import type { Whiteboard } from "@/lib/db/schema";
 import { useThemeStore } from "@/store/theme";
 import { buildScenePayload } from "./persistence";
+import { WhiteboardSkeleton } from "./skeleton";
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -97,11 +98,29 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
 
   useEffect(() => flushSave, [flushSave]);
 
+  // The unmount flush is fire-and-forget; a tab hidden or closed before it
+  // lands loses the strokes. Flushing on the earliest hide signals gives the
+  // IndexedDB write its best chance to commit. Idempotent — no-op when
+  // nothing is pending.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden) flushSave();
+    };
+    window.addEventListener("pagehide", flushSave);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", flushSave);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [flushSave]);
+
   // The app's class-flip treats only "dark" as dark ("system" renders light),
   // so the canvas mirrors that exact resolution.
   const appTheme = theme === "dark" ? "dark" : "light";
 
-  if (!initialData) return null;
+  if (!initialData) {
+    return <WhiteboardSkeleton />;
+  }
 
   return (
     <div className="h-full w-full">

@@ -1,5 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { db } from "./db";
+import { forgetWhiteboard } from "./whiteboards";
 import { isProjectIconKey } from "../project-icons";
 import type { ProjectIconKey } from "../project-icons";
 import type { ProjectKey } from "../task-key";
@@ -226,8 +227,10 @@ export async function deleteProject(id: string): Promise<void> {
       await db.labels.where("projectId").equals(id).delete();
       await db.columns.where("projectId").equals(id).delete();
       // The scene row is unique per project (`&[projectId]`), so this deletes
-      // at most one row; a project that never drew stores nothing.
+      // at most one row; a project that never drew stores nothing. Also drop
+      // its cached row identity so a later save can't resurrect the row.
       await db.whiteboards.where("projectId").equals(id).delete();
+      forgetWhiteboard(id);
       await db.projects.delete(id);
     },
   );

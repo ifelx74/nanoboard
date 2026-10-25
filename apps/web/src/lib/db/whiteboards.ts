@@ -2,11 +2,30 @@ import { createId } from "@paralleldrive/cuid2";
 import { db } from "./db";
 import type { Whiteboard } from "./schema";
 
+/**
+ * Per-session row identity (primary key + creation stamp), so steady-state
+ * saves are a single `put()` instead of a read-modify-write — a scene row can
+ * reach multi-MB with embedded images, and each read or write structured-
+ * clones it whole. Seeded by `getWhiteboard`; evicted when the project is
+ * deleted. Bounded by the projects visited this session, so it never needs
+ * eviction of its own.
+ */
+const rowIdentity = new Map<string, { id: string; createdAt: number }>();
+
 export async function getWhiteboard(
   projectId: string,
 ): Promise<Whiteboard | undefined> {
   // The `&[projectId]` unique index guarantees at most one row per project.
-  return db.whiteboards.where("projectId").equals(projectId).first();
+  const row = await db.whiteboards.where("projectId").equals(projectId).first();
+  if (row) {
+    rowIdentity.set(projectId, { id: row.id, createdAt: row.createdAt });
+  }
+  return row;
+}
+
+/** Forgets a project's cached row identity; call when its rows are deleted. */
+export function forgetWhiteboard(projectId: string): void {
+  rowIdentity.delete(projectId);
 }
 
 /**
@@ -20,30 +39,45 @@ export async function saveWhiteboardScene(
   projectId: string,
   scene: Pick<Whiteboard, "elements" | "appState" | "files">,
 ): Promise<void> {
+  const now = Date.now();
+
+  // Hot path: identity known from a previous read or create — one clone.
+  const identity = rowIdentity.get(projectId);
+  if (identity) {
+    await db.whiteboards.put({
+      id: identity.id,
+      projectId,
+      ...scene,
+      createdAt: identity.createdAt,
+      updatedAt: now,
+    });
+    return;
+  }
+
+  // Cold path (first save this session): resolve the row transactionally so
+  // two racing first-saves can't both create (the unique index would reject
+  // the second anyway; the transaction keeps it clean).
   await db.transaction("rw", db.whiteboards, async () => {
     const existing = await db.whiteboards
       .where("projectId")
       .equals(projectId)
       .first();
-    const now = Date.now();
     if (existing) {
-      await db.whiteboards.update(existing.id, {
-        elements: scene.elements,
-        appState: scene.appState,
-        files: scene.files,
-        updatedAt: now,
+      rowIdentity.set(projectId, {
+        id: existing.id,
+        createdAt: existing.createdAt,
       });
+      await db.whiteboards.put({ ...existing, ...scene, updatedAt: now });
       return;
     }
     const row: Whiteboard = {
       id: createId(),
       projectId,
-      elements: scene.elements,
-      appState: scene.appState,
-      files: scene.files,
+      ...scene,
       createdAt: now,
       updatedAt: now,
     };
+    rowIdentity.set(projectId, { id: row.id, createdAt: row.createdAt });
     await db.whiteboards.add(row);
   });
 }
