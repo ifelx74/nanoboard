@@ -5,6 +5,7 @@ import {
   WelcomeScreen,
 } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
+import "./theme.css";
 import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ComponentProps } from "react";
@@ -132,11 +133,12 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full whiteboard">
       <Excalidraw
         theme={appTheme}
         initialData={initialData}
         onChange={handleChange}
+        
       >
         <WelcomeScreen>
           <WelcomeScreen.Center>

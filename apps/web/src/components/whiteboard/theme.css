@@ -1,0 +1,92 @@
+/*
+ * Excalidraw theme mapping — follows the official "Customizing styles" docs:
+ * override the library's CSS variables on `.excalidraw` (and
+ * `.excalidraw.theme--dark` for dark) with higher specificity, here via the
+ * `.whiteboard-canvas` wrapper. Variables are mapped onto the app's semantic
+ * tokens (--background, --card, --border, --foreground, --brand-*) so the
+ * canvas follows the same light/dark flip as the rest of the app; only the
+ * brand family needs per-mode values, mirroring how the app itself uses
+ * `bg-brand-100` (light) vs `bg-brand-900` (dark) for active chips.
+ *
+ * Imported from the lazy whiteboard chunk — never from global CSS.
+ */
+
+.whiteboard .excalidraw {
+  /* UI font matches the app (stock is Assistant) */
+  --ui-font: "Geist Variable", sans-serif;
+
+  /* Brand family — light: active chips use the brand-100 tint with brand ink,
+     matching the app's light active-view chip. Excalidraw's own dark mode
+     flips this family's roles; see the .theme--dark scope below. */
+  --color-primary: var(--brand-800);
+  --color-primary-hover: var(--brand-900);
+  --color-primary-darker: var(--brand-900);
+  --color-primary-darkest: var(--brand-900);
+  --color-primary-light: var(--brand-100);
+  --color-primary-light-darker: var(--brand-200);
+  --color-brand-hover: var(--brand-800);
+  --color-brand-active: var(--brand-900);
+  --color-surface-primary-container: var(--brand-100);
+  --color-on-primary-container: var(--brand-900);
+  --color-promo: var(--brand-800);
+
+  /* Selected-element marquee (canvas-rendered, light mode has no filter) */
+  --color-selection: var(--brand-600);
+  --color-slider-track: var(--brand-200);
+
+  /* Surfaces & text follow the app's semantic tokens, which already flip
+     under `.dark` — so most of this block is mode-agnostic. */
+  --color-on-surface: var(--foreground);
+  --text-primary-color: var(--foreground);
+  --icon-fill-color: var(--foreground);
+  --island-bg-color: var(--card);
+  --island-bg-color-alt: var(--popover);
+  --popup-secondary-bg-color: var(--popover);
+  --popup-text-color: var(--foreground);
+  --popup-text-inverted-color: var(--primary-foreground);
+  --sidebar-bg-color: var(--card);
+  --default-bg-color: var(--background);
+  --input-bg-color: var(--card);
+  --input-hover-bg-color: var(--muted);
+  --input-border-color: var(--input);
+  --input-label-color: var(--muted-foreground);
+  --default-border-color: var(--border);
+  --dialog-border-color: var(--border);
+  --sidebar-border-color: var(--border);
+  --button-hover-bg: var(--accent);
+  --button-active-bg: var(--accent);
+  --keybinding-color: var(--muted-foreground);
+  --link-color: var(--info-foreground);
+  --link-color-hover: var(--info);
+  --scrollbar-thumb: var(--border);
+  --scrollbar-thumb-hover: var(--ring);
+  --color-logo-icon: var(--brand-800);
+  --color-logo-text: var(--foreground);
+
+  /* Corner radii track the app's radius scale */
+  --border-radius-md: calc(var(--radius) * 0.8);
+  --border-radius-lg: var(--radius);
+}
+
+.whiteboard .excalidraw.theme--dark {
+  /* Dark flips the primary family's roles (stock: light tint backgrounds,
+     deep tint containers). Mirror the app's dark active chip: brand-900
+     background with near-white brand ink. */
+  --color-primary: var(--brand-500);
+  --color-primary-hover: var(--brand-400);
+  --color-primary-darker: var(--brand-400);
+  --color-primary-darkest: var(--brand-300);
+  --color-primary-light: #1f4029;
+  --color-primary-light-darker: #19331f;
+  --color-brand-hover: var(--brand-400);
+  --color-brand-active: var(--brand-300);
+  --color-surface-primary-container: var(--brand-900);
+  --color-on-primary-container: var(--brand-100);
+  --color-selection: var(--brand-400);
+  --color-slider-track: color-mix(
+    in srgb,
+    var(--brand-700) 40%,
+    var(--background)
+  );
+  --color-logo-icon: var(--brand-500);
+}
