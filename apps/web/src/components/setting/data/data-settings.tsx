@@ -1,4 +1,4 @@
-import { HardDriveDownload } from "lucide-react";
+import { HardDriveDownload, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createBackupDocument } from "@/lib/backup/create";
@@ -7,6 +7,7 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { SettingsControlItem } from "../control-item";
 import { downloadBackupDocument } from "./download";
+import { RestoreBackupDialog } from "./restore-backup-dialog";
 
 /** "1 task" / "2 tasks"; pass the irregular plural (e.g. "stickies") if any. */
 function counted(value: number, one: string, many = `${one}s`): string {
@@ -15,6 +16,7 @@ function counted(value: number, one: string, many = `${one}s`): string {
 
 export const DataSettings = () => {
   const [exporting, setExporting] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
 
   async function handleExportBackup() {
     if (exporting) return;
@@ -66,7 +68,24 @@ export const DataSettings = () => {
             }
           />
         </section>
+        <section>
+          <SettingsControlItem
+            title="Restore from backup"
+            description="Replace everything in the app with the contents of a backup file."
+            control={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRestoreOpen(true)}
+              >
+                <RotateCcw aria-hidden="true" />
+                Restore
+              </Button>
+            }
+          />
+        </section>
       </div>
+      <RestoreBackupDialog open={restoreOpen} onOpenChange={setRestoreOpen} />
     </div>
   );
 };
