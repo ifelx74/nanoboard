@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
+import { DataSettings } from "./data/data-settings";
 import { PreferencesSettings } from "./preferences/preferences-settings";
 
 type Props = {
@@ -14,6 +15,9 @@ export const SettingsContent = (props: Props) => {
       <ScrollArea>
         <div className="px-8 py-9">
           <PreferencesSettings />
+          <section className="mt-9 border-t border-border pt-9">
+            <DataSettings />
+          </section>
         </div>
         <ScrollBar orientation="vertical" />
       </ScrollArea>
