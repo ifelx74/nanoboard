@@ -217,7 +217,14 @@ export async function deleteProject(id: string): Promise<void> {
   );
   await db.transaction(
     "rw",
-    [db.projects, db.columns, db.tasks, db.labels, db.taskLabels, db.whiteboards],
+    [
+      db.projects,
+      db.columns,
+      db.tasks,
+      db.labels,
+      db.taskLabels,
+      db.whiteboards,
+    ],
     async () => {
       // One indexed join wipe instead of a per-task loop (perf).
       await db.taskLabels.where("taskId").anyOf(taskIds).delete();

@@ -138,7 +138,6 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
         theme={appTheme}
         initialData={initialData}
         onChange={handleChange}
-        
       >
         <WelcomeScreen>
           <WelcomeScreen.Center>
