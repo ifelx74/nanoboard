@@ -11,20 +11,23 @@ import type {
 } from "@/lib/db/schema";
 import {
   BACKUP_FORMAT,
-  BACKUP_FORMAT_VERSION,
+  BACKUP_TABLES,
   type BackupDocument,
-  type BackupTables,
+  type BackupTableName,
 } from "./types";
 import { assertValidBackupDocument } from "./validate";
 
 /**
  * Parse backup file text into a document. Rejects anything that isn't a
- * nanoboard backup — unparseable JSON, a foreign format identifier, or a
- * missing/shapeless tables map — before the caller ever touches the database.
+ * nanoboard backup — unparseable JSON, a foreign format identifier, a
+ * missing/shapeless tables map, a known table that isn't an array, or a row
+ * failing its structural checks — before the caller ever touches the
+ * database.
  *
- * Tolerant by design: a tables map missing a known table reads as empty, and
- * unknown tables are ignored, so files produced by other app versions parse
- * and their compatibility is decided by the version policy, not by shape.
+ * Tolerant by design in exactly two ways: a tables map missing a known table
+ * reads as empty, and unknown tables are ignored, so files produced by other
+ * app versions parse and their compatibility is decided by the version
+ * policy, not by shape.
  */
 export function parseBackupDocument(text: string): BackupDocument {
   let value: unknown;
@@ -45,14 +48,16 @@ export function parseBackupDocument(text: string): BackupDocument {
   }
 
   const version = record.version;
-  if (typeof version !== "number") {
+  if (typeof version !== "number" || !Number.isInteger(version)) {
     throw new Error(
       "This doesn't look like a valid nanoboard backup — no format version.",
     );
   }
 
   const rawTables =
-    typeof record.tables === "object" && record.tables !== null
+    typeof record.tables === "object" &&
+    record.tables !== null &&
+    !Array.isArray(record.tables)
       ? (record.tables as Record<string, unknown>)
       : null;
   if (!rawTables) {
@@ -63,18 +68,18 @@ export function parseBackupDocument(text: string): BackupDocument {
 
   const document: BackupDocument = {
     format: BACKUP_FORMAT,
-    version: version as typeof BACKUP_FORMAT_VERSION,
+    version,
     appVersion: asString(record.appVersion, "unknown"),
     exportedAt: asString(record.exportedAt, new Date().toISOString()),
     tables: {
-      projects: asRows<Project>(rawTables.projects),
-      columns: asRows<Column>(rawTables.columns),
-      tasks: asRows<Task>(rawTables.tasks),
-      labels: asRows<Label>(rawTables.labels),
-      taskLabels: asRows<TaskLabel>(rawTables.taskLabels),
-      taskResources: asRows<TaskResource>(rawTables.taskResources),
-      stickies: asRows<Sticky>(rawTables.stickies),
-      whiteboards: asRows<Whiteboard>(rawTables.whiteboards),
+      projects: asRows<Project>("projects", rawTables),
+      columns: asRows<Column>("columns", rawTables),
+      tasks: asRows<Task>("tasks", rawTables),
+      labels: asRows<Label>("labels", rawTables),
+      taskLabels: asRows<TaskLabel>("taskLabels", rawTables),
+      taskResources: asRows<TaskResource>("taskResources", rawTables),
+      stickies: asRows<Sticky>("stickies", rawTables),
+      whiteboards: asRows<Whiteboard>("whiteboards", rawTables),
     },
   };
 
@@ -90,37 +95,45 @@ function asString(value: unknown, fallback: string): string {
   return typeof value === "string" ? value : fallback;
 }
 
-/** The parser boundary: file JSON becomes trusted row shapes here, or []. */
-function asRows<Row>(value: unknown): Row[] {
-  return Array.isArray(value) ? (value as Row[]) : [];
+/**
+ * The parser boundary: file JSON becomes trusted row shapes here. A missing
+ * table reads as empty; a table present but not an array is corruption, not
+ * tolerance, and aborts the parse.
+ */
+function asRows<Row>(
+  name: BackupTableName,
+  rawTables: Record<string, unknown>,
+): Row[] {
+  const value = rawTables[name];
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    throw new Error(
+      `This backup is corrupted — the "${name}" table is not a list of rows.`,
+    );
+  }
+  return value as Row[];
 }
 
 /** Row counts per table, for the restore preview's "backup contains" side. */
 export function backupTableCounts(
   document: BackupDocument,
-): Record<keyof BackupTables, number> {
-  return {
-    projects: document.tables.projects.length,
-    columns: document.tables.columns.length,
-    tasks: document.tables.tasks.length,
-    labels: document.tables.labels.length,
-    taskLabels: document.tables.taskLabels.length,
-    taskResources: document.tables.taskResources.length,
-    stickies: document.tables.stickies.length,
-    whiteboards: document.tables.whiteboards.length,
-  };
+): Record<BackupTableName, number> {
+  const counts = {} as Record<BackupTableName, number>;
+  for (const name of BACKUP_TABLES) {
+    counts[name] = document.tables[name].length;
+  }
+  return counts;
 }
 
-const BACKUP_TABLE_KEYS = [
-  "projects",
-  "columns",
-  "tasks",
-  "labels",
-  "taskLabels",
-  "taskResources",
-  "stickies",
-  "whiteboards",
-] as const;
+/** Live row counts of the given database, keyed like backupTableCounts. */
+export async function readWorkspaceCounts(
+  db: NanoboardDB,
+): Promise<Record<BackupTableName, number>> {
+  const entries = await Promise.all(
+    BACKUP_TABLES.map(async (name) => [name, await db.table(name).count()]),
+  );
+  return Object.fromEntries(entries) as Record<BackupTableName, number>;
+}
 
 /**
  * Replace the entire database with the backup's contents: every table wiped
@@ -128,32 +141,26 @@ const BACKUP_TABLE_KEYS = [
  * constraint on any row, a closed connection — aborts the whole transaction,
  * so the database is left exactly as it was. The caller decides when the UI
  * reflects the new state; for a full restore that is a page reload.
+ *
+ * The document is re-validated here rather than trusting the caller to have
+ * parsed a file first: the all-or-nothing guarantee must hold for every call
+ * site, not just the one that goes through `parseBackupDocument`.
  */
 export async function applyBackupDocument(
   db: NanoboardDB,
   document: BackupDocument,
 ): Promise<void> {
+  assertValidBackupDocument(document);
   await db.transaction(
     "rw",
-    BACKUP_TABLE_KEYS.map((name) => db[name]),
+    BACKUP_TABLES.map((name) => db.table(name)),
     async () => {
-      await db.projects.clear();
-      await db.columns.clear();
-      await db.tasks.clear();
-      await db.labels.clear();
-      await db.taskLabels.clear();
-      await db.taskResources.clear();
-      await db.stickies.clear();
-      await db.whiteboards.clear();
-
-      await db.projects.bulkAdd(document.tables.projects);
-      await db.columns.bulkAdd(document.tables.columns);
-      await db.tasks.bulkAdd(document.tables.tasks);
-      await db.labels.bulkAdd(document.tables.labels);
-      await db.taskLabels.bulkAdd(document.tables.taskLabels);
-      await db.taskResources.bulkAdd(document.tables.taskResources);
-      await db.stickies.bulkAdd(document.tables.stickies);
-      await db.whiteboards.bulkAdd(document.tables.whiteboards);
+      for (const name of BACKUP_TABLES) {
+        await db.table(name).clear();
+      }
+      for (const name of BACKUP_TABLES) {
+        await db.table(name).bulkAdd(document.tables[name]);
+      }
     },
   );
 }

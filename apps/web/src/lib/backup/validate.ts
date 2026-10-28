@@ -12,8 +12,10 @@ const isObject: Check = (value) =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const isArray: Check = Array.isArray;
 
-const isStringArray = (values: readonly string[]): Check => (value) =>
-  typeof value === "string" && values.includes(value);
+const isStringArray =
+  (values: readonly string[]): Check =>
+  (value) =>
+    typeof value === "string" && values.includes(value);
 
 interface FieldSpec {
   field: string;
@@ -32,6 +34,13 @@ function spec(field: string, check: Check, optional = false): FieldSpec {
  * task-number continuity, referenced IDs existing, compound-key shape
  * beyond the two string fields) and anything deep inside Excalidraw scenes.
  * The file was written by this app; structure is what corruption breaks.
+ *
+ * Enum fields (task priority, sticky color) are checked against their
+ * current value sets. This is part of the version contract, not a semantic
+ * check: a value outside the set cannot have been written by any build of
+ * the same format version, so it is corruption — and rendering an unknown
+ * value would fail worse than rejecting the file. Adding a value to either
+ * set therefore requires a backup format version bump.
  */
 const TABLE_FIELD_SPECS: Record<BackupTableName, FieldSpec[]> = {
   projects: [
@@ -78,10 +87,7 @@ const TABLE_FIELD_SPECS: Record<BackupTableName, FieldSpec[]> = {
     spec("createdAt", isNumber),
     spec("updatedAt", isNumber),
   ],
-  taskLabels: [
-    spec("taskId", isString),
-    spec("labelId", isString),
-  ],
+  taskLabels: [spec("taskId", isString), spec("labelId", isString)],
   taskResources: [
     spec("id", isString),
     spec("taskId", isString),

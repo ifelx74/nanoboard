@@ -11,7 +11,7 @@
 // isolated and testable.
 //
 // To give a database content, call `seedTestDb(db)` (or pass custom rows).
-// It replaces the contents of all seven tables in one transaction with
+// It replaces the contents of all eight tables in one transaction with
 // representative rows built by the `make*` factories, so assertions can rely
 // on exactly the rows a test chose — never on leftovers from the fresh-boot
 // populate seeding or from a previous write.
@@ -292,7 +292,7 @@ export function buildTestContents(now: number = TEST_NOW): TestDbContents {
 }
 
 /**
- * Replace the contents of all seven tables with `contents` in a single
+ * Replace the contents of all eight tables with `contents` in a single
  * transaction. Runs against a fresh test database, the fresh-boot populate
  * seeding has already fired by the time this runs — it is wiped here, so a
  * seeded database holds exactly the rows given.

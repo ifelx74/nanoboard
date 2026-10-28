@@ -28,15 +28,20 @@ import {
   applyBackupDocument,
   backupTableCounts,
   parseBackupDocument,
+  readWorkspaceCounts,
 } from "@/lib/backup/apply";
 import { createBackupDocument } from "@/lib/backup/create";
-import type { BackupDocument } from "@/lib/backup/types";
+import {
+  BACKUP_TABLES,
+  type BackupDocument,
+  type BackupTableName,
+} from "@/lib/backup/types";
 import { db } from "@/lib/db/db";
 import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import { downloadBackupDocument } from "./download";
 
-const TABLE_LABELS: Record<string, string> = {
+const TABLE_LABELS: Record<BackupTableName, string> = {
   projects: "Projects",
   columns: "Columns",
   tasks: "Tasks",
@@ -60,9 +65,10 @@ export function RestoreBackupDialog({
   const [mode, setMode] = useState<Mode>("pick");
   const [fileName, setFileName] = useState<string | null>(null);
   const [document, setDocument] = useState<BackupDocument | null>(null);
-  const [destroyed, setDestroyed] = useState<Record<string, number> | null>(
-    null,
-  );
+  const [currentCounts, setCurrentCounts] = useState<Record<
+    BackupTableName,
+    number
+  > | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -74,37 +80,13 @@ export function RestoreBackupDialog({
     setMode("pick");
     setFileName(null);
     setDocument(null);
-    setDestroyed(null);
+    setCurrentCounts(null);
     setError(null);
     setDragActive(false);
     setParsing(false);
     setRestoring(false);
     setDownloadingEscape(false);
   }, [open]);
-
-  async function liveCounts(): Promise<Record<string, number>> {
-    const [projects, columns, tasks, labels, taskLabels, taskResources, stickies, whiteboards] =
-      await Promise.all([
-        db.projects.count(),
-        db.columns.count(),
-        db.tasks.count(),
-        db.labels.count(),
-        db.taskLabels.count(),
-        db.taskResources.count(),
-        db.stickies.count(),
-        db.whiteboards.count(),
-      ]);
-    return {
-      projects,
-      columns,
-      tasks,
-      labels,
-      taskLabels,
-      taskResources,
-      stickies,
-      whiteboards,
-    };
-  }
 
   async function handleFile(file: File) {
     if (parsing) return;
@@ -118,19 +100,15 @@ export function RestoreBackupDialog({
     try {
       const parsed = parseBackupDocument(await file.text());
       setDocument(parsed);
-      setDestroyed(await liveCounts());
+      setCurrentCounts(await readWorkspaceCounts(db));
       setFileName(file.name);
       setMode("summary");
     } catch (cause) {
       setDocument(null);
-      setDestroyed(null);
+      setCurrentCounts(null);
       setFileName(null);
       setMode("pick");
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Could not read this file.",
-      );
+      setError(errorMessage(cause, "Could not read this file."));
     } finally {
       setParsing(false);
     }
@@ -156,11 +134,7 @@ export function RestoreBackupDialog({
       downloadBackupDocument(await createBackupDocument(db));
       toast.success("Current data downloaded as a backup.");
     } catch (cause) {
-      toast.error(
-        cause instanceof Error
-          ? cause.message
-          : "Could not export the current data.",
-      );
+      toast.error(errorMessage(cause, "Could not export the current data."));
     } finally {
       setDownloadingEscape(false);
     }
@@ -177,8 +151,7 @@ export function RestoreBackupDialog({
       // The apply path is atomic — a failure here left the database as it
       // was, so staying in the summary is safe.
       setRestoring(false);
-      const message =
-        cause instanceof Error ? cause.message : "Could not restore backup.";
+      const message = errorMessage(cause, "Could not restore backup.");
       setError(message);
       toast.error(message);
     }
@@ -188,7 +161,7 @@ export function RestoreBackupDialog({
     setMode("pick");
     setFileName(null);
     setDocument(null);
-    setDestroyed(null);
+    setCurrentCounts(null);
     setError(null);
   }
 
@@ -272,7 +245,7 @@ export function RestoreBackupDialog({
             </>
           )}
 
-          {mode === "summary" && contains && destroyed && (
+          {mode === "summary" && contains && currentCounts && (
             <>
               <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
                 <span className="min-w-0 truncate">{fileName}</span>
@@ -300,7 +273,7 @@ export function RestoreBackupDialog({
                 />
                 <CountsCard
                   title="Will be destroyed"
-                  counts={destroyed}
+                  counts={currentCounts}
                   tone="destructive"
                 />
               </div>
@@ -379,7 +352,7 @@ function CountsCard({
   tone,
 }: {
   title: string;
-  counts: Record<string, number>;
+  counts: Record<BackupTableName, number>;
   tone: "default" | "destructive";
 }) {
   return (
@@ -403,11 +376,11 @@ function CountsCard({
         {title}
       </p>
       <ul className="mt-1.5 space-y-0.5 text-sm tabular-nums">
-        {Object.entries(TABLE_LABELS).map(([key, label]) => (
+        {BACKUP_TABLES.map((key) => (
           <li key={key} className="flex justify-between gap-2">
-            <span className="text-muted-foreground">{label}</span>
+            <span className="text-muted-foreground">{TABLE_LABELS[key]}</span>
             <span className={cn(tone === "destructive" && "text-destructive")}>
-              {counts[key] ?? 0}
+              {counts[key]}
             </span>
           </li>
         ))}

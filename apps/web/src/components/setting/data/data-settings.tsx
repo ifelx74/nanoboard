@@ -2,9 +2,10 @@ import { HardDriveDownload, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createBackupDocument } from "@/lib/backup/create";
+import type { BackupDocument } from "@/lib/backup/types";
 import { db } from "@/lib/db/db";
 import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import { SettingsControlItem } from "../control-item";
 import { downloadBackupDocument } from "./download";
 import { RestoreBackupDialog } from "./restore-backup-dialog";
@@ -12,6 +13,21 @@ import { RestoreBackupDialog } from "./restore-backup-dialog";
 /** "1 task" / "2 tasks"; pass the irregular plural (e.g. "stickies") if any. */
 function counted(value: number, one: string, many = `${one}s`): string {
   return `${value} ${value === 1 ? one : many}`;
+}
+
+/** Every table's row count, for the export toast. */
+function exportSummary(document: BackupDocument): string {
+  const t = document.tables;
+  return [
+    counted(t.projects.length, "project"),
+    counted(t.columns.length, "column"),
+    counted(t.tasks.length, "task"),
+    counted(t.labels.length, "label"),
+    counted(t.taskLabels.length, "label assignment"),
+    counted(t.taskResources.length, "task link"),
+    counted(t.stickies.length, "sticky", "stickies"),
+    counted(t.whiteboards.length, "whiteboard"),
+  ].join(", ");
 }
 
 export const DataSettings = () => {
@@ -25,12 +41,10 @@ export const DataSettings = () => {
       const document = await createBackupDocument(db);
       downloadBackupDocument(document);
       toast.success("Backup exported.", {
-        description: `${counted(document.tables.projects.length, "project")}, ${counted(document.tables.tasks.length, "task")}, ${counted(document.tables.whiteboards.length, "whiteboard")}, and ${counted(document.tables.stickies.length, "sticky", "stickies")}.`,
+        description: `${exportSummary(document)}.`,
       });
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not export backup.",
-      );
+    } catch (cause) {
+      toast.error(errorMessage(cause, "Could not export backup."));
     } finally {
       setExporting(false);
     }

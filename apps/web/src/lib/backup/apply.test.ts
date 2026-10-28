@@ -32,7 +32,12 @@ function buildOtherContents(): TestDbContents {
     position: 1,
   });
   contents.tasks.push(
-    makeTask({ id: "task-extra", number: 9, createdAt: TEST_NOW + 60_000, updatedAt: TEST_NOW + 60_000 }),
+    makeTask({
+      id: "task-extra",
+      number: 9,
+      createdAt: TEST_NOW + 60_000,
+      updatedAt: TEST_NOW + 60_000,
+    }),
   );
   return contents;
 }
@@ -110,6 +115,29 @@ describe("parseBackupDocument", () => {
     ]);
     expect(parsed.tables.tasks).toEqual([]);
     expect(Object.keys(parsed.tables)).not.toContain("brandNewTable");
+  });
+
+  it.each([
+    [
+      "a table that is not a list",
+      { tasks: {} },
+      /"tasks" table is not a list/,
+    ],
+    ["a tables map that is a list", [], /no data tables/],
+  ])("rejects %s instead of reading it as empty", (_label, tables, message) => {
+    expect(() =>
+      parseBackupDocument(
+        JSON.stringify({ format: "nanoboard-backup", version: 1, tables }),
+      ),
+    ).toThrow(message);
+  });
+
+  it("rejects a non-integer format version", () => {
+    expect(() =>
+      parseBackupDocument(
+        JSON.stringify({ format: "nanoboard-backup", version: Number.NaN }),
+      ),
+    ).toThrow(/no format version/);
   });
 });
 
@@ -199,6 +227,37 @@ describe("applyBackupDocument", () => {
     await expect(applyBackupDocument(target, document)).rejects.toThrow();
 
     // Atomic: nothing was wiped, nothing was half-inserted.
+    expect(await readAllTables(target)).toEqual({
+      projects: original.projects,
+      columns: original.columns,
+      tasks: original.tasks,
+      labels: original.labels,
+      taskLabels: original.taskLabels,
+      taskResources: original.taskResources,
+      stickies: original.stickies,
+      whiteboards: original.whiteboards,
+    });
+
+    await source.close();
+    await target.close();
+  });
+
+  it("rejects a structurally broken document before writing anything", async () => {
+    const source = createTestDb();
+    await seedTestDb(source);
+    const document = await createBackupDocument(source);
+    // A structural break the parser would have caught: the apply path must
+    // not trust its caller to have parsed the file first.
+    (document.tables.tasks[0] as { title: unknown }).title = 123;
+
+    const target = createTestDb();
+    const original = buildOtherContents();
+    await seedTestDb(target, original);
+
+    await expect(applyBackupDocument(target, document)).rejects.toThrow(
+      /corrupted[\s\S]*"tasks", row 1[\s\S]*"title"/,
+    );
+
     expect(await readAllTables(target)).toEqual({
       projects: original.projects,
       columns: original.columns,

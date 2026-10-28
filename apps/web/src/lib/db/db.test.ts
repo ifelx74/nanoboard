@@ -27,7 +27,7 @@ describe("NanoboardDB on fake-indexeddb", () => {
     await db.close();
   });
 
-  it("round-trips representative rows through all seven tables", async () => {
+  it("round-trips representative rows through all eight tables", async () => {
     const db = createTestDb();
 
     await seedTestDb(db);

@@ -52,7 +52,12 @@ export interface BackupTables {
  */
 export interface BackupDocument {
   format: typeof BACKUP_FORMAT;
-  version: typeof BACKUP_FORMAT_VERSION;
+  /**
+   * The format version of the producing app. May be older than the current
+   * version: the compatibility policy accepts every version at or below
+   * {@link BACKUP_FORMAT_VERSION} and rejects newer ones.
+   */
+  version: number;
   /** The exporting app's own version (package.json), inlined at build time. */
   appVersion: string;
   /** ISO timestamp of the export. */

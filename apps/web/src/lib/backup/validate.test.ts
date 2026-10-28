@@ -65,10 +65,16 @@ describe("assertValidBackupTables", () => {
     ["projects", { ...buildTestContents().projects[0], lastTaskNumber: null }],
     ["labels", { ...buildTestContents().labels[0], color: 7 }],
     ["taskLabels", { taskId: "task-1" }],
-    ["stickies", { ...buildTestContents().stickies[0], backgroundColor: "chartreuse" }],
+    [
+      "stickies",
+      { ...buildTestContents().stickies[0], backgroundColor: "chartreuse" },
+    ],
     ["whiteboards", { ...buildTestContents().whiteboards[0], elements: "[]" }],
     ["whiteboards", { ...buildTestContents().whiteboards[0], appState: [] }],
-    ["taskResources", { ...buildTestContents().taskResources[0], url: undefined }],
+    [
+      "taskResources",
+      { ...buildTestContents().taskResources[0], url: undefined },
+    ],
     ["columns", { ...buildTestContents().columns[0], isFinal: "no" }],
   ])("rejects a structurally broken %s row", (tableName, row) => {
     const tables = buildTestContents();
@@ -120,7 +126,9 @@ describe("the parser gates on the full structural policy", () => {
   it("accepts a file from an older format version and applies it", async () => {
     const document = await seededDocument();
     // A hypothetical older producer: same rows, smaller version stamp.
-    const older = parseBackupDocument(JSON.stringify({ ...document, version: 0 }));
+    const older = parseBackupDocument(
+      JSON.stringify({ ...document, version: 0 }),
+    );
     expect(older.version).toBe(0);
   });
 });

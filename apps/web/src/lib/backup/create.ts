@@ -2,40 +2,27 @@ import type { NanoboardDB } from "@/lib/db/db";
 import {
   BACKUP_FORMAT,
   BACKUP_FORMAT_VERSION,
+  BACKUP_TABLES,
   type BackupDocument,
   type BackupTables,
 } from "./types";
-
-const ALL_BACKUP_TABLES = [
-  "projects",
-  "columns",
-  "tasks",
-  "labels",
-  "taskLabels",
-  "taskResources",
-  "stickies",
-  "whiteboards",
-] as const;
 
 /**
  * Read every table as one consistent snapshot, so a backup never mixes rows
  * from before and after a concurrent write.
  */
 async function readBackupTables(db: NanoboardDB): Promise<BackupTables> {
-  return db.transaction(
+  const tables = {} as BackupTables;
+  await db.transaction(
     "r",
-    ALL_BACKUP_TABLES.map((name) => db[name]),
-    async () => ({
-      projects: await db.projects.toArray(),
-      columns: await db.columns.toArray(),
-      tasks: await db.tasks.toArray(),
-      labels: await db.labels.toArray(),
-      taskLabels: await db.taskLabels.toArray(),
-      taskResources: await db.taskResources.toArray(),
-      stickies: await db.stickies.toArray(),
-      whiteboards: await db.whiteboards.toArray(),
-    }),
+    BACKUP_TABLES.map((name) => db.table(name)),
+    async () => {
+      for (const name of BACKUP_TABLES) {
+        tables[name] = await db.table(name).toArray();
+      }
+    },
   );
+  return tables;
 }
 
 /**
