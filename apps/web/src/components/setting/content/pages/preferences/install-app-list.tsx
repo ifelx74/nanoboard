@@ -2,7 +2,7 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { toast } from "@/lib/toast";
-import { SettingsControlItem } from "../control-item";
+import { SettingsControlItem } from "../../../control-item";
 
 export default function InstallAppList() {
   const { canInstall, isInstalled, isIos, install } = useInstallPrompt();

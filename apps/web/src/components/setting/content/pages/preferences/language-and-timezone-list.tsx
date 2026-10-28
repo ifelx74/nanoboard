@@ -1,4 +1,4 @@
-import { SettingsControlItem } from "../control-item";
+import { SettingsControlItem } from "../../../control-item";
 import {
   Select,
   SelectContent,
