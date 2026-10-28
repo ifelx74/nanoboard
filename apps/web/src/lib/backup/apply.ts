@@ -15,6 +15,7 @@ import {
   type BackupDocument,
   type BackupTables,
 } from "./types";
+import { assertValidBackupDocument } from "./validate";
 
 /**
  * Parse backup file text into a document. Rejects anything that isn't a
@@ -60,7 +61,7 @@ export function parseBackupDocument(text: string): BackupDocument {
     );
   }
 
-  return {
+  const document: BackupDocument = {
     format: BACKUP_FORMAT,
     version: version as typeof BACKUP_FORMAT_VERSION,
     appVersion: asString(record.appVersion, "unknown"),
@@ -76,6 +77,13 @@ export function parseBackupDocument(text: string): BackupDocument {
       whiteboards: asRows<Whiteboard>(rawTables.whiteboards),
     },
   };
+
+  // The full structural gate sits inside the parser: a file that fails the
+  // version policy or any row's structural checks never becomes a document
+  // the caller could apply.
+  assertValidBackupDocument(document);
+
+  return document;
 }
 
 function asString(value: unknown, fallback: string): string {

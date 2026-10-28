@@ -82,14 +82,32 @@ describe("parseBackupDocument", () => {
         version: 1,
         tables: {
           projects: [],
-          stickies: [{ id: "sticky-1" }],
+          stickies: [
+            {
+              id: "sticky-1",
+              contentHtml: "<p>Remember the milk</p>",
+              backgroundColor: "peach",
+              position: 0,
+              createdAt: 0,
+              updatedAt: 0,
+            },
+          ],
           brandNewTable: [{ id: "x" }],
         },
       }),
     );
 
     expect(parsed.tables.projects).toEqual([]);
-    expect(parsed.tables.stickies).toEqual([{ id: "sticky-1" }]);
+    expect(parsed.tables.stickies).toEqual([
+      {
+        id: "sticky-1",
+        contentHtml: "<p>Remember the milk</p>",
+        backgroundColor: "peach",
+        position: 0,
+        createdAt: 0,
+        updatedAt: 0,
+      },
+    ]);
     expect(parsed.tables.tasks).toEqual([]);
     expect(Object.keys(parsed.tables)).not.toContain("brandNewTable");
   });
