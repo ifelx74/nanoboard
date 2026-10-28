@@ -1,4 +1,6 @@
-<img alt="nanoboard" src="apps/web/public/og-image.png" width="100%" />
+<p align="center">
+  <img src="apps/web/public/pwa-192x192.png" alt="Odysseus" width="52">
+</p>
 
 <h4 align="center">
   <a href="#features">Features</a> |
@@ -28,6 +30,8 @@
     <img alt="Local-first" src="https://img.shields.io/badge/storage-100%25%20local-orange.svg?style=flat" /></a>
   <img alt="Made with TypeScript" src="https://img.shields.io/badge/100%25-TypeScript-3178c6.svg?style=flat&logo=typescript&logoColor=white" />
 </p>
+
+<img alt="nanoboard" src="apps/web/public/og-image.png" width="100%" />
 
 ## Features
 
