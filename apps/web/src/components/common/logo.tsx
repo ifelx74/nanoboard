@@ -33,9 +33,9 @@ export function LogoIcon(props: LogoIconProps) {
         stroke="#e4e4e7"
         strokeWidth="1"
       />
-      <rect x="4" y="4" width="4" height="16" rx="1.5" fill="#2E9F45" />
-      <rect x="10" y="4" width="4" height="11" rx="1.5" fill="#2E9F45" />
-      <rect x="16" y="4" width="4" height="5" rx="1.5" fill="#2E9F45" />
+      <rect x="4" y="4" width="4" height="16" rx="1.5" fill="#3E77FD" />
+      <rect x="10" y="4" width="4" height="11" rx="1.5" fill="#3E77FD" />
+      <rect x="16" y="4" width="4" height="5" rx="1.5" fill="#3E77FD" />
       <rect
         x="16"
         y="11"
@@ -43,7 +43,7 @@ export function LogoIcon(props: LogoIconProps) {
         height="4"
         rx="1.5"
         opacity="0.45"
-        fill="#2E9F45"
+        fill="#3E77FD"
       />
     </svg>
   );
@@ -59,7 +59,7 @@ export function BackgroundLogo(props: LogoIconProps) {
       aria-label="nanoboard logo"
       {...props}
     >
-      <rect width="24" height="24" rx="5" fill="#2E9F45" />
+      <rect width="24" height="24" rx="5" fill="#3E77FD" />
       <rect x="4" y="4" width="4" height="16" rx="1.5" fill="#ffffff" />
       <rect x="10" y="4" width="4" height="11" rx="1.5" fill="#ffffff" />
       <rect x="16" y="4" width="4" height="5" rx="1.5" fill="#ffffff" />

@@ -14,15 +14,15 @@
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
-  --color-brand-900: #2e9f45;
-  --color-brand-800: #43a958;
-  --color-brand-700: #58b26a;
-  --color-brand-600: #6dbc7d;
-  --color-brand-500: #82c58f;
-  --color-brand-400: #97cfa2;
-  --color-brand-300: #abd9b5;
-  --color-brand-200: #c0e2c7;
-  --color-brand-100: #eaf5ec;
+  --color-brand-900: #174ecf;
+  --color-brand-800: #3e77fd;
+  --color-brand-700: #6691f5;
+  --color-brand-600: #85a6f4;
+  --color-brand-500: #9fb8f4;
+  --color-brand-400: #b8caf4;
+  --color-brand-300: #ccd8f5;
+  --color-brand-200: #dee6f7;
+  --color-brand-100: #eff2fb;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
