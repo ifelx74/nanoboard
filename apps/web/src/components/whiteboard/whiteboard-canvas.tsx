@@ -14,12 +14,14 @@ import { getWhiteboard, saveWhiteboardScene } from "@/lib/db/whiteboards";
 import { db } from "@/lib/db/db";
 import {
   deleteWhiteboardPreview,
+  getWhiteboardPreview,
   saveWhiteboardPreview,
 } from "@/lib/db/whiteboard-previews";
 import type { Whiteboard } from "@/lib/db/schema";
 import { useThemeStore } from "@/store/theme";
 import { buildScenePayload } from "./persistence";
 import { decideWhiteboardPreview } from "./preview";
+import { renderWhiteboardThumbnail, resolveThumbnailDataUrl } from "./thumbnail";
 import { WhiteboardSkeleton } from "./skeleton";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -38,9 +40,10 @@ type PendingScene = Pick<Whiteboard, "elements" | "appState" | "files">;
  * touches Excalidraw types, which are erased at build time). The scene is
  * hydrated once on mount and saved with a ~500ms debounce, flushed on unmount
  * so navigating away never drops the last strokes. Each flush also syncs the
- * project's preview row — published when the payload has content, removed
- * when the canvas was emptied — so the gallery's "has content" index tracks
- * the board without ever reading scene rows. The route remounts this
+ * project's preview row — published with a freshly rendered thumbnail when
+ * the payload has content, removed when the canvas was emptied — so the
+ * gallery's "has content" index tracks the board without ever reading scene
+ * rows. The route remounts this
  * component per project (key={projectId}), so refs never outlive their scene.
  */
 export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
@@ -62,11 +65,20 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
       // The preview row rides the successful flush, but the scene save stays
       // authoritative: a preview failure is logged and dropped — it never
       // blocks, rolls back, or corrupts the scene save, and the next flush
-      // retries the sync. In this slice the published thumbnail is empty;
-      // rendered thumbnails arrive with the gallery slice.
+      // retries the sync. Rendering the thumbnail is a further cosmetic step
+      // with its own catch: a failed render keeps the row's prior thumbnail
+      // (or the empty placeholder for a fresh row) instead of clobbering it.
       try {
         if (decideWhiteboardPreview(payload) === "publish") {
-          await saveWhiteboardPreview(db, projectId, "");
+          let dataUrl: string;
+          try {
+            dataUrl = await renderWhiteboardThumbnail(payload);
+          } catch (error) {
+            console.error("Failed to render whiteboard thumbnail:", error);
+            const prior = await getWhiteboardPreview(db, projectId);
+            dataUrl = resolveThumbnailDataUrl(null, prior?.dataUrl);
+          }
+          await saveWhiteboardPreview(db, projectId, dataUrl);
         } else {
           await deleteWhiteboardPreview(db, projectId);
         }
