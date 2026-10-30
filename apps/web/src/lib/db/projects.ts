@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
-import { db } from "./db";
+import { db, type NanoboardDB } from "./db";
 import { forgetWhiteboard } from "./whiteboards";
+import { deleteWhiteboardPreview } from "./whiteboard-previews";
 import { isProjectIconKey } from "../project-icons";
 import type { ProjectIconKey } from "../project-icons";
 import type { ProjectKey } from "../task-key";
@@ -207,38 +208,52 @@ export async function updateProject(
   await db.projects.update(id, next);
 }
 
-export async function deleteProject(id: string): Promise<void> {
-  const existing = await db.projects.get(id);
+/**
+ * Deletes the project and every row hanging off it in one transaction. The
+ * database instance is passed explicitly (the data-layer convention for
+ * functions under test — see test-db.ts), so eviction behavior is
+ * assertable on an isolated database; production callers pass the singleton.
+ */
+export async function deleteProject(
+  database: NanoboardDB,
+  id: string,
+): Promise<void> {
+  const existing = await database.projects.get(id);
   if (!existing) {
     throw new Error("Project not found.");
   }
-  const taskIds = (await db.tasks.where("projectId").equals(id).toArray()).map(
-    (task) => task.id,
-  );
-  await db.transaction(
+  const taskIds = (
+    await database.tasks.where("projectId").equals(id).toArray()
+  ).map((task) => task.id);
+  await database.transaction(
     "rw",
     [
-      db.projects,
-      db.columns,
-      db.tasks,
-      db.labels,
-      db.taskLabels,
-      db.whiteboards,
+      database.projects,
+      database.columns,
+      database.tasks,
+      database.labels,
+      database.taskLabels,
+      database.whiteboards,
+      database.whiteboardPreviews,
     ],
     async () => {
       // One indexed join wipe instead of a per-task loop (perf).
-      await db.taskLabels.where("taskId").anyOf(taskIds).delete();
-      await db.tasks.where("projectId").equals(id).delete();
+      await database.taskLabels.where("taskId").anyOf(taskIds).delete();
+      await database.tasks.where("projectId").equals(id).delete();
       // Joins can't dangle: every project-label join belonged to a project
       // task (same-project attach rule), all removed above.
-      await db.labels.where("projectId").equals(id).delete();
-      await db.columns.where("projectId").equals(id).delete();
+      await database.labels.where("projectId").equals(id).delete();
+      await database.columns.where("projectId").equals(id).delete();
       // The scene row is unique per project (`&[projectId]`), so this deletes
       // at most one row; a project that never drew stores nothing. Also drop
       // its cached row identity so a later save can't resurrect the row.
-      await db.whiteboards.where("projectId").equals(id).delete();
+      await database.whiteboards.where("projectId").equals(id).delete();
       forgetWhiteboard(id);
-      await db.projects.delete(id);
+      // The preview row rides the scene row's lifecycle: evicted in the same
+      // transaction so the gallery's "has content" index never outlives the
+      // project (a no-op for projects that never drew).
+      await deleteWhiteboardPreview(database, id);
+      await database.projects.delete(id);
     },
   );
 }
