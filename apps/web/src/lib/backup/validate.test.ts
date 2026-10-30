@@ -72,6 +72,18 @@ describe("assertValidBackupTables", () => {
     ["whiteboards", { ...buildTestContents().whiteboards[0], elements: "[]" }],
     ["whiteboards", { ...buildTestContents().whiteboards[0], appState: [] }],
     [
+      "whiteboardPreviews",
+      { ...buildTestContents().whiteboardPreviews[0], projectId: undefined },
+    ],
+    [
+      "whiteboardPreviews",
+      { ...buildTestContents().whiteboardPreviews[0], dataUrl: 42 },
+    ],
+    [
+      "whiteboardPreviews",
+      { ...buildTestContents().whiteboardPreviews[0], updatedAt: "now" },
+    ],
+    [
       "taskResources",
       { ...buildTestContents().taskResources[0], url: undefined },
     ],
