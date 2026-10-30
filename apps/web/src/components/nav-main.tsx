@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { House } from "lucide-react";
+import { House, PencilRuler } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -39,6 +39,16 @@ export function NavMain() {
             >
               <Stickies className="shrink-0 size-4" aria-hidden="true" />
               <span>Stickies</span>
+            </SidebarMenuButton>
+            <SidebarMenuButton
+              tooltip="Whiteboard"
+              isActive={pathname === "/whiteboard"}
+              size="default"
+              className="h-8 text-sm text-primary"
+              onClick={() => navigate({ to: "/whiteboard" })}
+            >
+              <PencilRuler aria-hidden="true" />
+              <span>Whiteboard</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

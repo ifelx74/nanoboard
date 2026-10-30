@@ -51,3 +51,49 @@ export async function deleteWhiteboardPreview(
 ): Promise<void> {
   await db.whiteboardPreviews.delete(projectId);
 }
+
+/** One flattened gallery card: the preview joined with its project. */
+export interface WhiteboardGalleryEntry {
+  projectId: string;
+  projectName: string;
+  projectIcon: string;
+  /** Thumbnail data URL; empty when the card shows the placeholder. */
+  dataUrl: string;
+  /** The preview row's freshness stamp; drives the most-recent-first order. */
+  updatedAt: number;
+}
+
+/**
+ * The gallery listing: every project with a preview row (the "has content"
+ * index — scene rows are never read here), joined with its project for the
+ * card's title, icon, and navigation target, ordered most-recently-edited
+ * first with ties broken by project name. A preview whose project row is
+ * gone is dropped rather than rendered as a ghost card (the deletion
+ * transaction already evicts previews with their project, so this only
+ * guards against out-of-band drift). Called from a live query, so every
+ * table it reads is observed: edits, deletions, and renames all re-run it.
+ */
+export async function listWhiteboardGallery(
+  db: NanoboardDB,
+): Promise<WhiteboardGalleryEntry[]> {
+  const previews = await db.whiteboardPreviews.toArray();
+  const projects = await db.projects.bulkGet(
+    previews.map((preview) => preview.projectId),
+  );
+  const entries: WhiteboardGalleryEntry[] = [];
+  for (const [index, preview] of previews.entries()) {
+    const project = projects[index];
+    if (!project) continue;
+    entries.push({
+      projectId: preview.projectId,
+      projectName: project.name,
+      projectIcon: project.icon,
+      dataUrl: preview.dataUrl,
+      updatedAt: preview.updatedAt,
+    });
+  }
+  return entries.sort(
+    (a, b) =>
+      b.updatedAt - a.updatedAt || a.projectName.localeCompare(b.projectName),
+  );
+}
