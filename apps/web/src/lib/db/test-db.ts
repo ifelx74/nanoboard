@@ -11,7 +11,7 @@
 // isolated and testable.
 //
 // To give a database content, call `seedTestDb(db)` (or pass custom rows).
-// It replaces the contents of all eight tables in one transaction with
+// It replaces the contents of all nine tables in one transaction with
 // representative rows built by the `make*` factories, so assertions can rely
 // on exactly the rows a test chose — never on leftovers from the fresh-boot
 // populate seeding or from a previous write.
@@ -33,6 +33,7 @@ import {
   type TaskLabel,
   type TaskResource,
   type Whiteboard,
+  type WhiteboardPreview,
 } from "./schema";
 
 // Dexie snapshots the browser globals into `Dexie.dependencies` when the
@@ -206,6 +207,20 @@ export function makeWhiteboard(
   };
 }
 
+/** A small fake JPEG data URL — representative of a stored thumbnail. */
+export const TEST_PREVIEW_DATA_URL =
+  "data:image/jpeg;base64,ZmFrZS10aHVtYm5haWw=";
+
+export function makeWhiteboardPreview(
+  overrides: Partial<WhiteboardPreview> & { projectId: string },
+): WhiteboardPreview {
+  return {
+    dataUrl: TEST_PREVIEW_DATA_URL,
+    updatedAt: TEST_NOW,
+    ...overrides,
+  };
+}
+
 /** Representative rows of every table, with a consistent reference graph. */
 export interface TestDbContents {
   projects: Project[];
@@ -216,14 +231,16 @@ export interface TestDbContents {
   taskResources: TaskResource[];
   stickies: Sticky[];
   whiteboards: Whiteboard[];
+  whiteboardPreviews: WhiteboardPreview[];
 }
 
 /**
  * A small, internally consistent workspace touching every table: one project
  * with three columns, two tasks (one plain, one with dates/priority), two
- * labels with one assignment, one manual link, one sticky, and one whiteboard
- * scene complete with a data-URL file. Row timestamps default to TEST_NOW;
- * pass `now` to vary them (e.g. for tests that order by updatedAt).
+ * labels with one assignment, one manual link, one sticky, one whiteboard
+ * scene complete with a data-URL file, and that project's preview row.
+ * Row timestamps default to TEST_NOW; pass `now` to vary them (e.g. for tests
+ * that order by updatedAt).
  */
 export function buildTestContents(now: number = TEST_NOW): TestDbContents {
   return {
@@ -288,11 +305,14 @@ export function buildTestContents(now: number = TEST_NOW): TestDbContents {
     whiteboards: [
       makeWhiteboard({ id: "whiteboard-1", createdAt: now, updatedAt: now }),
     ],
+    whiteboardPreviews: [
+      makeWhiteboardPreview({ projectId: "project-1", updatedAt: now }),
+    ],
   };
 }
 
 /**
- * Replace the contents of all eight tables with `contents` in a single
+ * Replace the contents of all nine tables with `contents` in a single
  * transaction. Runs against a fresh test database, the fresh-boot populate
  * seeding has already fired by the time this runs — it is wiped here, so a
  * seeded database holds exactly the rows given.
@@ -312,6 +332,7 @@ export async function seedTestDb(
       db.taskResources,
       db.stickies,
       db.whiteboards,
+      db.whiteboardPreviews,
     ],
     async () => {
       await db.projects.clear();
@@ -322,6 +343,7 @@ export async function seedTestDb(
       await db.taskResources.clear();
       await db.stickies.clear();
       await db.whiteboards.clear();
+      await db.whiteboardPreviews.clear();
 
       await db.projects.bulkAdd(contents.projects);
       await db.columns.bulkAdd(contents.columns);
@@ -331,6 +353,7 @@ export async function seedTestDb(
       await db.taskResources.bulkAdd(contents.taskResources);
       await db.stickies.bulkAdd(contents.stickies);
       await db.whiteboards.bulkAdd(contents.whiteboards);
+      await db.whiteboardPreviews.bulkAdd(contents.whiteboardPreviews);
     },
   );
 }

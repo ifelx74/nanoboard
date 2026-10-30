@@ -8,6 +8,7 @@ import type {
   TaskLabel,
   TaskResource,
   Whiteboard,
+  WhiteboardPreview,
 } from "./schema";
 import { buildLabelSeedRows, seedDatabase } from "./seed";
 
@@ -20,6 +21,7 @@ export class NanoboardDB extends Dexie {
   taskResources!: Table<TaskResource, string>;
   stickies!: Table<Sticky, string>;
   whiteboards!: Table<Whiteboard, string>;
+  whiteboardPreviews!: Table<WhiteboardPreview, string>;
 
   constructor(name = "nanoboard") {
     super(name);
@@ -98,6 +100,26 @@ export class NanoboardDB extends Dexie {
       taskResources: "&id, taskId",
       stickies: "&id, position, createdAt, updatedAt",
       whiteboards: "&id, projectId, &[projectId]",
+    });
+    // v7: per-project whiteboard previews — the lightweight "has content"
+    // index the whiteboard gallery lists from, without ever touching the
+    // multi-MB scene rows. The primary key on projectId enforces at most one
+    // preview per project (matching the one-scene-per-project uniqueness),
+    // and `updatedAt` is indexed for the gallery's recent-first ordering.
+    // Rows are written only by content-ful scene saves and removed by
+    // emptied-canvas saves and project deletion, so the table is empty on a
+    // fresh boot and needs no upgrade function.
+    this.version(7).stores({
+      projects: "&id, slug, position",
+      columns: "&id, projectId, [projectId+position]",
+      tasks:
+        "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
+      labels: "&id, projectId, &[projectId+name]",
+      taskLabels: "&[taskId+labelId], taskId, labelId",
+      taskResources: "&id, taskId",
+      stickies: "&id, position, createdAt, updatedAt",
+      whiteboards: "&id, projectId, &[projectId]",
+      whiteboardPreviews: "&projectId, updatedAt",
     });
     this.on("populate", () => seedDatabase(this));
   }

@@ -183,3 +183,21 @@ export interface Whiteboard {
   createdAt: number;
   updatedAt: number;
 }
+
+/**
+ * Lightweight per-project whiteboard preview: the "has content" index the
+ * gallery lists from, deliberately kept apart from the multi-MB scene rows.
+ * A project has at most one preview row (the primary key on projectId), and
+ * it exists only while the project's saved scene holds at least one
+ * non-deleted element: content-ful save flushes upsert it, emptied-canvas
+ * flushes and project deletion remove it. Rows may carry an empty `dataUrl`
+ * until a rendered thumbnail is stored for them.
+ */
+export interface WhiteboardPreview {
+  /** Primary key; one preview per project, mirroring the scene row. */
+  projectId: string;
+  /** Thumbnail data URL; empty until a rendered thumbnail is stored. */
+  dataUrl: string;
+  /** Epoch ms of the last content-ful save; gallery ordering + staleness. */
+  updatedAt: number;
+}

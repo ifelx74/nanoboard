@@ -1,6 +1,13 @@
 import { createId } from "@paralleldrive/cuid2";
-import { db } from "./db";
+import type { NanoboardDB } from "./db";
 import type { Whiteboard } from "./schema";
+
+/**
+ * Like the backup module, these functions take the database instance as a
+ * parameter instead of reaching for the singleton — that is what keeps them
+ * isolated and testable on fake-indexeddb (see test-db.ts). Production
+ * callers pass the singleton.
+ */
 
 /**
  * Per-session row identity (primary key + creation stamp), so steady-state
@@ -13,6 +20,7 @@ import type { Whiteboard } from "./schema";
 const rowIdentity = new Map<string, { id: string; createdAt: number }>();
 
 export async function getWhiteboard(
+  db: NanoboardDB,
   projectId: string,
 ): Promise<Whiteboard | undefined> {
   // The `&[projectId]` unique index guarantees at most one row per project.
@@ -36,6 +44,7 @@ export function forgetWhiteboard(projectId: string): void {
  * save, so projects whose whiteboard was never drawn on store nothing.
  */
 export async function saveWhiteboardScene(
+  db: NanoboardDB,
   projectId: string,
   scene: Pick<Whiteboard, "elements" | "appState" | "files">,
 ): Promise<void> {

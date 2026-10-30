@@ -18,6 +18,7 @@ const EMPTY_CONTENTS: TestDbContents = {
   taskResources: [],
   stickies: [],
   whiteboards: [],
+  whiteboardPreviews: [],
 };
 
 describe("createBackupDocument", () => {

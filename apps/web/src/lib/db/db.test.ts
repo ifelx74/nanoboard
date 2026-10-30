@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { NanoboardDB } from "./db";
-import { createTestDb, makeTask, seedTestDb } from "./test-db";
+import {
+  createTestDb,
+  makeTask,
+  makeWhiteboardPreview,
+  seedTestDb,
+  TEST_NOW,
+} from "./test-db";
 
 describe("NanoboardDB on fake-indexeddb", () => {
   it("opens the real schema on a fresh database and runs the populate seeding", async () => {
@@ -19,15 +25,18 @@ describe("NanoboardDB on fake-indexeddb", () => {
     expect(await db.labels.count()).toBe(7);
     expect(await db.taskLabels.count()).toBe(6);
 
-    // The untouched tables exist with the right schema and start empty.
+    // The untouched tables exist with the right schema and start empty —
+    // including the v7 preview store, whose rows exist only alongside
+    // content-ful scene saves.
     expect(await db.taskResources.count()).toBe(0);
     expect(await db.stickies.count()).toBe(0);
     expect(await db.whiteboards.count()).toBe(0);
+    expect(await db.whiteboardPreviews.count()).toBe(0);
 
     await db.close();
   });
 
-  it("round-trips representative rows through all eight tables", async () => {
+  it("round-trips representative rows through all nine tables", async () => {
     const db = createTestDb();
 
     await seedTestDb(db);
@@ -43,6 +52,7 @@ describe("NanoboardDB on fake-indexeddb", () => {
     expect(await db.taskResources.count()).toBe(1);
     expect(await db.stickies.count()).toBe(1);
     expect(await db.whiteboards.count()).toBe(1);
+    expect(await db.whiteboardPreviews.count()).toBe(1);
 
     // Tasks: per-project numbering, dates, and the status mirror of the
     // parent column's slug.
@@ -81,6 +91,12 @@ describe("NanoboardDB on fake-indexeddb", () => {
       /^data:image\/png;base64,/,
     );
 
+    // Preview: keyed by projectId (the primary key itself), holding the
+    // thumbnail data URL and the freshness stamp.
+    const preview = await db.whiteboardPreviews.get("project-1");
+    expect(preview?.dataUrl).toMatch(/^data:image\/jpeg;base64,/);
+    expect(preview?.updatedAt).toBe(TEST_NOW);
+
     await db.close();
   });
 
@@ -111,6 +127,12 @@ describe("NanoboardDB on fake-indexeddb", () => {
     // project is rejected at the store level.
     const duplicate = makeTask({ id: "task-duplicate", number: 1 });
     await expect(db.tasks.add(duplicate)).rejects.toThrow();
+
+    // v7 schema: the preview store's primary key is projectId itself, so a
+    // second preview row for the same project is rejected at the store
+    // level — one preview row per project, like the scene row.
+    const duplicatePreview = makeWhiteboardPreview({ projectId: "project-1" });
+    await expect(db.whiteboardPreviews.add(duplicatePreview)).rejects.toThrow();
 
     await db.close();
   });

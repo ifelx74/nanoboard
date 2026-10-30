@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { db } from "@/lib/db/db";
 import { deleteProject } from "@/lib/db/queries";
 import { toast } from "@/lib/toast";
 
@@ -31,7 +32,7 @@ export default function ProjectDeleteDialog({
     if (pending) return;
     setPending(true);
     try {
-      await deleteProject(projectId);
+      await deleteProject(db, projectId);
       onOpenChange(false);
       onDeleted();
     } catch (error) {
