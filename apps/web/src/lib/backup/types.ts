@@ -7,6 +7,7 @@ import type {
   TaskLabel,
   TaskResource,
   Whiteboard,
+  WhiteboardPreview,
 } from "@/lib/db/schema";
 
 /** Self-describing format identifier carried by every backup file. */
@@ -28,6 +29,7 @@ export const BACKUP_TABLES = [
   "taskResources",
   "stickies",
   "whiteboards",
+  "whiteboardPreviews",
 ] as const;
 
 export type BackupTableName = (typeof BACKUP_TABLES)[number];
@@ -42,6 +44,7 @@ export interface BackupTables {
   taskResources: TaskResource[];
   stickies: Sticky[];
   whiteboards: Whiteboard[];
+  whiteboardPreviews: WhiteboardPreview[];
 }
 
 /**

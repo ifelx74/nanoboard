@@ -8,6 +8,7 @@ import type {
   TaskLabel,
   TaskResource,
   Whiteboard,
+  WhiteboardPreview,
 } from "@/lib/db/schema";
 import {
   BACKUP_FORMAT,
@@ -80,6 +81,10 @@ export function parseBackupDocument(text: string): BackupDocument {
       taskResources: asRows<TaskResource>("taskResources", rawTables),
       stickies: asRows<Sticky>("stickies", rawTables),
       whiteboards: asRows<Whiteboard>("whiteboards", rawTables),
+      whiteboardPreviews: asRows<WhiteboardPreview>(
+        "whiteboardPreviews",
+        rawTables,
+      ),
     },
   };
 

@@ -50,6 +50,7 @@ const TABLE_LABELS: Record<BackupTableName, string> = {
   taskResources: "Task links",
   stickies: "Stickies",
   whiteboards: "Whiteboards",
+  whiteboardPreviews: "Whiteboard previews",
 };
 
 type Mode = "pick" | "summary";

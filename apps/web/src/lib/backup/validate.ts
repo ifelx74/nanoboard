@@ -115,6 +115,11 @@ const TABLE_FIELD_SPECS: Record<BackupTableName, FieldSpec[]> = {
     spec("createdAt", isNumber),
     spec("updatedAt", isNumber),
   ],
+  whiteboardPreviews: [
+    spec("projectId", isString),
+    spec("dataUrl", isString),
+    spec("updatedAt", isNumber),
+  ],
 };
 
 /**

@@ -10,6 +10,7 @@ import {
   buildTestContents,
   createTestDb,
   makeTask,
+  makeWhiteboardPreview,
   seedTestDb,
   TEST_NOW,
   type TestDbContents,
@@ -39,6 +40,10 @@ function buildOtherContents(): TestDbContents {
       updatedAt: TEST_NOW + 60_000,
     }),
   );
+  // A preview only the target has: a replace-all restore must evict it.
+  contents.whiteboardPreviews.push(
+    makeWhiteboardPreview({ projectId: "project-extra" }),
+  );
   return contents;
 }
 
@@ -52,6 +57,7 @@ async function readAllTables(db: Parameters<typeof applyBackupDocument>[0]) {
     taskResources: await db.taskResources.toArray(),
     stickies: await db.stickies.toArray(),
     whiteboards: await db.whiteboards.toArray(),
+    whiteboardPreviews: await db.whiteboardPreviews.toArray(),
   };
 }
 
@@ -114,6 +120,7 @@ describe("parseBackupDocument", () => {
       },
     ]);
     expect(parsed.tables.tasks).toEqual([]);
+    expect(parsed.tables.whiteboardPreviews).toEqual([]);
     expect(Object.keys(parsed.tables)).not.toContain("brandNewTable");
   });
 
@@ -157,6 +164,7 @@ describe("backupTableCounts", () => {
       taskResources: 1,
       stickies: 1,
       whiteboards: 1,
+      whiteboardPreviews: 1,
     });
 
     await db.close();
@@ -184,6 +192,7 @@ describe("applyBackupDocument", () => {
       taskResources: contents.taskResources,
       stickies: contents.stickies,
       whiteboards: contents.whiteboards,
+      whiteboardPreviews: contents.whiteboardPreviews,
     });
 
     await source.close();
@@ -192,7 +201,8 @@ describe("applyBackupDocument", () => {
 
   it("restores over a populated app, removing rows the backup doesn't contain", async () => {
     const source = createTestDb();
-    await seedTestDb(source, buildTestContents());
+    const contents = buildTestContents();
+    await seedTestDb(source, contents);
     const document = await createBackupDocument(source);
 
     const target = createTestDb();
@@ -204,9 +214,17 @@ describe("applyBackupDocument", () => {
     expect(await target.projects.get("project-extra")).toBeUndefined();
     expect(await target.stickies.get("sticky-extra")).toBeUndefined();
     expect(await target.tasks.get("task-extra")).toBeUndefined();
+    expect(
+      await target.whiteboardPreviews.get("project-extra"),
+    ).toBeUndefined();
     expect(await target.projects.count()).toBe(1);
     expect(await target.tasks.count()).toBe(2);
     expect(await target.stickies.count()).toBe(1);
+    // Previews are replaced wholesale like every other table: the target's
+    // stale row (older timestamp) is gone, the backup's row is all that's left.
+    expect(await target.whiteboardPreviews.toArray()).toEqual(
+      contents.whiteboardPreviews,
+    );
 
     await source.close();
     await target.close();
@@ -236,6 +254,42 @@ describe("applyBackupDocument", () => {
       taskResources: original.taskResources,
       stickies: original.stickies,
       whiteboards: original.whiteboards,
+      whiteboardPreviews: original.whiteboardPreviews,
+    });
+
+    await source.close();
+    await target.close();
+  });
+
+  it("leaves the database untouched when two preview rows share a project", async () => {
+    const source = createTestDb();
+    await seedTestDb(source);
+    const document = await createBackupDocument(source);
+    // Corrupt the document: a second preview for the same project violates
+    // the store-enforced primary key on projectId.
+    document.tables.whiteboardPreviews.push(
+      makeWhiteboardPreview({
+        projectId: "project-1",
+        updatedAt: TEST_NOW + 1,
+      }),
+    );
+
+    const target = createTestDb();
+    const original = buildOtherContents();
+    await seedTestDb(target, original);
+
+    await expect(applyBackupDocument(target, document)).rejects.toThrow();
+
+    expect(await readAllTables(target)).toEqual({
+      projects: original.projects,
+      columns: original.columns,
+      tasks: original.tasks,
+      labels: original.labels,
+      taskLabels: original.taskLabels,
+      taskResources: original.taskResources,
+      stickies: original.stickies,
+      whiteboards: original.whiteboards,
+      whiteboardPreviews: original.whiteboardPreviews,
     });
 
     await source.close();
@@ -248,14 +302,15 @@ describe("applyBackupDocument", () => {
     const document = await createBackupDocument(source);
     // A structural break the parser would have caught: the apply path must
     // not trust its caller to have parsed the file first.
-    (document.tables.tasks[0] as { title: unknown }).title = 123;
+    (document.tables.whiteboardPreviews[0] as { dataUrl: unknown }).dataUrl =
+      42;
 
     const target = createTestDb();
     const original = buildOtherContents();
     await seedTestDb(target, original);
 
     await expect(applyBackupDocument(target, document)).rejects.toThrow(
-      /corrupted[\s\S]*"tasks", row 1[\s\S]*"title"/,
+      /corrupted[\s\S]*"whiteboardPreviews", row 1[\s\S]*"dataUrl"/,
     );
 
     expect(await readAllTables(target)).toEqual({
@@ -267,6 +322,7 @@ describe("applyBackupDocument", () => {
       taskResources: original.taskResources,
       stickies: original.stickies,
       whiteboards: original.whiteboards,
+      whiteboardPreviews: original.whiteboardPreviews,
     });
 
     await source.close();
@@ -291,10 +347,38 @@ describe("applyBackupDocument", () => {
       target.taskResources,
       target.stickies,
       target.whiteboards,
+      target.whiteboardPreviews,
     ]) {
       expect(await table.count()).toBe(0);
     }
 
+    await target.close();
+  });
+
+  it("applies a legacy backup without a previews table, leaving previews empty", async () => {
+    // A backup produced before previews existed: the envelope carries the
+    // older table set, everything else identical.
+    const source = createTestDb();
+    await seedTestDb(source, buildTestContents());
+    const document = await createBackupDocument(source);
+    const legacyTables: Record<string, unknown> = { ...document.tables };
+    delete legacyTables.whiteboardPreviews;
+    const legacyText = JSON.stringify({ ...document, tables: legacyTables });
+
+    const target = createTestDb();
+    await seedTestDb(target, buildOtherContents());
+    const parsed = parseBackupDocument(legacyText);
+    await applyBackupDocument(target, parsed);
+
+    // The workspace rows restore; the preview store reads as empty, so
+    // legacy boards fall back to the placeholder path.
+    expect(await target.projects.toArray()).toEqual(parsed.tables.projects);
+    expect(await target.whiteboards.toArray()).toEqual(
+      parsed.tables.whiteboards,
+    );
+    expect(await target.whiteboardPreviews.count()).toBe(0);
+
+    await source.close();
     await target.close();
   });
 });
