@@ -15,14 +15,8 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import Layout from "@/components/common/layout";
+import { SidebarTriggerHeader } from "@/components/common/sidebar-trigger-header";
 import { getProject } from "@/lib/db/queries";
 import { cn } from "@/lib/utils";
 import {
@@ -63,17 +57,7 @@ export function ProjectLayout({
       <Layout.Header>
         <div className="flex w-full items-center justify-between">
           <div className="flex w-full items-center gap-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SidebarTrigger className="-ml-1 h-6 w-6" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-[10px]">Toggle sidebar</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <div className="mx-1.5 h-4 w-px shrink-0 bg-border/80" />
+            <SidebarTriggerHeader triggerClassName="-ml-1 h-6 w-6" />
             <Breadcrumb className="flex w-full items-center gap-1 text-xs">
               <BreadcrumbList>
                 <BreadcrumbItem>

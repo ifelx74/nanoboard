@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { House, PencilRuler } from "lucide-react";
+import type { ReactNode } from "react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,6 +9,29 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Stickies from "@/icons/stickies";
+
+type NavButtonProps = {
+  tooltip: string;
+  isActive: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+  label: string;
+};
+
+function NavButton({ tooltip, isActive, onClick, icon, label }: NavButtonProps) {
+  return (
+    <SidebarMenuButton
+      tooltip={tooltip}
+      isActive={isActive}
+      size="default"
+      className="h-8 text-sm text-primary"
+      onClick={onClick}
+    >
+      {icon}
+      <span>{label}</span>
+    </SidebarMenuButton>
+  );
+}
 
 export function NavMain() {
   const navigate = useNavigate();
@@ -20,36 +44,27 @@ export function NavMain() {
       <SidebarGroupContent>
         <SidebarMenu className="gap-0.5">
           <SidebarMenuItem>
-            <SidebarMenuButton
+            <NavButton
               tooltip="Home"
               isActive={pathname === "" || pathname === "/"}
-              size="default"
-              className="h-8 text-sm text-primary"
               onClick={() => navigate({ to: "/" })}
-            >
-              <House aria-hidden="true" />
-              <span>Home</span>
-            </SidebarMenuButton>
-            <SidebarMenuButton
+              icon={<House aria-hidden="true" />}
+              label="Home"
+            />
+            <NavButton
               tooltip="Stickies"
               isActive={pathname === "/stickies"}
-              size="default"
-              className="h-8 text-sm text-primary"
               onClick={() => navigate({ to: "/stickies" })}
-            >
-              <Stickies className="shrink-0 size-4" aria-hidden="true" />
-              <span>Stickies</span>
-            </SidebarMenuButton>
-            <SidebarMenuButton
+              icon={<Stickies className="shrink-0 size-4" aria-hidden="true" />}
+              label="Stickies"
+            />
+            <NavButton
               tooltip="Whiteboard"
               isActive={pathname === "/whiteboard"}
-              size="default"
-              className="h-8 text-sm text-primary"
               onClick={() => navigate({ to: "/whiteboard" })}
-            >
-              <PencilRuler aria-hidden="true" />
-              <span>Whiteboard</span>
-            </SidebarMenuButton>
+              icon={<PencilRuler aria-hidden="true" />}
+              label="Whiteboard"
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
