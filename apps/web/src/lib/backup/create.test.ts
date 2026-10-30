@@ -48,6 +48,7 @@ describe("createBackupDocument", () => {
         "taskResources",
         "tasks",
         "whiteboards",
+        "whiteboardPreviews",
       ].sort(),
     );
     for (const rows of Object.values(document.tables)) {
@@ -67,7 +68,7 @@ describe("createBackupDocument", () => {
 
     expect(document.format).toBe("nanoboard-backup");
     expect(document.version).toBe(1);
-    expect(Object.keys(document.tables).sort()).toHaveLength(8);
+    expect(Object.keys(document.tables).sort()).toHaveLength(9);
     for (const rows of Object.values(document.tables)) {
       expect(rows).toEqual([]);
     }
@@ -102,6 +103,15 @@ describe("createBackupDocument", () => {
     expect(whiteboard?.appState.viewBackgroundColor).toBe("#fefefe");
     expect(whiteboard?.files["file-1"]?.dataURL).toMatch(
       /^data:image\/png;base64,/,
+    );
+
+    // Previews ride along as plain rows — the thumbnail is just a string,
+    // kept verbatim like every other field.
+    expect(document.tables.whiteboardPreviews).toEqual(
+      contents.whiteboardPreviews,
+    );
+    expect(document.tables.whiteboardPreviews[0]?.dataUrl).toMatch(
+      /^data:image\/jpeg;base64,/,
     );
 
     await db.close();
