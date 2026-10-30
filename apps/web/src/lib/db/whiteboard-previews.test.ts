@@ -1,9 +1,13 @@
+import { liveQuery } from "dexie";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deleteProject } from "./projects";
+import { DEFAULT_PROJECT_ICON } from "./schema";
 import {
   buildTestContents,
   createTestDb,
+  makeProject,
   makeWhiteboard,
+  makeWhiteboardPreview,
   seedTestDb,
   TEST_NOW,
   TEST_PREVIEW_DATA_URL,
@@ -12,8 +16,10 @@ import { forgetWhiteboard, saveWhiteboardScene } from "./whiteboards";
 import {
   deleteWhiteboardPreview,
   getWhiteboardPreview,
+  listWhiteboardGallery,
   saveWhiteboardPreview,
 } from "./whiteboard-previews";
+import type { WhiteboardGalleryEntry } from "./whiteboard-previews";
 
 describe("whiteboard preview store on fake-indexeddb", () => {
   afterEach(() => {
@@ -228,6 +234,179 @@ describe("the save flush's two stores on fake-indexeddb", () => {
     expect(
       await getWhiteboardPreview(database, "project-failure"),
     ).toBeDefined();
+
+    await database.close();
+  });
+});
+
+describe("the gallery listing query on fake-indexeddb", () => {
+  it("lists every project with a preview row, joined with its project", async () => {
+    const database = createTestDb();
+    await seedTestDb(database);
+
+    // The seeded workspace: one project with a content-ful preview row.
+    // The card gets everything it renders from this one row shape.
+    expect(await listWhiteboardGallery(database)).toEqual([
+      {
+        projectId: "project-1",
+        projectName: "Test project",
+        projectIcon: DEFAULT_PROJECT_ICON,
+        dataUrl: TEST_PREVIEW_DATA_URL,
+        updatedAt: TEST_NOW,
+      },
+    ]);
+
+    await database.close();
+  });
+
+  it("never lists a project without a preview row, even with a saved scene", async () => {
+    const database = createTestDb();
+    await seedTestDb(database, {
+      ...buildTestContents(),
+      projects: [
+        makeProject({ id: "project-1" }),
+        makeProject({ id: "project-scene-only", name: "Scene only" }),
+        makeProject({ id: "project-untouched", name: "Untouched" }),
+      ],
+      whiteboards: [
+        makeWhiteboard({ id: "whiteboard-1" }),
+        makeWhiteboard({
+          id: "whiteboard-scene-only",
+          projectId: "project-scene-only",
+        }),
+      ],
+      // Only project-1 has a preview row: project-scene-only holds a legacy
+      // scene row without one and project-untouched was never drawn on.
+      whiteboardPreviews: [makeWhiteboardPreview({ projectId: "project-1" })],
+    });
+
+    // The preview table is the gallery's "has content" index — scene rows
+    // are never read, so a scene without a preview cannot leak onto the page.
+    expect(
+      (await listWhiteboardGallery(database)).map((entry) => entry.projectId),
+    ).toEqual(["project-1"]);
+
+    await database.close();
+  });
+
+  it("orders most-recently-edited first with ties broken by project name", async () => {
+    const database = createTestDb();
+    await seedTestDb(database, {
+      ...buildTestContents(),
+      projects: [
+        makeProject({ id: "project-beta", name: "Beta" }),
+        makeProject({ id: "project-zulu", name: "Zulu" }),
+        makeProject({ id: "project-alpha", name: "Alpha" }),
+      ],
+      whiteboards: [],
+      whiteboardPreviews: [
+        makeWhiteboardPreview({ projectId: "project-beta", updatedAt: TEST_NOW }),
+        makeWhiteboardPreview({
+          projectId: "project-zulu",
+          updatedAt: TEST_NOW + 5_000,
+        }),
+        makeWhiteboardPreview({
+          projectId: "project-alpha",
+          updatedAt: TEST_NOW,
+        }),
+      ],
+    });
+
+    // Zulu was edited last; Alpha and Beta tie on freshness and fall back
+    // to project-name order, which differs from both seeding order and id.
+    expect(
+      (await listWhiteboardGallery(database)).map(
+        (entry) => entry.projectName,
+      ),
+    ).toEqual(["Zulu", "Alpha", "Beta"]);
+
+    await database.close();
+  });
+
+  it("drops a preview row whose project no longer exists", async () => {
+    const database = createTestDb();
+    await seedTestDb(database, {
+      ...buildTestContents(),
+      whiteboardPreviews: [
+        makeWhiteboardPreview({ projectId: "project-1" }),
+        makeWhiteboardPreview({ projectId: "ghost-project" }),
+      ],
+    });
+
+    // The deletion transaction evicts previews alongside their project, so
+    // an orphan can only appear defensively: a ghost card would have no
+    // name, icon, or destination to render.
+    expect(
+      (await listWhiteboardGallery(database)).map((entry) => entry.projectId),
+    ).toEqual(["project-1"]);
+
+    await database.close();
+  });
+
+  it("reflects a project rename in the listing", async () => {
+    const database = createTestDb();
+    await seedTestDb(database);
+
+    await database.projects.update("project-1", {
+      name: "Renamed",
+      updatedAt: TEST_NOW + 1,
+    });
+
+    // The join reads the project row on every call — the property the live
+    // query relies on to surface renames without navigation.
+    expect(
+      (await listWhiteboardGallery(database)).map(
+        (entry) => entry.projectName,
+      ),
+    ).toEqual(["Renamed"]);
+
+    await database.close();
+  });
+
+  it("pushes renames and thumbnail refreshes to a liveQuery subscriber", async () => {
+    const database = createTestDb();
+    await seedTestDb(database, {
+      ...buildTestContents(),
+      whiteboardPreviews: [
+        makeWhiteboardPreview({ projectId: "project-1", dataUrl: "" }),
+      ],
+    });
+
+    // The route subscribes through dexie-react-hooks' useLiveQuery, which
+    // wraps exactly this observable: an emission must arrive after each
+    // mutation the card renders, without re-mounting or navigation.
+    const emissions: WhiteboardGalleryEntry[][] = [];
+    const subscription = liveQuery(() =>
+      listWhiteboardGallery(database),
+    ).subscribe({
+      next: (entries) => {
+        emissions.push(entries);
+      },
+      error: () => {},
+    });
+
+    try {
+      await vi.waitFor(() => expect(emissions).toHaveLength(1));
+      expect(emissions[0]?.map((entry) => entry.projectName)).toEqual([
+        "Test project",
+      ]);
+      expect(emissions[0]?.[0]?.dataUrl).toBe("");
+
+      await database.projects.update("project-1", { name: "Renamed" });
+      await saveWhiteboardPreview(database, "project-1", TEST_PREVIEW_DATA_URL);
+
+      // Each mutation triggers its own re-run, so wait for the last one and
+      // assert on the final state rather than the emission count.
+      await vi.waitFor(() => {
+        expect(emissions.length).toBeGreaterThanOrEqual(2);
+        expect(emissions.at(-1)?.map((entry) => entry.projectName)).toEqual([
+          "Renamed",
+        ]);
+        expect(emissions.at(-1)?.[0]?.dataUrl).toBe(TEST_PREVIEW_DATA_URL);
+      });
+    } finally {
+      subscription.unsubscribe();
+    }
 
     await database.close();
   });

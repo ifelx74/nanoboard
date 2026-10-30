@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppStickiesRouteImport } from './routes/_app/stickies'
+import { Route as AppWhiteboardRouteImport } from './routes/_app/whiteboard'
 import { Route as AppProjectProjectIdIndexRouteImport } from './routes/_app/project/$projectId/index'
 import { Route as AppProjectProjectIdBoardRouteImport } from './routes/_app/project/$projectId/board'
 import { Route as AppProjectProjectIdCalendarRouteImport } from './routes/_app/project/$projectId/calendar'
@@ -30,6 +31,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppStickiesRoute = AppStickiesRouteImport.update({
   id: '/stickies',
   path: '/stickies',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWhiteboardRoute = AppWhiteboardRouteImport.update({
+  id: '/whiteboard',
+  path: '/whiteboard',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProjectProjectIdIndexRoute =
@@ -65,6 +71,7 @@ const AppProjectProjectIdWhiteboardRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/stickies': typeof AppStickiesRoute
+  '/whiteboard': typeof AppWhiteboardRoute
   '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
   '/project/$projectId/list': typeof AppProjectProjectIdListRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/stickies': typeof AppStickiesRoute
+  '/whiteboard': typeof AppWhiteboardRoute
   '/': typeof AppIndexRoute
   '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_app/stickies': typeof AppStickiesRoute
+  '/_app/whiteboard': typeof AppWhiteboardRoute
   '/_app/': typeof AppIndexRoute
   '/_app/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/_app/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/stickies'
+    | '/whiteboard'
     | '/project/$projectId/board'
     | '/project/$projectId/calendar'
     | '/project/$projectId/list'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/stickies'
+    | '/whiteboard'
     | '/'
     | '/project/$projectId/board'
     | '/project/$projectId/calendar'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_app/stickies'
+    | '/_app/whiteboard'
     | '/_app/'
     | '/_app/project/$projectId/board'
     | '/_app/project/$projectId/calendar'
@@ -147,6 +159,13 @@ declare module '@tanstack/react-router' {
       path: '/stickies'
       fullPath: '/stickies'
       preLoaderRoute: typeof AppStickiesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/whiteboard': {
+      id: '/_app/whiteboard'
+      path: '/whiteboard'
+      fullPath: '/whiteboard'
+      preLoaderRoute: typeof AppWhiteboardRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/project/$projectId/': {
@@ -189,6 +208,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppStickiesRoute: typeof AppStickiesRoute
+  AppWhiteboardRoute: typeof AppWhiteboardRoute
   AppIndexRoute: typeof AppIndexRoute
   AppProjectProjectIdBoardRoute: typeof AppProjectProjectIdBoardRoute
   AppProjectProjectIdCalendarRoute: typeof AppProjectProjectIdCalendarRoute
@@ -199,6 +219,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppStickiesRoute: AppStickiesRoute,
+  AppWhiteboardRoute: AppWhiteboardRoute,
   AppIndexRoute: AppIndexRoute,
   AppProjectProjectIdBoardRoute: AppProjectProjectIdBoardRoute,
   AppProjectProjectIdCalendarRoute: AppProjectProjectIdCalendarRoute,
