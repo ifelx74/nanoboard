@@ -1,0 +1,10 @@
+# Content-hashed Vite bundles and fonts never change in place — cache forever.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker must revalidate on every update check so autoUpdate
+# picks up new versions. Everything else (index.html, icons, manifest) uses
+# Cloudflare's default `public, max-age=0, must-revalidate`, which is what
+# the app shell wants.
+/sw.js
+  Cache-Control: no-cache
