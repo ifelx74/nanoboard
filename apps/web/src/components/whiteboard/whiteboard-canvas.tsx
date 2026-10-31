@@ -1,5 +1,6 @@
 import {
   Excalidraw,
+  MainMenu,
   restoreAppState,
   restoreElements,
   WelcomeScreen,
@@ -21,7 +22,10 @@ import type { Whiteboard } from "@/lib/db/schema";
 import { useThemeStore } from "@/store/theme";
 import { buildScenePayload } from "./persistence";
 import { decideWhiteboardPreview } from "./preview";
-import { renderWhiteboardThumbnail, resolveThumbnailDataUrl } from "./thumbnail";
+import {
+  renderWhiteboardThumbnail,
+  resolveThumbnailDataUrl,
+} from "./thumbnail";
 import { WhiteboardSkeleton } from "./skeleton";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -176,6 +180,18 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
         initialData={initialData}
         onChange={handleChange}
       >
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.DefaultItems.SaveAsImage />
+          <MainMenu.DefaultItems.SearchMenu />
+          <MainMenu.DefaultItems.Help />
+          <MainMenu.DefaultItems.ClearCanvas />
+
+          <MainMenu.Separator />
+
+          <MainMenu.DefaultItems.ChangeCanvasBackground />
+        </MainMenu>
         <WelcomeScreen>
           <WelcomeScreen.Center>
             <WelcomeScreen.Center.Heading>
