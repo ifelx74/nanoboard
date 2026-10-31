@@ -27,6 +27,8 @@ import {
   resolveThumbnailDataUrl,
 } from "./thumbnail";
 import { WhiteboardSkeleton } from "./skeleton";
+import { Button } from "../ui/button";
+import { Fullscreen, Minimize } from "lucide-react";
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -165,6 +167,34 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
     };
   }, [flushSave]);
 
+  // Fullscreen applies to the wrapper div, not the document, so the app
+  // chrome stays out of the picture and only the canvas is promoted. The
+  // listener re-syncs the icon after any exit path — Escape, browser UI, or
+  // another element taking fullscreen — not just the button.
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === canvasContainerRef.current);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement === canvasContainerRef.current) {
+      void document.exitFullscreen().catch((error) => {
+        console.error("Failed to exit whiteboard fullscreen:", error);
+      });
+    } else {
+      void canvasContainerRef.current?.requestFullscreen().catch((error) => {
+        console.error("Failed to enter whiteboard fullscreen:", error);
+      });
+    }
+  }, []);
+
   // The app's class-flip treats only "dark" as dark ("system" renders light),
   // so the canvas mirrors that exact resolution.
   const appTheme = theme === "dark" ? "dark" : "light";
@@ -174,11 +204,24 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="h-full w-full whiteboard">
+    <div ref={canvasContainerRef} className="h-full w-full whiteboard">
       <Excalidraw
         theme={appTheme}
         initialData={initialData}
         onChange={handleChange}
+        renderTopRightUI={() => {
+          return (
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? <Minimize /> : <Fullscreen />}
+            </Button>
+          );
+        }}
       >
         <MainMenu>
           <MainMenu.DefaultItems.LoadScene />
