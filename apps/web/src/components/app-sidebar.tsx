@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/sidebar";
 import { NavSecondary } from "./nav-secondary";
 import { BackgroundLogo } from "./common/logo";
+import { Button } from "./ui/button";
+import Github from "@/icons/github";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -26,8 +28,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <NavSecondary />
-        <div className="flex items-center justify-between px-2">
-          <span className="text-xs text-muted-foreground">v0.0.0</span>
+        <div className="flex items-center justify-between">
+          <Button
+            size="icon-sm"
+            variant="outline"
+            className="text-foreground"
+            nativeButton={false}
+            render={
+              <a
+                href="https://github.com/ifelx74/nanoboard"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="GitHub repository"
+              />
+            }
+          >
+            <Github />
+          </Button>
           <ThemeSwitch />
         </div>
       </SidebarFooter>
