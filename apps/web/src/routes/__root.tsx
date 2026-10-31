@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { Suspense } from "react";
-import TanStackRouterDevtools from "@/tanstack/router";
+// import TanStackRouterDevtools from "@/tanstack/router";
 import { Toaster } from "@/components/ui/toast";
 
 export const Route = createRootRoute({
@@ -13,7 +13,7 @@ function RootComponent() {
     <div className="flex h-svh w-full flex-row overflow-x-hidden overflow-y-hidden bg-background scrollbar-thin scrollbar-thumb-border scrollbar-track-muted">
       <Outlet />
       <Suspense fallback={null}>
-        <TanStackRouterDevtools />
+        {/* <TanStackRouterDevtools /> */}
       </Suspense>
       <Toaster />
     </div>
