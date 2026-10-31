@@ -30,8 +30,9 @@ function RouteComponent() {
           {entries === undefined ? null : list.length === 0 ? (
             <GalleryEmptyState />
           ) : (
-            <div className="mx-auto w-full max-w-5xl px-6 py-10 lg:px-10">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="@container mx-auto w-full px-6 py-10 lg:px-10">
+              <h1 className="text-xl font-semibold mb-3">Recently modified</h1>
+              <div className="grid gap-3 @md:grid-cols-2 @3xl:grid-cols-3 @4xl:grid-cols-4 @6xl:grid-cols-5">
                 {list.map((entry) => (
                   <GalleryCard key={entry.projectId} entry={entry} />
                 ))}
