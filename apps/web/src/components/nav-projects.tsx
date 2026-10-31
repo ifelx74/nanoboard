@@ -27,6 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import CreateProjectDialog from "@/components/project/create-project-dialog";
 import EditProjectDialog from "@/components/project/edit-project-dialog";
 import ProjectDeleteDialog from "@/components/project/project-delete-dialog";
@@ -200,8 +201,8 @@ export function NavProjects() {
 
   return (
     <>
-      <SidebarGroup className="gap-1 p-2 pt-1">
-        <div className="relative">
+      <SidebarGroup className="min-h-0 flex-1 gap-1 p-2 pt-1">
+        <div className="relative shrink-0">
           <SidebarGroupLabel
             className={cn(
               "flex h-7 cursor-pointer items-center justify-start gap-1 px-0 text-sidebar-accent-foreground",
@@ -227,18 +228,20 @@ export function NavProjects() {
           </SidebarGroupAction>
         </div>
         {groupOpen && (
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
-              {(projects ?? []).map((project) => (
-                <ProjectRow
-                  key={project.id}
-                  project={project}
-                  stats={statsByProject?.get(project.id)}
-                  isActive={activeProjectId === project.id}
-                  onDeleted={handleDeletedProject}
-                />
-              ))}
-            </SidebarMenu>
+          <SidebarGroupContent className="min-h-0 flex-1">
+            <ScrollArea scrollFade>
+              <SidebarMenu className="gap-0.5">
+                {(projects ?? []).map((project) => (
+                  <ProjectRow
+                    key={project.id}
+                    project={project}
+                    stats={statsByProject?.get(project.id)}
+                    isActive={activeProjectId === project.id}
+                    onDeleted={handleDeletedProject}
+                  />
+                ))}
+              </SidebarMenu>
+            </ScrollArea>
           </SidebarGroupContent>
         )}
       </SidebarGroup>

@@ -22,7 +22,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <BackgroundLogo /> Nanoboard
         </span>
       </SidebarHeader>
-      <SidebarContent className="overflow-hidden gap-1 py-1">
+      <SidebarContent className="h-full overflow-hidden gap-1 py-1">
         <NavMain />
         <NavProjects />
       </SidebarContent>

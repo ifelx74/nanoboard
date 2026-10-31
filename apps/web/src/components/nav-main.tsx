@@ -40,7 +40,7 @@ export function NavMain() {
   });
 
   return (
-    <SidebarGroup className="gap-1 p-2">
+    <SidebarGroup className="shrink-0 gap-1 p-2">
       <SidebarGroupContent>
         <SidebarMenu className="gap-0.5">
           <SidebarMenuItem>
