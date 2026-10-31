@@ -20,7 +20,7 @@ export function GalleryCard({ entry }: GalleryCardProps) {
     <Link
       to="/project/$projectId/whiteboard"
       params={{ projectId: entry.projectId }}
-      className="flex flex-col overflow-hidden rounded-lg border border-border outline-none transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+      className="flex flex-col overflow-hidden rounded-lg border border-border outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
     >
       {entry.dataUrl ? (
         // Thumbnails bake in the board's own background color, so they sit
@@ -28,7 +28,7 @@ export function GalleryCard({ entry }: GalleryCardProps) {
         <img
           src={entry.dataUrl}
           alt=""
-          className="aspect-video w-full object-contain"
+          className="aspect-video w-full object-contain bg-white"
         />
       ) : (
         <div
@@ -38,7 +38,7 @@ export function GalleryCard({ entry }: GalleryCardProps) {
           <ProjectIcon className="size-8 text-muted-foreground" />
         </div>
       )}
-      <div className="flex items-center gap-2 p-3">
+      <div className="flex items-center gap-2 p-3 bg-accent">
         <ProjectIcon
           aria-hidden="true"
           className="size-4 shrink-0 text-muted-foreground"
