@@ -13,8 +13,8 @@
 // To give a database content, call `seedTestDb(db)` (or pass custom rows).
 // It replaces the contents of all nine tables in one transaction with
 // representative rows built by the `make*` factories, so assertions can rely
-// on exactly the rows a test chose — never on leftovers from the fresh-boot
-// populate seeding or from a previous write.
+// on exactly the rows a test chose — never on leftovers from a previous
+// write.
 import "fake-indexeddb/auto";
 import Dexie from "dexie";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
@@ -49,8 +49,8 @@ let testDbCounter = 0;
 /**
  * A fresh, isolated NanoboardDB on fake-indexeddb, with its own unique
  * database name. The connection opens lazily — on first use the full schema
- * (all migration versions) is created and the populate seeding runs, exactly
- * like a browser first boot.
+ * (all migration versions) is created, exactly like a browser first boot.
+ * A fresh database holds no rows: demo seeding is dev-only (see db.ts).
  */
 export function createTestDb(): NanoboardDB {
   return new NanoboardDB(`nanoboard-test-${++testDbCounter}`);
@@ -313,9 +313,8 @@ export function buildTestContents(now: number = TEST_NOW): TestDbContents {
 
 /**
  * Replace the contents of all nine tables with `contents` in a single
- * transaction. Runs against a fresh test database, the fresh-boot populate
- * seeding has already fired by the time this runs — it is wiped here, so a
- * seeded database holds exactly the rows given.
+ * transaction. Wiping first means a seeded database holds exactly the rows
+ * given, regardless of prior writes.
  */
 export async function seedTestDb(
   db: NanoboardDB,

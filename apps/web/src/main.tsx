@@ -26,8 +26,10 @@ registerSW({ immediate: true });
 // first paint; keep the root class in sync for hydration and runtime flips.
 useThemeStore.subscribe((state) => applyThemeClass(state.theme));
 
-// Dev-only escape hatch: reseed demo content from the console with
-// `await resetNanoboardToSeed()`. Never present in production builds.
+// Dev-only escape hatch: wipe and reseed the demo content from the console
+// with `await resetNanoboardToSeed()`. The populate seeding fires only on
+// database creation, so this is how an existing dev database gets the demo
+// content back. Never present in production builds.
 if (import.meta.env.DEV) {
   const devWindow = window as unknown as Record<string, unknown>;
   devWindow.resetNanoboardToSeed = () => resetToSeed(db);

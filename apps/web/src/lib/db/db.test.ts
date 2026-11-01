@@ -9,25 +9,20 @@ import {
 } from "./test-db";
 
 describe("NanoboardDB on fake-indexeddb", () => {
-  it("opens the real schema on a fresh database and runs the populate seeding", async () => {
+  it("opens the real schema on a fresh database and leaves it empty", async () => {
     const db = createTestDb();
 
     expect(db).toBeInstanceOf(NanoboardDB);
 
     await db.open();
 
-    // Seed content from seed.ts: 2 projects x 5 columns, 9 tasks, the
-    // default label palette (4 labels for the website project, 3 for the
-    // mobile one) and 6 task assignments.
-    expect(await db.projects.count()).toBe(2);
-    expect(await db.columns.count()).toBe(10);
-    expect(await db.tasks.count()).toBe(9);
-    expect(await db.labels.count()).toBe(7);
-    expect(await db.taskLabels.count()).toBe(6);
-
-    // The untouched tables exist with the right schema and start empty —
-    // including the v7 preview store, whose rows exist only alongside
-    // content-ful scene saves.
+    // Demo seeding is gated to the dev server (see db.ts), so under vitest
+    // a fresh database starts empty.
+    expect(await db.projects.count()).toBe(0);
+    expect(await db.columns.count()).toBe(0);
+    expect(await db.tasks.count()).toBe(0);
+    expect(await db.labels.count()).toBe(0);
+    expect(await db.taskLabels.count()).toBe(0);
     expect(await db.taskResources.count()).toBe(0);
     expect(await db.stickies.count()).toBe(0);
     expect(await db.whiteboards.count()).toBe(0);
@@ -41,9 +36,8 @@ describe("NanoboardDB on fake-indexeddb", () => {
 
     await seedTestDb(db);
 
-    // Counts are exactly what the representative contents hold — proving
-    // seedTestDb replaces the fresh-boot seed content rather than appending
-    // to it.
+    // Counts are exactly what the representative contents hold — seedTestDb
+    // wipes the (empty) fresh-boot database rather than appending to it.
     expect(await db.projects.count()).toBe(1);
     expect(await db.columns.count()).toBe(3);
     expect(await db.tasks.count()).toBe(2);

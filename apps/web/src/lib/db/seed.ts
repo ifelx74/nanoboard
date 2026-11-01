@@ -34,9 +34,11 @@ function isoDaysFromNow(days: number): DueDateString {
 }
 
 /**
- * 1:1 conversion of the former in-memory demo content. A single shared `now`
- * keeps seed timestamps internally consistent. Task numbers follow the
- * original listed order per project (not id sort).
+ * Demo content, seeded on first database creation in `vite dev` only (see
+ * the populate registration in db.ts). Production users start from an empty
+ * workspace. A single shared `now` keeps seed timestamps internally
+ * consistent. Task numbers follow the original listed order per project
+ * (not id sort).
  */
 export function buildSeedRows(now: number = Date.now()): SeedRows {
   const projects: Project[] = [
@@ -295,76 +297,52 @@ export function buildSeedRows(now: number = Date.now()): SeedRows {
     },
   ];
 
-  return {
-    projects,
-    columns,
-    tasks,
-    ...buildLabelSeedRows(["p-website", "p-mobile"], now, true),
-  };
+  return { projects, columns, tasks, ...buildDemoLabels(now) };
 }
 
 /**
- * Default palette per project plus a few assignments, so label UI has real
- * data from first boot. Shared by fresh seeds and the v3 upgrade backfill
- * (which passes existing project ids but no task assignments — there are no
- * tasks worth guessing labels for on upgrade).
+ * Demo-only label palettes for the two demo projects plus a few assignments,
+ * so the label UI has real data in development. The default palette used by
+ * real projects (and the v3 upgrade backfill) is `buildDefaultLabels` below.
  */
-export function buildLabelSeedRows(
-  projectIds: string[],
-  now: number = Date.now(),
-  withAssignments = false,
+function buildDemoLabels(
+  now: number,
 ): { labels: Label[]; taskLabels: TaskLabel[] } {
-  const labels: Label[] = [];
-  for (const projectId of projectIds) {
-    for (const entry of paletteEntries(projectId)) {
-      labels.push({
-        id: labelId(projectId, entry.name),
-        projectId,
-        ...entry,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-  }
+  const labels: Label[] = [
+    { id: "l-web-bug", projectId: "p-website", name: "bug", color: "red" },
+    {
+      id: "l-web-feature",
+      projectId: "p-website",
+      name: "feature",
+      color: "green",
+    },
+    {
+      id: "l-web-design",
+      projectId: "p-website",
+      name: "design",
+      color: "purple",
+    },
+    { id: "l-web-docs", projectId: "p-website", name: "docs", color: "gray" },
+    { id: "l-mob-crash", projectId: "p-mobile", name: "crash", color: "red" },
+    { id: "l-mob-sync", projectId: "p-mobile", name: "sync", color: "teal" },
+    {
+      id: "l-mob-release",
+      projectId: "p-mobile",
+      name: "release",
+      color: "yellow",
+    },
+  ].map((entry) => ({ ...entry, createdAt: now, updatedAt: now }));
 
-  const taskLabels: TaskLabel[] = withAssignments
-    ? [
-        { taskId: "t-1", labelId: labelId("p-website", "design") },
-        { taskId: "t-3", labelId: labelId("p-website", "feature") },
-        { taskId: "t-4", labelId: labelId("p-website", "docs") },
-        { taskId: "t-9", labelId: labelId("p-mobile", "crash") },
-        { taskId: "t-6", labelId: labelId("p-mobile", "sync") },
-        { taskId: "t-8", labelId: labelId("p-mobile", "release") },
-      ]
-    : [];
+  const taskLabels: TaskLabel[] = [
+    { taskId: "t-1", labelId: "l-web-design" },
+    { taskId: "t-3", labelId: "l-web-feature" },
+    { taskId: "t-4", labelId: "l-web-docs" },
+    { taskId: "t-9", labelId: "l-mob-crash" },
+    { taskId: "t-6", labelId: "l-mob-sync" },
+    { taskId: "t-8", labelId: "l-mob-release" },
+  ];
 
   return { labels, taskLabels };
-}
-
-function paletteEntries(projectId: string): { name: string; color: string }[] {
-  if (projectId === "p-mobile") {
-    return [
-      { name: "crash", color: "red" },
-      { name: "sync", color: "teal" },
-      { name: "release", color: "yellow" },
-    ];
-  }
-  return [
-    { name: "bug", color: "red" },
-    { name: "feature", color: "green" },
-    ...(projectId === "p-website" ? [{ name: "design", color: "purple" }] : []),
-    { name: "docs", color: "gray" },
-  ];
-}
-
-function labelId(projectId: string, name: string): string {
-  const short =
-    projectId === "p-website"
-      ? "web"
-      : projectId === "p-mobile"
-        ? "mob"
-        : projectId;
-  return `l-${short}-${name}`;
 }
 
 async function addSeedRows(db: SeedableDb, rows: SeedRows): Promise<void> {
@@ -375,12 +353,17 @@ async function addSeedRows(db: SeedableDb, rows: SeedRows): Promise<void> {
   await db.taskLabels.bulkAdd(rows.taskLabels);
 }
 
-/** Runs inside the `populate` transaction on first database creation only. */
+/** Dev-only: runs inside the `populate` transaction on database creation. */
 export async function seedDatabase(db: SeedableDb): Promise<void> {
   await addSeedRows(db, buildSeedRows());
 }
 
-/** Dev-only reset: clears all rows and restores seed content. No UI calls this. */
+/**
+ * Dev-only reset: clears all rows and restores demo content. Wired to
+ * `window.resetNanoboardToSeed` in main.tsx (dev builds only) — the populate
+ * seeding fires once per database, so this is how an existing dev database
+ * gets the demo content back.
+ */
 export async function resetToSeed(db: Dexie & SeedableDb): Promise<void> {
   await db.transaction(
     "rw",
@@ -398,4 +381,33 @@ export async function resetToSeed(db: Dexie & SeedableDb): Promise<void> {
       await addSeedRows(db, buildSeedRows());
     },
   );
+}
+
+/**
+ * The default label palette, backfilled by the v3 upgrade for pre-existing
+ * profiles whose projects predate labels. Fresh databases start empty and
+ * new projects create no labels until the user does.
+ */
+export function buildDefaultLabels(
+  projectIds: string[],
+  now: number = Date.now(),
+): Label[] {
+  const palette = [
+    { name: "bug", color: "red" },
+    { name: "feature", color: "green" },
+    { name: "docs", color: "gray" },
+  ];
+  const labels: Label[] = [];
+  for (const projectId of projectIds) {
+    for (const entry of palette) {
+      labels.push({
+        id: `l-${projectId}-${entry.name}`,
+        projectId,
+        ...entry,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+  return labels;
 }

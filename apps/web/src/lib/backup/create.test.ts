@@ -60,8 +60,7 @@ describe("createBackupDocument", () => {
 
   it("exports a fresh, empty app as a valid backup with empty tables", async () => {
     const db = createTestDb();
-    // Wipe the fresh-boot populate seeding: the state a brand-new app has
-    // before the user creates anything.
+    // A brand-new app holds no rows before the user creates anything.
     await seedTestDb(db, EMPTY_CONTENTS);
 
     const document = await createBackupDocument(db);

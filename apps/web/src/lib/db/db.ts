@@ -10,7 +10,7 @@ import type {
   Whiteboard,
   WhiteboardPreview,
 } from "./schema";
-import { buildLabelSeedRows, seedDatabase } from "./seed";
+import { buildDefaultLabels, seedDatabase } from "./seed";
 
 export class NanoboardDB extends Dexie {
   projects!: Table<Project, string>;
@@ -36,9 +36,9 @@ export class NanoboardDB extends Dexie {
         "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
     });
     // v3: label palette per project plus the assignment join. The compound
-    // primary key makes re-attaching an existing pair a no-op. `populate`
-    // only fires on fresh creation, so the upgrade backfills the default
-    // palette for pre-existing profiles.
+    // primary key makes re-attaching an existing pair a no-op. The upgrade
+    // backfills the default palette for pre-existing profiles; fresh
+    // databases start empty (demo content is dev-only, see seed.ts).
     //
     // startDate needs no version bump or upgrade: it is an unindexed
     // optional property, so pre-existing rows simply read it as absent.
@@ -53,7 +53,7 @@ export class NanoboardDB extends Dexie {
       })
       .upgrade(async (tx) => {
         const projects = await tx.table("projects").toArray();
-        const { labels } = buildLabelSeedRows(
+        const labels = buildDefaultLabels(
           projects.map((p: { id: string }) => p.id),
           Date.now(),
         );
@@ -121,7 +121,13 @@ export class NanoboardDB extends Dexie {
       whiteboards: "&id, projectId, &[projectId]",
       whiteboardPreviews: "&projectId, updatedAt",
     });
-    this.on("populate", () => seedDatabase(this));
+    // Demo content is a development convenience (see seed.ts). Gating on
+    // MODE — not DEV — keeps the hook unregistered under vitest (MODE is
+    // "test"), and the production build folds the branch away and drops
+    // the demo rows from the bundle.
+    if (import.meta.env.MODE === "development") {
+      this.on("populate", () => seedDatabase(this));
+    }
   }
 }
 
