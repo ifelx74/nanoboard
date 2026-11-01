@@ -1,6 +1,14 @@
 import { SearchX } from "lucide-react";
 import Stickies from "@/icons/stickies";
 import { AddStickyButton } from "./add-sticky-button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "../ui/empty";
 
 type EmptyStickiesProps = {
   onAddSticky: () => void;
@@ -12,19 +20,21 @@ export function EmptyStickiesState({
   isCreating = false,
 }: EmptyStickiesProps) {
   return (
-    <div className="flex size-full flex-col items-center justify-center py-16 text-center">
-      <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground shadow-xs">
-        <Stickies className="size-7" />
-      </div>
-      <h3 className="mb-2 max-w-md font-heading font-semibold text-base text-foreground sm:text-lg">
-        Stickies are quick notes and to-dos you take down on the fly.
-      </h3>
-      <p className="mb-6 max-w-sm text-muted-foreground text-xs leading-relaxed sm:text-sm">
-        Capture your thoughts and ideas effortlessly by creating stickies that
-        you can access anytime and from anywhere.
-      </p>
-      <AddStickyButton onClick={onAddSticky} isCreating={isCreating} />
-    </div>
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon" className="size-12">
+          <Stickies className="size-7" />
+        </EmptyMedia>
+        <EmptyTitle>Capture your thoughts and ideas with stickies.</EmptyTitle>
+        <EmptyDescription>
+          Create stickies for quick notes and to-dos, and keep them with you
+          wherever you go.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent className="flex-row justify-center gap-2">
+        <AddStickyButton onClick={onAddSticky} isCreating={isCreating} />
+      </EmptyContent>
+    </Empty>
   );
 }
 

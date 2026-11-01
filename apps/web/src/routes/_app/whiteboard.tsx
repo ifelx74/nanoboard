@@ -28,7 +28,9 @@ function RouteComponent() {
       <Layout.Content>
         <div className="h-full overflow-y-auto">
           {entries === undefined ? null : list.length === 0 ? (
-            <GalleryEmptyState />
+            <div className="flex items-center justify-center h-full">
+              <GalleryEmptyState />
+            </div>
           ) : (
             <div className="@container mx-auto w-full px-6 py-10 lg:px-10">
               <h1 className="text-xl font-semibold mb-3">Recently modified</h1>

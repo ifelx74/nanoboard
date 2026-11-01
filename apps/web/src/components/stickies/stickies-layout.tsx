@@ -113,7 +113,9 @@ export function StickiesLayout({
 
   if (stickies.length === 0) {
     return (
-      <EmptyStickiesState onAddSticky={onAddSticky} isCreating={isCreating} />
+      <div className="flex items-center justify-center h-full">
+        <EmptyStickiesState onAddSticky={onAddSticky} isCreating={isCreating} />
+      </div>
     );
   }
 
