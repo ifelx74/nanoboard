@@ -60,12 +60,12 @@ export function ProjectLayout({
             <SidebarTriggerHeader triggerClassName="-ml-1 h-6 w-6" />
             <Breadcrumb className="flex w-full items-center gap-1 text-xs">
               <BreadcrumbList>
-                <BreadcrumbItem>
+                <BreadcrumbItem className="hidden sm:inline-flex">
                   <span className="text-xs font-semibold text-card-foreground">
                     {project?.name ?? "Project"}
                   </span>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator />
+                <BreadcrumbSeparator className="hidden sm:inline-flex" />
                 <BreadcrumbItem>
                   <DropdownMenu>
                     <DropdownMenuTrigger>

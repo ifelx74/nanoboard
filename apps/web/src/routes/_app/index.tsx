@@ -7,6 +7,7 @@ import type { ProjectStats } from "@/lib/db/queries";
 import type { Project } from "@/lib/db/schema";
 import { getDayPart } from "@/lib/day-part";
 import { getProjectIcon } from "@/lib/project-icons";
+import { SidebarTriggerHeader } from "@/components/common/sidebar-trigger-header";
 
 export const Route = createFileRoute("/_app/")({
   component: RouteComponent,
@@ -89,10 +90,10 @@ function RouteComponent() {
     return (
       <>
         <Layout.Header>
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-normal text-card-foreground">
-              Home
-            </span>
+          <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-1">
+              <SidebarTriggerHeader />
+            </div>
           </div>
         </Layout.Header>
         <Layout.Content>
@@ -105,8 +106,10 @@ function RouteComponent() {
   return (
     <>
       <Layout.Header>
-        <div className="flex items-center gap-1">
-          <span className="text-xs font-normal text-card-foreground">Home</span>
+        <div className="flex w-full items-center justify-between">
+          <div className="flex items-center gap-1">
+            <SidebarTriggerHeader />
+          </div>
         </div>
       </Layout.Header>
       <Layout.Content>
