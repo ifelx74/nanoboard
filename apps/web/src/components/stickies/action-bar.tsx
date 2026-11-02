@@ -54,7 +54,9 @@ export function StickyActionBar() {
 
   // The whiteboard's bottom-right corner belongs to Excalidraw's help button;
   // lift the bar above it instead of parking on top.
-  const isWhiteboardPage = location.pathname.endsWith("/whiteboard");
+  const isProjectWhiteboard =
+    location.pathname.startsWith("/project/") &&
+    location.pathname.endsWith("/whiteboard");
 
   const recentSticky = stickies && stickies.length > 0 ? stickies[0] : null;
 
@@ -88,7 +90,7 @@ export function StickyActionBar() {
         ref={containerRef}
         className={cn(
           "fixed z-40 flex flex-col items-end transition-[bottom] duration-300 ease-in-out bottom-3.5",
-          isWhiteboardPage ? "right-15" : "right-4",
+          isProjectWhiteboard ? "right-15" : "right-4",
         )}
       >
         {activePopupSticky && (
