@@ -5,10 +5,9 @@
 <h4 align="center">
   <a href="https://nanoboard.pages.dev">Open the app</a> |
   <a href="#features">Features</a> |
-  <a href="#quick-start">Quick start</a> |
   <a href="#project-structure">Project structure</a> |
   <a href="#built-with">Built with</a> |
-  <a href="#contributing">Contributing</a>
+  <a href="./CONTRIBUTING.md">Contributing</a>
 </h4>
 
 <div align="center">
@@ -63,24 +62,6 @@ nanoboard supports:
 - 🌓&nbsp;Dark mode.
 - 🪶&nbsp;Minimalist and fast.
 
-## Quick start
-
-**Requirements:** Node.js ≥ 24.20 and [pnpm](https://pnpm.io) (the exact version is pinned via `packageManager`; [Corepack](https://nodejs.org/api/corepack.html) picks it up automatically).
-
-```sh
-pnpm install
-pnpm dev
-```
-
-Then open [http://localhost:5173](http://localhost:5173).
-
-Other scripts, run from the repository root:
-
-- `pnpm build` — build all apps and packages
-- `pnpm test` — run tests with Vitest
-- `pnpm lint` — lint the codebase
-- `pnpm format` — format with Prettier
-
 ## Project structure
 
 nanoboard is a pnpm + Turborepo monorepo:
@@ -105,13 +86,10 @@ nanoboard is a pnpm + Turborepo monorepo:
 - [dnd-kit](https://dndkit.com) for drag and drop
 - [vite-plugin-pwa](https://vite-pwa-org.netlify.app) for PWA/offline support
 
-## Deployment
-
-Every push to `main` is built and deployed automatically by GitHub Actions to [nanoboard.pages.dev](https://nanoboard.pages.dev), hosted on Cloudflare Pages.
 
 ## Contributing
 
-Missing something or found a bug? [Open an issue](https://github.com/ifelx74/nanoboard/issues). Pull requests are welcome — fork the repository, create a branch, and submit a PR against `main`.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for local setup, development commands, project guidelines, and how to submit a pull request. For bugs and feature requests, [open an issue](https://github.com/ifelx74/nanoboard/issues).
 
 ## License
 
