@@ -6,6 +6,7 @@ import "@/index.css";
 import { db } from "@/lib/db/db";
 import { resetToSeed } from "@/lib/db/seed";
 import { applyThemeClass, useThemeStore } from "@/store/theme";
+import { Toaster } from "@/components/ui/toast";
 import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
@@ -36,7 +37,11 @@ if (import.meta.env.DEV) {
 }
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <Toaster>
+      <RouterProvider router={router} />
+    </Toaster>
+  );
 }
 
 const rootElement = document.getElementById("app") as HTMLElement;
