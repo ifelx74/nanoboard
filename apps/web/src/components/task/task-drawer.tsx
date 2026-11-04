@@ -4,13 +4,15 @@ import {
   CalendarClock,
   CalendarDays,
   CalendarX,
+  Check,
   Copy,
   Link2,
+  Loader2,
   Plus,
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetPanel, SheetPopup } from "@/components/ui/sheet";
 import {
@@ -30,7 +32,9 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import TaskColumnPopover from "./task-column-popover";
 import TaskDeleteDialog from "./task-delete-dialog";
-import TaskDescription from "./task-description";
+import TaskDescription, {
+  type DescriptionSaveStatus,
+} from "./task-description";
 import TaskDueDatePopover from "./task-due-date-popover";
 import TaskLabelsPopover from "./task-labels-popover";
 import TaskPriorityPopover from "./task-priority-popover";
@@ -44,6 +48,65 @@ const DUE_ICON_CLASS: Record<string, string> = {
   "far-future": "text-muted-foreground",
   "no-due-date": "text-muted-foreground",
 };
+
+function DescriptionSaveIndicator({
+  status,
+  onRetry,
+}: {
+  status: DescriptionSaveStatus;
+  onRetry: () => void;
+}) {
+  const [savedVisible, setSavedVisible] = useState(false);
+
+  useEffect(() => {
+    if (status !== "saved") {
+      setSavedVisible(false);
+      return undefined;
+    }
+
+    setSavedVisible(true);
+    const timer = setTimeout(() => setSavedVisible(false), 1000);
+    return () => clearTimeout(timer);
+  }, [status]);
+
+  return (
+    <span className="flex items-center" aria-live="polite">
+      {status === "saving" && (
+        <>
+          <Loader2
+            className="size-3.5 animate-spin text-muted-foreground"
+            aria-hidden="true"
+          />
+          <span className="sr-only">Saving description</span>
+        </>
+      )}
+      {status === "failed" && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="text-destructive hover:text-destructive"
+            aria-label="Retry saving description"
+            title="Retry"
+            onClick={onRetry}
+          >
+            <X className="size-3.5" aria-hidden="true" />
+          </Button>
+          <span className="sr-only">Failed to save description</span>
+        </>
+      )}
+      {status === "saved" && savedVisible && (
+        <>
+          <Check
+            className="size-3.5 text-success-foreground"
+            aria-hidden="true"
+          />
+          <span className="sr-only">Description saved</span>
+        </>
+      )}
+    </span>
+  );
+}
 
 export default function TaskDrawer({
   projectId,
@@ -61,8 +124,12 @@ export default function TaskDrawer({
   );
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [descriptionStatus, setDescriptionStatus] =
+    useState<DescriptionSaveStatus>("idle");
+  const descriptionRetryRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    setDescriptionStatus("idle");
     if (taskId) {
       setCurrentTaskId(taskId);
       return undefined;
@@ -341,12 +408,22 @@ export default function TaskDrawer({
 
               <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
                 {project && (
-                  <p className="text-xs font-semibold text-foreground/70">
-                    {taskKeyText}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-foreground/70">
+                      {taskKeyText}
+                    </p>
+                    <DescriptionSaveIndicator
+                      status={descriptionStatus}
+                      onRetry={() => descriptionRetryRef.current?.()}
+                    />
+                  </div>
                 )}
                 <TaskTitle task={task} />
-                <TaskDescription task={task} />
+                <TaskDescription
+                  task={task}
+                  onStatusChange={setDescriptionStatus}
+                  retryRef={descriptionRetryRef}
+                />
                 <TaskResources taskId={task.id} />
               </div>
             </div>

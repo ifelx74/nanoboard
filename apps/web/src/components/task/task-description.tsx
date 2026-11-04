@@ -11,15 +11,25 @@ import "./task-description.css";
 
 const AUTOSAVE_DELAY = 700;
 
-type SaveStatus = "idle" | "saving" | "saved" | "failed";
+export type DescriptionSaveStatus = "idle" | "saving" | "saved" | "failed";
+
+type TaskDescriptionProps = {
+  task: Task;
+  onStatusChange?: (status: DescriptionSaveStatus) => void;
+  retryRef?: { current: (() => void) | null };
+};
 
 /**
  * Task description editor: bubble toolbar + slash menu, debounced autosave
  * with status and retry. The drawer remounts per task (`key={task.id}`),
  * so hydration runs once on mount without undo pollution.
  */
-export default function TaskDescription({ task }: { task: Task }) {
-  const [status, setStatus] = useState<SaveStatus>("idle");
+export default function TaskDescription({
+  task,
+  onStatusChange,
+  retryRef,
+}: TaskDescriptionProps) {
+  const [status, setStatus] = useState<DescriptionSaveStatus>("idle");
   const savedRef = useRef(task.description);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const persistRef = useRef<(() => void) | null>(null);
@@ -82,6 +92,18 @@ export default function TaskDescription({ task }: { task: Task }) {
     };
   }, [editor, task.id]);
 
+  useEffect(() => {
+    onStatusChange?.(status);
+  }, [onStatusChange, status]);
+
+  useEffect(() => {
+    if (!retryRef) return undefined;
+    retryRef.current = () => persistRef.current?.();
+    return () => {
+      retryRef.current = null;
+    };
+  }, [retryRef]);
+
   // Flush a pending edit if the drawer closes mid-debounce.
   useEffect(
     () => () => {
@@ -100,26 +122,6 @@ export default function TaskDescription({ task }: { task: Task }) {
         <EditorContent editor={editor} aria-label="Task description" />
       </div>
       {editor && <DescriptionBubbleMenu editor={editor} />}
-      <div aria-live="polite" className="min-h-4 text-[11px]">
-        {status === "saving" && (
-          <span className="text-muted-foreground">Saving…</span>
-        )}
-        {status === "saved" && (
-          <span className="text-muted-foreground">Saved</span>
-        )}
-        {status === "failed" && (
-          <span className="flex items-center gap-1.5 text-destructive">
-            Couldn&apos;t save
-            <button
-              type="button"
-              onClick={() => persistRef.current?.()}
-              className="font-medium underline underline-offset-2 outline-none hover:text-destructive/80 focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              Retry
-            </button>
-          </span>
-        )}
-      </div>
     </div>
   );
 }
