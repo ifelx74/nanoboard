@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildSeedRows, resetToSeed } from "./seed";
+import { suggestProjectKey } from "../task-key";
+import { DEFAULT_COLUMNS } from "./schema";
 import { createTestDb } from "./test-db";
 
 describe("demo seed rows", () => {
@@ -31,6 +33,28 @@ describe("demo seed rows", () => {
       expect(taskIds.has(join.taskId)).toBe(true);
       expect(labelIds.has(join.labelId)).toBe(true);
     }
+
+    // Rows look app-created: derived keys, DEFAULT_COLUMNS board, and ids
+    // unique across every table.
+    for (const project of rows.projects) {
+      expect(project.slug).toBe(suggestProjectKey(project.name));
+      expect(project.lastTaskNumber).toBe(
+        rows.tasks.filter((task) => task.projectId === project.id).length,
+      );
+    }
+    for (const project of rows.projects) {
+      const slugs = rows.columns
+        .filter((column) => column.projectId === project.id)
+        .map((column) => column.slug);
+      expect(slugs).toEqual(DEFAULT_COLUMNS.map((def) => def.slug));
+    }
+    const ids = [
+      ...rows.projects,
+      ...rows.columns,
+      ...rows.tasks,
+      ...rows.labels,
+    ].map((row) => row.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("resetToSeed fills an empty database with exactly the demo rows", async () => {

@@ -16,8 +16,8 @@ describe("NanoboardDB on fake-indexeddb", () => {
 
     await db.open();
 
-    // Demo seeding is gated to the dev server (see db.ts), so under vitest
-    // a fresh database starts empty.
+    // Demo seeding is unregistered under vitest (see db.ts), so a fresh
+    // database starts empty.
     expect(await db.projects.count()).toBe(0);
     expect(await db.columns.count()).toBe(0);
     expect(await db.tasks.count()).toBe(0);

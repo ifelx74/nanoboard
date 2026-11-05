@@ -50,7 +50,8 @@ let testDbCounter = 0;
  * A fresh, isolated NanoboardDB on fake-indexeddb, with its own unique
  * database name. The connection opens lazily — on first use the full schema
  * (all migration versions) is created, exactly like a browser first boot.
- * A fresh database holds no rows: demo seeding is dev-only (see db.ts).
+ * A fresh database holds no rows: demo seeding is unregistered under
+ * vitest (MODE=test, see db.ts).
  */
 export function createTestDb(): NanoboardDB {
   return new NanoboardDB(`nanoboard-test-${++testDbCounter}`);

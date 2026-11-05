@@ -37,8 +37,7 @@ export class NanoboardDB extends Dexie {
     });
     // v3: label palette per project plus the assignment join. The compound
     // primary key makes re-attaching an existing pair a no-op. The upgrade
-    // backfills the default palette for pre-existing profiles; fresh
-    // databases start empty (demo content is dev-only, see seed.ts).
+    // backfills the default palette for pre-existing profiles.
     //
     // startDate needs no version bump or upgrade: it is an unindexed
     // optional property, so pre-existing rows simply read it as absent.
@@ -121,11 +120,11 @@ export class NanoboardDB extends Dexie {
       whiteboards: "&id, projectId, &[projectId]",
       whiteboardPreviews: "&projectId, updatedAt",
     });
-    // Demo content is a development convenience (see seed.ts). Gating on
-    // MODE — not DEV — keeps the hook unregistered under vitest (MODE is
-    // "test"), and the production build folds the branch away and drops
-    // the demo rows from the bundle.
-    if (import.meta.env.MODE === "development") {
+    // Fresh databases are seeded with the demo workspace so first-time
+    // visitors can interact with the app right away (see seed.ts). Gating
+    // on MODE keeps the hook unregistered under vitest (MODE is "test"),
+    // so tests always start from an empty database.
+    if (import.meta.env.MODE !== "test") {
       this.on("populate", () => seedDatabase(this));
     }
   }

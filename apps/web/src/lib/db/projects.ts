@@ -5,6 +5,7 @@ import { deleteWhiteboardPreview } from "./whiteboard-previews";
 import { isProjectIconKey } from "../project-icons";
 import type { ProjectIconKey } from "../project-icons";
 import type { ProjectKey } from "../task-key";
+import { PROJECT_SLUG_MAX, suggestProjectKey } from "../task-key";
 import type { DueDateString, Project } from "./schema";
 import { DEFAULT_COLUMNS, DEFAULT_PROJECT_ICON } from "./schema";
 
@@ -18,9 +19,6 @@ export function getProjects(): Promise<Project[]> {
 
 export const PROJECT_NAME_MIN = 1;
 export const PROJECT_NAME_MAX = 100;
-export const PROJECT_SLUG_MAX = 5;
-
-const PROJECT_SLUG_FALLBACK = "PROJ";
 
 /** Hard cap so a saturated namespace fails loudly instead of hanging. */
 const MAX_SLUG_ATTEMPTS = 10_000;
@@ -75,27 +73,6 @@ async function assertUniqueProjectSlug(
   if ((await takenSlugs(exceptId)).has(slug.toLowerCase())) {
     throw new Error(`A project with key "${slug}" already exists.`);
   }
-}
-
-export function suggestProjectKey(name: string): ProjectKey {
-  const words = name
-    .normalize("NFKC")
-    .toUpperCase()
-    .split(/[\s_-]+/)
-    .map((word) => word.replace(/[^A-Z0-9]/g, ""))
-    .filter((word) => word.length > 0);
-  if (words.length === 0) return PROJECT_SLUG_FALLBACK as ProjectKey;
-  const first = words[0] as string;
-  const candidate =
-    words.length === 1
-      ? first.slice(0, PROJECT_SLUG_MAX)
-      : words
-          .slice(0, PROJECT_SLUG_MAX)
-          .map((word) => word[0] as string)
-          .join("");
-  // Keys start with a letter; digit-led suggestions fall back.
-  const key = candidate.replace(/^[0-9]+/, "");
-  return (key || PROJECT_SLUG_FALLBACK) as ProjectKey;
 }
 
 async function resolveUniqueSlug(

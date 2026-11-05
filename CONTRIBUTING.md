@@ -27,7 +27,7 @@ pnpm dev
 
 This starts the Vite dev server at [http://localhost:5173](http://localhost:5173).
 
-The app is local-first: data lives in the browser's IndexedDB through Dexie. On a fresh dev database, demo content is seeded automatically. To wipe and reseed it from the browser console, run:
+The app is local-first: data lives in the browser's IndexedDB through Dexie. Fresh databases are seeded with a demo workspace so first-time visitors can explore the app. To wipe and reseed it from the browser console (dev server only), run:
 
 ```js
 await resetNanoboardToSeed();

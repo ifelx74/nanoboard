@@ -16,7 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { createProject, suggestProjectKey } from "@/lib/db/queries";
+import { createProject } from "@/lib/db/queries";
+import { suggestProjectKey } from "@/lib/task-key";
 import { toast } from "@/lib/toast";
 import ProjectIconPicker from "./project-icon-picker";
 
