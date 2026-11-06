@@ -1,6 +1,8 @@
 import { createId } from "@paralleldrive/cuid2";
 import { LABEL_COLORS } from "../label-color";
 import { db } from "./db";
+import type { NanoboardDB } from "./db";
+import { isTaskArchived } from "./archive";
 import type { Label } from "./schema";
 
 export const LABEL_NAME_MIN = 1;
@@ -61,25 +63,43 @@ export function getProjectLabels(projectId: string): Promise<Label[]> {
 
 export async function getTaskLabels(taskId: string): Promise<Label[]> {
   const joins = await db.taskLabels.where("taskId").equals(taskId).toArray();
-  return resolveLabels(joins.map((join) => join.labelId));
+  return resolveLabels(
+    db,
+    joins.map((join) => join.labelId),
+  );
+}
+
+export interface GetProjectTaskLabelsOptions {
+  /** Transfer/export reads opt back in; see GetProjectTasksOptions. */
+  includeArchived?: boolean;
 }
 
 /**
  * Project-wide assignment map backing board chips (and the ticket-5
- * filter): one live subscription instead of one per card. Tasks without
+ * filter): one live subscription instead of one per task. The join runs
+ * off the project's active tasks — archived rows are excluded via the
+ * shared archive predicate unless the caller opts in. Tasks without
  * labels are absent from the map.
  */
 export async function getProjectTaskLabels(
+  database: NanoboardDB,
   projectId: string,
+  options?: GetProjectTaskLabelsOptions,
 ): Promise<Map<string, Label[]>> {
-  const tasks = await db.tasks.where("projectId").equals(projectId).toArray();
-  if (tasks.length === 0) return new Map();
-  const joins = await db.taskLabels
+  const tasks = await database.tasks
+    .where("projectId")
+    .equals(projectId)
+    .toArray();
+  const visible = options?.includeArchived
+    ? tasks
+    : tasks.filter((task) => !isTaskArchived(task));
+  if (visible.length === 0) return new Map();
+  const joins = await database.taskLabels
     .where("taskId")
-    .anyOf(tasks.map((task) => task.id))
+    .anyOf(visible.map((task) => task.id))
     .toArray();
   if (joins.length === 0) return new Map();
-  const byId = await resolveLabelMap([
+  const byId = await resolveLabelMap(database, [
     ...new Set(joins.map((join) => join.labelId)),
   ]);
   const byTask = new Map<string, Label[]>();
@@ -93,15 +113,19 @@ export async function getProjectTaskLabels(
   return byTask;
 }
 
-async function resolveLabels(labelIds: string[]): Promise<Label[]> {
-  return [...(await resolveLabelMap(labelIds)).values()];
+async function resolveLabels(
+  database: NanoboardDB,
+  labelIds: string[],
+): Promise<Label[]> {
+  return [...(await resolveLabelMap(database, labelIds)).values()];
 }
 
 async function resolveLabelMap(
+  database: NanoboardDB,
   labelIds: string[],
 ): Promise<Map<string, Label>> {
   if (labelIds.length === 0) return new Map();
-  const labels = await db.labels.bulkGet(labelIds);
+  const labels = await database.labels.bulkGet(labelIds);
   return new Map(
     labels
       .filter((label): label is Label => label !== undefined)

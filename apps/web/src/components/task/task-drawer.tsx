@@ -24,6 +24,7 @@ import {
 } from "@/lib/db/queries";
 import { getColumnIcon } from "@/lib/column";
 import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
+import { db } from "@/lib/db/db";
 import { formatDateShort } from "@/lib/due-date-status";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
@@ -145,7 +146,10 @@ export default function TaskDrawer({
     () => (currentTaskId ? getTask(currentTaskId) : undefined),
     [currentTaskId],
   );
-  const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
+  const columns = useLiveQuery(
+    () => getProjectColumns(db, projectId),
+    [projectId],
+  );
   const taskLabels = useLiveQuery(
     () => (currentTaskId ? getTaskLabels(currentTaskId) : undefined),
     [currentTaskId],

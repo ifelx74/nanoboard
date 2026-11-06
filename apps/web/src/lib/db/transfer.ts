@@ -6,9 +6,8 @@ import type {
   PlannedImportTask,
 } from "@/lib/task-transfer/types";
 import { LABEL_COLORS } from "../label-color";
-import { db } from "./db";
+import { db, type NanoboardDB } from "./db";
 import { getProjectTaskLabels } from "./labels";
-import { getProject } from "./projects";
 import type { Column, Label, Project, Task } from "./schema";
 import { TASK_PRIORITIES } from "./schema";
 import { getProjectColumns, getProjectTasks } from "./tasks";
@@ -20,14 +19,22 @@ export interface ProjectTransferSource {
   labelsByTask: Map<string, Label[]>;
 }
 
+/**
+ * The task-transfer source read. Deliberately INCLUSIVE of archived rows —
+ * export must carry archive state so it round-trips (interchange fidelity);
+ * the interchange format itself gains `archivedAt` in the transfer ticket.
+ * Until then archived rows simply travel as-is, never silently resurrected
+ * or dropped here.
+ */
 export async function readProjectTransferSource(
+  database: NanoboardDB,
   projectId: string,
 ): Promise<ProjectTransferSource> {
   const [project, columns, tasks, labelsByTask] = await Promise.all([
-    getProject(projectId),
-    getProjectColumns(projectId),
-    getProjectTasks(projectId),
-    getProjectTaskLabels(projectId),
+    database.projects.get(projectId),
+    getProjectColumns(database, projectId),
+    getProjectTasks(database, projectId, { includeArchived: true }),
+    getProjectTaskLabels(database, projectId, { includeArchived: true }),
   ]);
   if (!project) {
     throw new Error("Project not found.");

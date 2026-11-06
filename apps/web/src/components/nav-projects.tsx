@@ -40,6 +40,7 @@ import {
   readProjectTransferSource,
 } from "@/lib/db/queries";
 import type { ProjectStats } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
 import type { Project } from "@/lib/db/schema";
 import { buildTaskTransferDocument } from "@/lib/task-transfer/export";
 import { getProjectIcon } from "@/lib/project-icons";
@@ -81,7 +82,7 @@ function ProjectRow({
     if (exporting) return;
     setExporting(true);
     try {
-      const source = await readProjectTransferSource(project.id);
+      const source = await readProjectTransferSource(db, project.id);
       downloadTaskTransferDocument(await buildTaskTransferDocument(source));
       toast.success("Tasks exported.");
     } catch (error) {
@@ -189,7 +190,7 @@ export function NavProjects() {
   const navigate = useNavigate();
   const { projectId: activeProjectId } = useParams({ strict: false });
   const projects = useLiveQuery(() => getProjects(), []);
-  const statsByProject = useLiveQuery(() => getProjectsStats(), []);
+  const statsByProject = useLiveQuery(() => getProjectsStats(db), []);
   const [groupOpen, setGroupOpen] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 

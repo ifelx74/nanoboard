@@ -1,6 +1,8 @@
 import { createId } from "@paralleldrive/cuid2";
 import Dexie from "dexie";
 import { db } from "./db";
+import type { NanoboardDB } from "./db";
+import { isTaskArchived } from "./archive";
 import type {
   Column,
   ColumnSlug,
@@ -15,16 +17,53 @@ export function getTask(id: string): Promise<Task | undefined> {
   return db.tasks.get(id);
 }
 
-export function getProjectColumns(projectId: string): Promise<Column[]> {
-  return db.columns.where("projectId").equals(projectId).sortBy("position");
+export function getProjectColumns(
+  database: NanoboardDB,
+  projectId: string,
+): Promise<Column[]> {
+  return database.columns
+    .where("projectId")
+    .equals(projectId)
+    .sortBy("position");
 }
 
-export function getProjectTasks(projectId: string): Promise<Task[]> {
-  return db.tasks.where("projectId").equals(projectId).toArray();
+export interface GetProjectTasksOptions {
+  /**
+   * Transfer/export reads must carry archive state (interchange fidelity —
+   * see the task-transfer format), so they opt back in; every work surface
+   * reads active tasks only by default.
+   */
+  includeArchived?: boolean;
 }
 
-export function countProjectTasks(projectId: string): Promise<number> {
-  return db.tasks.where("projectId").equals(projectId).count();
+/**
+ * Active-task listing for the board/list/calendar surfaces: archived rows
+ * are excluded via the shared archive predicate unless the caller opts in.
+ */
+export async function getProjectTasks(
+  database: NanoboardDB,
+  projectId: string,
+  options?: GetProjectTasksOptions,
+): Promise<Task[]> {
+  const tasks = await database.tasks
+    .where("projectId")
+    .equals(projectId)
+    .toArray();
+  return options?.includeArchived
+    ? tasks
+    : tasks.filter((task) => !isTaskArchived(task));
+}
+
+/** Active-task count backing task-count badges; archived rows excluded. */
+export function countProjectTasks(
+  database: NanoboardDB,
+  projectId: string,
+): Promise<number> {
+  return database.tasks
+    .where("projectId")
+    .equals(projectId)
+    .filter((task) => !isTaskArchived(task))
+    .count();
 }
 
 export const QUICK_ADD_TITLE_MIN = 3;

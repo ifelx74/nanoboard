@@ -81,6 +81,11 @@ export interface Task {
   startDate?: StartDateString;
   /** ISO date string (yyyy-mm-dd) */
   dueDate?: DueDateString;
+  /**
+   * Soft-archive stamp (epoch ms); absent means active. Like the dates,
+   * unindexed and optional — no version bump, no row migration.
+   */
+  archivedAt?: number;
   createdAt: number;
   updatedAt: number;
 }

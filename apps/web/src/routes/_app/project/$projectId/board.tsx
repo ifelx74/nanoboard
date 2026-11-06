@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { ProjectLayout } from "@/components/common/project-layout";
 import KanbanBoard from "@/components/kanban-board/kanban-board";
 import TaskDrawer from "@/components/task/task-drawer";
+import { db } from "@/lib/db/db";
 import {
   getProject,
   getProjectColumns,
@@ -62,11 +63,14 @@ function RouteComponent() {
   const { projectId } = Route.useParams();
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
-  const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
-  const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+  const columns = useLiveQuery(
+    () => getProjectColumns(db, projectId),
+    [projectId],
+  );
+  const tasks = useLiveQuery(() => getProjectTasks(db, projectId), [projectId]);
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   const labelsByTask = useLiveQuery(
-    () => getProjectTaskLabels(projectId),
+    () => getProjectTaskLabels(db, projectId),
     [projectId],
   );
 

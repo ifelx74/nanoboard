@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Layout from "@/components/common/layout";
 import { SectionHeader } from "@/components/home/section-header";
 import { getProjects, getProjectsStats } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
 import type { ProjectStats } from "@/lib/db/queries";
 import type { Project } from "@/lib/db/schema";
 import { getDayPart } from "@/lib/day-part";
@@ -78,7 +79,7 @@ function ProjectCard({
 
 function RouteComponent() {
   const projects = useLiveQuery(() => getProjects(), []);
-  const statsByProject = useLiveQuery(() => getProjectsStats(), []);
+  const statsByProject = useLiveQuery(() => getProjectsStats(db), []);
   const now = new Date();
   const dateLine = now.toLocaleDateString(undefined, {
     weekday: "long",

@@ -28,6 +28,7 @@ import {
   getProjectLabels,
   importProjectTasks,
 } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
 import type { ImportColumn } from "@/lib/task-transfer/types";
 import type {
   ImportPlan,
@@ -105,7 +106,7 @@ export function ImportTasksDialog({
     try {
       const items = parseTaskImportFile(await file.text());
       const [projectColumns, projectLabels] = await Promise.all([
-        getProjectColumns(projectId),
+        getProjectColumns(db, projectId),
         getProjectLabels(projectId),
       ]);
       const nextPlan = planTaskImport(items, projectColumns, projectLabels);

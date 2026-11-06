@@ -1,5 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { db, type NanoboardDB } from "./db";
+import { isTaskArchived } from "./archive";
 import { forgetWhiteboard } from "./whiteboards";
 import { deleteWhiteboardPreview } from "./whiteboard-previews";
 import { isProjectIconKey } from "../project-icons";
@@ -278,10 +279,11 @@ export interface ProjectStats {
 
 /** Computed read backing the sidebar progress donut; no stored aggregates. */
 export async function getProjectStats(
+  database: NanoboardDB,
   projectId: string,
 ): Promise<ProjectStats> {
   return (
-    (await getProjectsStats()).get(projectId) ?? {
+    (await getProjectsStats(database)).get(projectId) ?? {
       totalTasks: 0,
       doneTasks: 0,
       completionPercentage: 0,
@@ -292,13 +294,17 @@ export async function getProjectStats(
 
 /**
  * Every project's stats in one pass (the sidebar subscribes to this once
- * instead of two queries per row).
+ * instead of two queries per row). Archived tasks are excluded via the
+ * shared archive predicate — stats describe live work only.
  */
-export async function getProjectsStats(): Promise<Map<string, ProjectStats>> {
+export async function getProjectsStats(
+  database: NanoboardDB,
+): Promise<Map<string, ProjectStats>> {
   const [columns, tasks] = await Promise.all([
-    db.columns.toArray(),
-    db.tasks.toArray(),
+    database.columns.toArray(),
+    database.tasks.toArray(),
   ]);
+  const liveTasks = tasks.filter((task) => !isTaskArchived(task));
   const finalIds = new Set(
     columns.filter((column) => column.isFinal).map((column) => column.id),
   );
@@ -306,7 +312,7 @@ export async function getProjectsStats(): Promise<Map<string, ProjectStats>> {
     string,
     { total: number; done: number; dues: DueDateString[] }
   >();
-  for (const task of tasks) {
+  for (const task of liveTasks) {
     let entry = byProject.get(task.projectId);
     if (!entry) {
       entry = { total: 0, done: 0, dues: [] };
