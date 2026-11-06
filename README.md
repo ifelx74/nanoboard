@@ -12,7 +12,7 @@
 
 <div align="center">
   <h2>
-    A minimalist, local-first project management workspace. </br>
+    A minimalist, local-first space for your tasks. </br>
     Kanban board, whiteboard, calendar, and sticky notes — fast, private, and 100% stored in your browser. </br>
   <br />
   </h2>
@@ -40,7 +40,7 @@
     </a>
     <figcaption>
       <p align="center">
-        Plan projects, sketch ideas, and keep everything private on your device.
+        Plan tasks, sketch ideas, and keep everything private on your device.
       </p>
     </figcaption>
   </figure>
@@ -50,7 +50,7 @@
 
 nanoboard supports:
 
-- 🗂️&nbsp;Projects to organize your work.
+- 🗂️&nbsp;Projects to organize your tasks.
 - 📋&nbsp;Kanban board with drag-and-drop task management.
 - 📝&nbsp;List view for a linear overview of tasks.
 - 🖌️&nbsp;Infinite-canvas whiteboard powered by Excalidraw.

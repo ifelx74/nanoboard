@@ -74,7 +74,7 @@ export default defineConfig(({ mode }) => {
           name: "Nanoboard",
           short_name: "Nanoboard",
           description:
-            "A local-first kanban board for organizing projects, tasks, and resources.",
+            "A minimalist, local-first space for your tasks.",
           id: "/",
           start_url: "/",
           scope: "/",
