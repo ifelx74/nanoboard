@@ -1,6 +1,6 @@
 # nanoboard
 
-A minimalist, local-first project management workspace: kanban board, whiteboard (Excalidraw), calendar, and sticky notes. There is no server — all data lives in the browser's IndexedDB via Dexie. pnpm + Turborepo monorepo with a single web app.
+A minimalist, local-first space for your tasks: kanban board, whiteboard (Excalidraw), calendar, and sticky notes. There is no server — all data lives in the browser's IndexedDB via Dexie. pnpm + Turborepo monorepo with a single web app.
 
 ## Structure
 
