@@ -199,6 +199,80 @@ describe("applyBackupDocument", () => {
     await target.close();
   });
 
+  it("round-trips archive state: backup → restore → backup preserves archivedAt exactly", async () => {
+    const source = createTestDb();
+    const contents = buildTestContents();
+    contents.tasks[0] = { ...contents.tasks[0], archivedAt: TEST_NOW + 7 };
+    await seedTestDb(source, contents);
+    const first = await createBackupDocument(source);
+    const text = serializeBackupDocument(first);
+
+    const target = createTestDb();
+    await seedTestDb(target, buildOtherContents());
+    await applyBackupDocument(target, parseBackupDocument(text));
+    const second = await createBackupDocument(target);
+
+    // The re-exported document's task rows are byte-identical to the
+    // original export — archive stamps included, absence included.
+    expect(second.tables.tasks).toEqual(first.tables.tasks);
+    expect(second.tables.tasks[0]?.archivedAt).toBe(TEST_NOW + 7);
+    expect(second.tables.tasks[1]?.archivedAt).toBeUndefined();
+
+    await source.close();
+    await target.close();
+  });
+
+  it("restores a pre-feature backup whose task rows lack archivedAt", async () => {
+    const source = createTestDb();
+    const contents = buildTestContents();
+    await seedTestDb(source, contents);
+    const document = await createBackupDocument(source);
+    // A backup produced before archiving existed: the field is simply
+    // absent from every task row.
+    const legacyText = JSON.stringify({
+      ...document,
+      tables: {
+        ...document.tables,
+        tasks: document.tables.tasks.map((task) => {
+          const row = { ...task };
+          delete row.archivedAt;
+          return row;
+        }),
+      },
+    });
+
+    const target = createTestDb();
+    await seedTestDb(target, buildOtherContents());
+    await applyBackupDocument(target, parseBackupDocument(legacyText));
+
+    expect(await readAllTables(target)).toEqual(contents);
+
+    await source.close();
+    await target.close();
+  });
+
+  it("rejects a document with a mistyped archivedAt before writing anything", async () => {
+    const source = createTestDb();
+    await seedTestDb(source);
+    const document = await createBackupDocument(source);
+    (document.tables.tasks[0] as { archivedAt: unknown }).archivedAt =
+      "yesterday";
+
+    const target = createTestDb();
+    const original = buildOtherContents();
+    await seedTestDb(target, original);
+
+    await expect(applyBackupDocument(target, document)).rejects.toThrow(
+      /corrupted[\s\S]*"tasks", row 1[\s\S]*"archivedAt"/,
+    );
+
+    // The gate runs before the restore transaction: the database is untouched.
+    expect(await readAllTables(target)).toEqual(original);
+
+    await source.close();
+    await target.close();
+  });
+
   it("restores over a populated app, removing rows the backup doesn't contain", async () => {
     const source = createTestDb();
     const contents = buildTestContents();
