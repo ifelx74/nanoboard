@@ -51,7 +51,8 @@ const EXAMPLE_FORMAT = `{
       "priority": "low",
       "startDate": "2025-04-18T00:00:00.000Z",
       "dueDate": "2025-04-20T00:00:00.000Z",
-      "userId": null
+      "userId": null,
+      "archivedAt": null
     }
   ]
 }`;
@@ -145,7 +146,7 @@ export function ImportTasksDialog({
     if (!plan || plan.tasks.length === 0 || importing) return;
     setImporting(true);
     try {
-      const written = await importProjectTasks(projectId, plan.tasks);
+      const written = await importProjectTasks(db, projectId, plan.tasks);
       const outcomes: ImportTaskOutcome[] = [
         ...plan.failures.map((failure) => ({
           index: failure.index,
