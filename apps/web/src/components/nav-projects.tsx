@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
+  Archive,
   ArrowUpFromLine,
   ChevronRight,
   FileDown,
@@ -69,6 +70,13 @@ function ProjectRow({
   function openBoard() {
     void navigate({
       to: "/project/$projectId/board",
+      params: { projectId: project.id },
+    });
+  }
+
+  function openArchives() {
+    void navigate({
+      to: "/project/$projectId/archives",
       params: { projectId: project.id },
     });
   }
@@ -155,6 +163,15 @@ function ProjectRow({
           >
             <FileDown className="size-4 shrink-0" />
             <span>Import tasks</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setMenuOpen(false);
+              openArchives();
+            }}
+          >
+            <Archive className="size-4 shrink-0" />
+            <span>Archives</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={handleDeleteRequest}>
