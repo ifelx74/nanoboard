@@ -6,7 +6,12 @@ import {
   assertValidBackupDocument,
   assertValidBackupTables,
 } from "./validate";
-import { buildTestContents, createTestDb, seedTestDb, TEST_NOW } from "../db/test-db";
+import {
+  buildTestContents,
+  createTestDb,
+  seedTestDb,
+  TEST_NOW,
+} from "../db/test-db";
 import type { BackupTables } from "./types";
 
 async function seededDocument() {

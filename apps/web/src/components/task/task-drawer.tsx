@@ -84,7 +84,7 @@ function DisabledHintButton({
           />
         }
       >
-        {children}
+        <span aria-hidden="true">{children}</span>
       </TooltipTrigger>
       <TooltipPopup>{tooltip}</TooltipPopup>
     </Tooltip>
@@ -311,7 +311,6 @@ export default function TaskDrawer({
                     variant="ghost"
                     size="sm"
                     disabled
-                    aria-hidden="true"
                     className="text-foreground"
                   >
                     <Copy className="size-4" aria-hidden="true" />
@@ -363,7 +362,6 @@ export default function TaskDrawer({
                     variant="ghost"
                     size="sm"
                     disabled
-                    aria-hidden="true"
                     className="text-foreground"
                   >
                     <Archive className="size-4" aria-hidden="true" />
@@ -397,6 +395,7 @@ export default function TaskDrawer({
 
         {currentTaskId && (
           <TaskArchiveDialog
+            key={currentTaskId}
             open={archiveOpen}
             onOpenChange={setArchiveOpen}
             taskId={currentTaskId}

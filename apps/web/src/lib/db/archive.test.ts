@@ -197,7 +197,6 @@ describe("archive data layer", () => {
 
       expect(secondPass).toBe(0);
       // The first sweep's stamp is left alone.
-      // The first sweep's stamp is left alone.
       expect((await db.tasks.get("task-3"))?.archivedAt).toBe(stamped);
     });
   });

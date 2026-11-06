@@ -75,7 +75,15 @@ function ArchiveRow({
   return (
     <div
       onClick={() => onOpen(task.id)}
-      className="group flex h-11 cursor-pointer items-center gap-3 border-b border-border/50 px-4 outline-none transition-colors last:border-0 hover:bg-accent/60"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(task.id);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className="group flex h-11 cursor-pointer items-center gap-3 border-b border-border/50 px-4 outline-none transition-colors last:border-0 hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     >
       <span className="w-15 shrink-0 truncate font-mono text-xs text-muted-foreground">
         {taskKey(projectSlug, task.number)}
@@ -220,8 +228,7 @@ function RouteComponent() {
               </EmptyMedia>
               <EmptyTitle>No archived tasks yet</EmptyTitle>
               <EmptyDescription>
-                Tasks you archive — completed or cancelled — will show up
-                here.
+                Tasks you archive — completed or cancelled — will show up here.
               </EmptyDescription>
             </EmptyHeader>
             {(eligibleCount ?? 0) > 0 && (
