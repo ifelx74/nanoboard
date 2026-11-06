@@ -167,6 +167,37 @@ function planDay(
   return { value: day, warnings: [] };
 }
 
+/**
+ * `archivedAt` is additive and optional: absent or null means active (so
+ * legacy files import cleanly), a valid ISO timestamp means archived. Every
+ * other shape is ignored with a warning — the stamp is dropped rather than
+ * failing the task, matching the per-field validation style above.
+ */
+function planArchivedAt(value: unknown): {
+  value?: number;
+  warnings: string[];
+} {
+  if (value === undefined || value === null) {
+    return { warnings: [] };
+  }
+  if (typeof value !== "string") {
+    return { warnings: ["archivedAt is not text; ignored."] };
+  }
+
+  const raw = value.trim();
+  if (!raw) {
+    return { warnings: [] };
+  }
+  if (!ISO_DAY_PATTERN.test(raw) || !isRealDay(raw.slice(0, 10))) {
+    return { warnings: [`Invalid archivedAt "${raw}" ignored.`] };
+  }
+  const time = Date.parse(raw);
+  if (Number.isNaN(time)) {
+    return { warnings: [`Invalid archivedAt "${raw}" ignored.`] };
+  }
+  return { value: time, warnings: [] };
+}
+
 function capitalize(value: string): string {
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
@@ -346,7 +377,8 @@ export function planTaskImport(
 
     const startPlan = planDay(item.startDate, "start date");
     const duePlan = planDay(item.dueDate, "due date");
-    warnings.push(...startPlan.warnings, ...duePlan.warnings);
+    const archivedPlan = planArchivedAt(item.archivedAt);
+    warnings.push(...startPlan.warnings, ...duePlan.warnings, ...archivedPlan.warnings);
 
     let start = startPlan.value;
     const due = duePlan.value;
@@ -371,6 +403,7 @@ export function planTaskImport(
       priority: priorityPlan.priority,
       startDate: start ? brandStartDate(start) : undefined,
       dueDate: due as DueDateString | undefined,
+      archivedAt: archivedPlan.value,
       labels: labelPlan.labels,
       warnings,
     });

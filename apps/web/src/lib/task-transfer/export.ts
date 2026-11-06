@@ -43,6 +43,10 @@ export async function buildTaskTransferDocument(input: {
         startDate: isoDay(task.startDate),
         dueDate: isoDay(task.dueDate),
         userId: null,
+        archivedAt:
+          task.archivedAt !== undefined
+            ? new Date(task.archivedAt).toISOString()
+            : null,
         labels: (input.labelsByTask.get(task.id) ?? [])
           .slice()
           .sort(compareLabels)

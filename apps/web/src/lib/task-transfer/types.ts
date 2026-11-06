@@ -18,6 +18,11 @@ export interface TaskTransferTask {
   startDate: string | null;
   dueDate: string | null;
   userId: string | null;
+  /**
+   * Soft-archive stamp as an ISO timestamp (null when the task is active),
+   * absent only in pre-archive files. Honored on import; see planTaskImport.
+   */
+  archivedAt?: string | null;
   labels: TaskTransferLabel[];
 }
 
@@ -61,6 +66,8 @@ export interface PlannedImportTask {
   priority: TaskPriority;
   startDate?: StartDateString;
   dueDate?: DueDateString;
+  /** Epoch ms when the source file carried a valid archivedAt stamp. */
+  archivedAt?: number;
   labels: PlannedImportLabel[];
   warnings: string[];
 }
