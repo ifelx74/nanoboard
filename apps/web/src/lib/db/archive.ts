@@ -3,8 +3,8 @@ import type { Task } from "./schema";
 
 /**
  * The task archive: a soft-archive (`archivedAt` stamp) for tasks sitting in
- * final columns, with restore, an archived-only listing, and the bulk
- * "archive completed tasks" sweep.
+ * final columns, with restore, an archived-only listing, the eligibility
+ * count, and the bulk "archive completed tasks" sweep.
  *
  * Like the backup module and deleteProject, these functions take the
  * database instance as a parameter instead of reaching for the singleton —
@@ -96,6 +96,41 @@ export async function getArchivedProjectTasks(
 }
 
 /**
+ * The shared eligibility read behind both the sweep and the count: every
+ * non-archived task sitting in a final column of the project.
+ */
+async function getArchivableTasks(
+  database: NanoboardDB,
+  projectId: string,
+): Promise<Task[]> {
+  const columns = await database.columns
+    .where("projectId")
+    .equals(projectId)
+    .toArray();
+  const finalIds = new Set(
+    columns.filter((column) => column.isFinal).map((column) => column.id),
+  );
+  const tasks = await database.tasks
+    .where("projectId")
+    .equals(projectId)
+    .toArray();
+  return tasks.filter(
+    (task) => !isTaskArchived(task) && finalIds.has(task.columnId),
+  );
+}
+
+/**
+ * How many tasks the "Archive completed tasks" sweep would file right
+ * now — backs the sweep's confirm dialog and the archive empty-state CTA.
+ */
+export async function countArchivableTasks(
+  database: NanoboardDB,
+  projectId: string,
+): Promise<number> {
+  return (await getArchivableTasks(database, projectId)).length;
+}
+
+/**
  * The bulk sweep behind "Archive completed tasks": one transaction archives
  * every non-archived task sitting in a final column of the project and
  * returns how many it filed. Skips already-archived tasks; a zero-count
@@ -112,20 +147,7 @@ export async function archiveCompletedTasks(
     database.tasks,
     database.columns,
     async () => {
-      const columns = await database.columns
-        .where("projectId")
-        .equals(projectId)
-        .toArray();
-      const finalIds = new Set(
-        columns.filter((column) => column.isFinal).map((column) => column.id),
-      );
-      const tasks = await database.tasks
-        .where("projectId")
-        .equals(projectId)
-        .toArray();
-      const archivable = tasks.filter(
-        (task) => !isTaskArchived(task) && finalIds.has(task.columnId),
-      );
+      const archivable = await getArchivableTasks(database, projectId);
       if (archivable.length > 0) {
         await database.tasks.bulkPut(
           archivable.map((task) => ({

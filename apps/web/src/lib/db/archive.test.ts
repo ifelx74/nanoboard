@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   archiveCompletedTasks,
   archiveTask,
+  countArchivableTasks,
   getArchivedProjectTasks,
   restoreTask,
 } from "./archive";
@@ -154,6 +155,24 @@ describe("archive data layer", () => {
 
     it("is empty before anything is archived", async () => {
       expect(await getArchivedProjectTasks(db, "project-1")).toEqual([]);
+    });
+  });
+
+  describe("countArchivableTasks", () => {
+    it("counts only the non-archived final-column tasks", async () => {
+      expect(await countArchivableTasks(db, "project-1")).toBe(2);
+    });
+
+    it("drops to zero once the sweep files them", async () => {
+      await archiveCompletedTasks(db, "project-1");
+
+      expect(await countArchivableTasks(db, "project-1")).toBe(0);
+    });
+
+    it("excludes already-archived tasks without archiving the rest", async () => {
+      await archiveTask(db, "task-3");
+
+      expect(await countArchivableTasks(db, "project-1")).toBe(1);
     });
   });
 

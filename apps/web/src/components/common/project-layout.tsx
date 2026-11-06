@@ -27,7 +27,12 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 
-export type ProjectView = "board" | "calendar" | "list" | "whiteboard";
+export type ProjectView =
+  | "board"
+  | "calendar"
+  | "list"
+  | "whiteboard"
+  | "archives";
 export type ProjectLayoutView = "backlog" | "whiteboard";
 
 const views: { key: ProjectView; title: string; icon: typeof List }[] = [
@@ -40,17 +45,22 @@ type ProjectLayoutProps = {
   projectId: string;
   activeView: ProjectView;
   children: ReactNode;
+  headerAction?: ReactNode;
+  archiveCount?: number;
 };
 
 export function ProjectLayout({
   projectId,
   activeView,
   children,
+  headerAction,
+  archiveCount = 0,
 }: ProjectLayoutProps) {
   const navigate = useNavigate();
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   // is backlog view if activeView is board, calendar, or list
   const isBacklogView = ["board", "calendar", "list"].includes(activeView);
+  const isArchivesView = activeView === "archives";
 
   return (
     <>
@@ -67,48 +77,62 @@ export function ProjectLayout({
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden sm:inline-flex" />
                 <BreadcrumbItem>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="px-1.5 py-0.5 text-sm"
+                  {isArchivesView ? (
+                    <span className="flex h-7 items-center gap-1.5 px-1.5 text-sm font-medium text-foreground">
+                      Archives
+                      {archiveCount > 0 && (
+                        <span
+                          aria-label={`${archiveCount} archived tasks`}
+                          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-100 px-1.5 text-[11px] font-semibold tabular-nums text-brand-800 dark:bg-brand-900 dark:text-brand-100"
+                        >
+                          {archiveCount}
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="px-1.5 py-0.5 text-sm"
+                        >
+                          {isBacklogView ? "Backlog" : "Whiteboard"}
+                          <ChevronsUpDown className="size-3 text-foreground/70" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-44 rounded-sm"
+                        align="start"
+                        side="bottom"
                       >
-                        {isBacklogView ? "Backlog" : "Whiteboard"}
-                        <ChevronsUpDown className="size-3 text-foreground/70" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="w-44 rounded-sm"
-                      align="start"
-                      side="bottom"
-                    >
-                      <DropdownMenuItem
-                        key={"backlog"}
-                        onClick={() =>
-                          navigate({
-                            to: `/project/$projectId/board`,
-                            params: { projectId },
-                          })
-                        }
-                      >
-                        <ClipboardClock />
-                        Backlog
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        key={"whiteboard"}
-                        onClick={() =>
-                          navigate({
-                            to: `/project/$projectId/whiteboard`,
-                            params: { projectId },
-                          })
-                        }
-                      >
-                        <PencilSparkles />
-                        Whiteboard
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <DropdownMenuItem
+                          key={"backlog"}
+                          onClick={() =>
+                            navigate({
+                              to: `/project/$projectId/board`,
+                              params: { projectId },
+                            })
+                          }
+                        >
+                          <ClipboardClock />
+                          Backlog
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          key={"whiteboard"}
+                          onClick={() =>
+                            navigate({
+                              to: `/project/$projectId/whiteboard`,
+                              params: { projectId },
+                            })
+                          }
+                        >
+                          <PencilSparkles />
+                          Whiteboard
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -137,6 +161,10 @@ export function ProjectLayout({
                   <span className="hidden sm:block">{view.title}</span>
                 </button>
               ))}
+            </div>
+          ) : isArchivesView && headerAction ? (
+            <div className="flex shrink-0 items-center gap-1">
+              {headerAction}
             </div>
           ) : null}
         </div>
