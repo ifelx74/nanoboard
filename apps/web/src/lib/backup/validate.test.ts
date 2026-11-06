@@ -6,7 +6,7 @@ import {
   assertValidBackupDocument,
   assertValidBackupTables,
 } from "./validate";
-import { buildTestContents, createTestDb, seedTestDb } from "../db/test-db";
+import { buildTestContents, createTestDb, seedTestDb, TEST_NOW } from "../db/test-db";
 import type { BackupTables } from "./types";
 
 async function seededDocument() {
@@ -105,6 +105,35 @@ describe("assertValidBackupTables", () => {
     tables.tasks[1].startDate = 42 as never;
     expect(() => assertValidBackupTables(tables as BackupTables)).toThrow(
       /invalid "startDate"/,
+    );
+  });
+});
+
+describe("archivedAt on task rows", () => {
+  it("accepts task rows with a finite archivedAt", () => {
+    const tables = buildTestContents();
+    tables.tasks[0] = { ...tables.tasks[0], archivedAt: TEST_NOW + 1 };
+    // 0 is a finite number — the epoch itself is a legal stamp.
+    tables.tasks[1] = { ...tables.tasks[1], archivedAt: 0 };
+    expect(() => assertValidBackupTables(tables as BackupTables)).not.toThrow();
+  });
+
+  it("accepts task rows without archivedAt — pre-feature backups stay valid", () => {
+    const tables = buildTestContents();
+    for (const task of tables.tasks) delete task.archivedAt;
+    expect(() => assertValidBackupTables(tables as BackupTables)).not.toThrow();
+  });
+
+  it.each([
+    ["a string", "2026-01-01"],
+    ["a boolean", true],
+    ["NaN", Number.NaN],
+    ["an infinity", Number.POSITIVE_INFINITY],
+  ])("rejects an archivedAt that is %s as corruption", (_label, value) => {
+    const tables = buildTestContents();
+    (tables.tasks[0] as { archivedAt: unknown }).archivedAt = value;
+    expect(() => assertValidBackupTables(tables as BackupTables)).toThrow(
+      /corrupted[\s\S]*"tasks", row 1[\s\S]*"archivedAt"/,
     );
   });
 });

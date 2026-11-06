@@ -3,6 +3,7 @@ import {
   buildTestContents,
   createTestDb,
   seedTestDb,
+  TEST_NOW,
   type TestDbContents,
 } from "../db/test-db";
 import { createBackupDocument } from "./create";
@@ -112,6 +113,22 @@ describe("createBackupDocument", () => {
     expect(document.tables.whiteboardPreviews[0]?.dataUrl).toMatch(
       /^data:image\/jpeg;base64,/,
     );
+
+    await db.close();
+  });
+
+  it("carries archivedAt on archived task rows, exactly as stored", async () => {
+    const db = createTestDb();
+    const contents = buildTestContents();
+    contents.tasks[0] = { ...contents.tasks[0], archivedAt: TEST_NOW + 5 };
+    await seedTestDb(db, contents);
+
+    const document = await createBackupDocument(db);
+
+    // Archive state is ordinary row data: exported verbatim on the rows
+    // that carry it, absent on the ones that don't.
+    expect(document.tables.tasks[0]?.archivedAt).toBe(TEST_NOW + 5);
+    expect(document.tables.tasks[1]?.archivedAt).toBeUndefined();
 
     await db.close();
   });

@@ -76,6 +76,9 @@ const TABLE_FIELD_SPECS: Record<BackupTableName, FieldSpec[]> = {
     spec("priority", isStringArray(TASK_PRIORITIES)),
     spec("startDate", isString, true),
     spec("dueDate", isString, true),
+    // Archive stamp (epoch ms): absent on pre-feature backups and active
+    // tasks alike, a finite number when present. Wrong type = corruption.
+    spec("archivedAt", isNumber, true),
     spec("createdAt", isNumber),
     spec("updatedAt", isNumber),
   ],
