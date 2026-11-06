@@ -6,10 +6,12 @@ import TaskOptionPopover from "./task-option-popover";
 export default function TaskColumnPopover({
   task,
   columns,
+  disabled = false,
   children,
 }: {
   task: Task;
   columns: Column[];
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   async function handleColumnChange(columnId: string): Promise<boolean> {
@@ -28,6 +30,8 @@ export default function TaskColumnPopover({
       return false;
     }
   }
+
+  if (disabled) return <>{children}</>;
 
   return (
     <TaskOptionPopover
