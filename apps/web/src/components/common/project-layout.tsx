@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -29,18 +30,10 @@ import {
 import { Button } from "../ui/button";
 
 export type ProjectView =
-  | "board"
-  | "calendar"
-  | "list"
-  | "whiteboard"
-  | "archives";
+  "board" | "calendar" | "list" | "whiteboard" | "archives";
 export type ProjectLayoutView = "backlog" | "whiteboard";
 
-const views: { key: ProjectView; title: string; icon: typeof List }[] = [
-  { key: "board", title: "Board", icon: SquareKanban },
-  { key: "calendar", title: "Calendar", icon: CalendarDays },
-  { key: "list", title: "List", icon: List },
-];
+type ViewMeta = { key: ProjectView; title: string; icon: typeof List };
 
 type ProjectLayoutProps = {
   projectId: string;
@@ -56,6 +49,12 @@ export function ProjectLayout({
   archiveCount = 0,
 }: ProjectLayoutProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation("project");
+  const views: ViewMeta[] = [
+    { key: "board", title: t("toolbar.board"), icon: SquareKanban },
+    { key: "calendar", title: t("toolbar.calendar"), icon: CalendarDays },
+    { key: "list", title: t("toolbar.list"), icon: List },
+  ];
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   // is backlog view if activeView is board, calendar, or list
   const isBacklogView = ["board", "calendar", "list"].includes(activeView);
@@ -71,7 +70,7 @@ export function ProjectLayout({
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden sm:inline-flex">
                   <span className="text-xs font-semibold text-card-foreground">
-                    {project?.name ?? "Project"}
+                    {project?.name ?? t("toolbar.fallbackProject")}
                   </span>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden sm:inline-flex" />
@@ -84,13 +83,15 @@ export function ProjectLayout({
                         className="px-1.5 py-0.5 text-sm"
                       >
                         {isBacklogView
-                          ? "Backlog"
+                          ? t("toolbar.backlog")
                           : isArchivesView
-                            ? "Archives"
-                            : "Whiteboard"}
+                            ? t("toolbar.archives")
+                            : t("toolbar.whiteboard")}
                         {isArchivesView && archiveCount > 0 && (
                           <span
-                            aria-label={`${archiveCount} archived tasks`}
+                            aria-label={t("toolbar.archivedTasks", {
+                              count: archiveCount,
+                            })}
                             className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-100 px-1.5 text-[11px] font-semibold tabular-nums text-brand-800 dark:bg-brand-900 dark:text-brand-100"
                           >
                             {archiveCount}
@@ -114,7 +115,7 @@ export function ProjectLayout({
                         }
                       >
                         <ClipboardClock />
-                        Backlog
+                        {t("toolbar.backlog")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         key={"whiteboard"}
@@ -126,7 +127,7 @@ export function ProjectLayout({
                         }
                       >
                         <PencilSparkles />
-                        Whiteboard
+                        {t("toolbar.whiteboard")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         key={"archives"}
@@ -138,7 +139,7 @@ export function ProjectLayout({
                         }
                       >
                         <Archive />
-                        Archives
+                        {t("toolbar.archives")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

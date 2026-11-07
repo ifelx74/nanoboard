@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,8 +40,9 @@ import {
   planTaskImport,
   parseTaskImportFile,
 } from "@/lib/task-transfer/import";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 
 const EXAMPLE_FORMAT = `{
   "tasks": [
@@ -70,6 +72,7 @@ export function ImportTasksDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation("project");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<Mode>("pick");
   const [fileName, setFileName] = useState<string | null>(null);
@@ -98,7 +101,7 @@ export function ImportTasksDialog({
   async function handleFile(file: File) {
     if (parsing) return;
     if (!isJsonFile(file)) {
-      setError("Choose a JSON file.");
+      setError(t("import.chooseJsonError"));
       return;
     }
 
@@ -121,9 +124,7 @@ export function ImportTasksDialog({
       setReport(null);
       setFileName(null);
       setMode("pick");
-      setError(
-        cause instanceof Error ? cause.message : "Could not read this file.",
-      );
+      setError(errorMessage(cause, t("import.readFailed")));
     } finally {
       setParsing(false);
     }
@@ -167,17 +168,19 @@ export function ImportTasksDialog({
       setReport({ imported, warned, failed, outcomes });
       setMode("result");
       if (imported > 0) {
-        toast.success(`${imported} task${imported === 1 ? "" : "s"} imported.`);
+        const message = i18n.t("project:import.toasts.imported", {
+          count: imported,
+        });
+        toast.success(message);
       }
       if (failed > 0) {
-        toast.error(
-          `${failed} task${failed === 1 ? "" : "s"} could not be imported.`,
-        );
+        const message = i18n.t("project:import.toasts.failed", {
+          count: failed,
+        });
+        toast.error(message);
       }
     } catch (cause) {
-      toast.error(
-        cause instanceof Error ? cause.message : "Could not import tasks.",
-      );
+      toast.error(errorMessage(cause, i18n.t("project:import.errors.import")));
     } finally {
       setImporting(false);
     }
@@ -202,12 +205,12 @@ export function ImportTasksDialog({
       <DialogPopup className="max-w-lg" showCloseButton={!importing}>
         <DialogHeader>
           <DialogTitle>
-            {mode === "result" ? "Import complete" : "Import tasks"}
+            {mode === "result" ? t("import.completeTitle") : t("import.title")}
           </DialogTitle>
           <DialogDescription>
             {mode === "result"
-              ? `Finished importing into “${projectName}”.`
-              : `Add tasks from a JSON file to “${projectName}”.`}
+              ? t("import.completeDescription", { name: projectName })
+              : t("import.description", { name: projectName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -215,7 +218,9 @@ export function ImportTasksDialog({
           {mode === "pick" && (
             <>
               <div className="space-y-1.5">
-                <p className="text-xs text-muted-foreground">Expected format</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("import.expectedFormat")}
+                </p>
                 <pre className="max-h-40 overflow-auto rounded-lg border border-border bg-muted/50 p-3 font-mono text-xs">
                   {EXAMPLE_FORMAT}
                 </pre>
@@ -237,11 +242,9 @@ export function ImportTasksDialog({
                   className="size-8 text-muted-foreground"
                 />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">
-                    Drag and drop a JSON file
-                  </p>
+                  <p className="text-sm font-medium">{t("import.dragTitle")}</p>
                   <p className="text-xs text-muted-foreground">
-                    A full export, a tasks object, or a task array.
+                    {t("import.dragHint")}
                   </p>
                 </div>
                 <input
@@ -263,7 +266,7 @@ export function ImportTasksDialog({
                   ) : (
                     <FileJson aria-hidden="true" />
                   )}
-                  {parsing ? "Reading" : "Select file"}
+                  {parsing ? t("import.reading") : t("import.selectFile")}
                 </Button>
               </div>
               {error && (
@@ -287,7 +290,7 @@ export function ImportTasksDialog({
                   disabled={importing}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  Change file
+                  {t("import.changeFile")}
                 </button>
               </div>
               <input
@@ -298,20 +301,25 @@ export function ImportTasksDialog({
                 onChange={handleFileChange}
               />
               <div className="grid grid-cols-3 gap-2 text-center">
-                <Count label="Ready" value={planStats(plan).ready} />
                 <Count
-                  label="Warnings"
+                  label={t("import.counts.ready")}
+                  value={planStats(plan).ready}
+                />
+                <Count
+                  label={t("import.counts.warnings")}
                   value={planStats(plan).warned}
                   tone="warning"
                 />
                 <Count
-                  label="Failed"
+                  label={t("import.counts.failed")}
                   value={planStats(plan).failed}
                   tone="error"
                 />
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">Tasks</p>
+                <p className="text-sm font-medium">
+                  {t("import.tasksHeading")}
+                </p>
                 <div className="max-h-64 space-y-1 overflow-auto rounded-sm border border-border p-1">
                   {[...plan.tasks, ...plan.failures]
                     .sort((a, b) => a.index - b.index)
@@ -349,9 +357,20 @@ export function ImportTasksDialog({
           {mode === "result" && report && (
             <>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <Count label="Imported" value={report.imported} />
-                <Count label="Warnings" value={report.warned} tone="warning" />
-                <Count label="Failed" value={report.failed} tone="error" />
+                <Count
+                  label={t("import.counts.imported")}
+                  value={report.imported}
+                />
+                <Count
+                  label={t("import.counts.warnings")}
+                  value={report.warned}
+                  tone="warning"
+                />
+                <Count
+                  label={t("import.counts.failed")}
+                  value={report.failed}
+                  tone="error"
+                />
               </div>
               <div className="max-h-72 space-y-1 overflow-auto rounded-lg border border-border p-1">
                 {report.outcomes.map((outcome) => (
@@ -367,10 +386,10 @@ export function ImportTasksDialog({
                     }
                     detail={
                       !outcome.success
-                        ? (outcome.error ?? "Import failed.")
+                        ? (outcome.error ?? t("import.importFailed"))
                         : outcome.warnings.length > 0
                           ? outcome.warnings.join(" ")
-                          : "Imported"
+                          : t("import.counts.imported")
                     }
                   />
                 ))}
@@ -382,7 +401,7 @@ export function ImportTasksDialog({
         <DialogFooter>
           {mode === "pick" && (
             <DialogClose render={<Button variant="outline" size="sm" />}>
-              Cancel
+              {t("import.cancel")}
             </DialogClose>
           )}
           {mode === "preview" && (
@@ -393,7 +412,7 @@ export function ImportTasksDialog({
                 disabled={importing}
                 onClick={resetToPick}
               >
-                Back
+                {t("import.back")}
               </Button>
               <Button
                 size="sm"
@@ -404,17 +423,19 @@ export function ImportTasksDialog({
                   <Loader2 className="animate-spin" aria-hidden="true" />
                 )}
                 {importing
-                  ? "Importing"
-                  : `Import ${pendingCount} task${pendingCount === 1 ? "" : "s"}`}
+                  ? t("import.importing")
+                  : t("import.importButton", { count: pendingCount })}
               </Button>
             </>
           )}
           {mode === "result" && (
             <>
               <Button variant="outline" size="sm" onClick={resetToPick}>
-                Import another file
+                {t("import.importAnother")}
               </Button>
-              <DialogClose render={<Button size="sm" />}>Done</DialogClose>
+              <DialogClose render={<Button size="sm" />}>
+                {t("import.done")}
+              </DialogClose>
             </>
           )}
         </DialogFooter>

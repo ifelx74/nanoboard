@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +17,7 @@ export default function ProjectIconPicker({
   selected: string;
   onSelect: (icon: string) => void;
 }) {
+  const { t } = useTranslation("project");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const SelectedIcon = getProjectIcon(selected);
@@ -37,7 +39,7 @@ export default function ProjectIconPicker({
           variant="outline"
           size="icon-sm"
           className="h-8 w-8 p-0"
-          title="Pick an icon"
+          title={t("iconPicker.pickTitle")}
         >
           <SelectedIcon className="h-4 w-4" />
         </Button>
@@ -47,7 +49,7 @@ export default function ProjectIconPicker({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search icons"
+            placeholder={t("iconPicker.searchPlaceholder")}
             className="h-8 text-xs"
           />
           <div className="max-h-[280px] overflow-y-auto pr-1">
