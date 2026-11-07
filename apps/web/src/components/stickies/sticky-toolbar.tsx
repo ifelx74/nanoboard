@@ -8,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Kbd } from "@/components/ui/kbd";
 import {
   Tooltip,
@@ -28,36 +29,6 @@ type FormattingAction = {
   command: (editor: Editor) => void;
 };
 
-const FORMATTING_ACTIONS: FormattingAction[] = [
-  {
-    label: "Bold",
-    shortcut: "Cmd + B",
-    icon: Bold,
-    isActive: (editor) => editor.isActive("bold"),
-    command: (editor) => {
-      editor.chain().focus().toggleBold().run();
-    },
-  },
-  {
-    label: "Italic",
-    shortcut: "Cmd + I",
-    icon: Italic,
-    isActive: (editor) => editor.isActive("italic"),
-    command: (editor) => {
-      editor.chain().focus().toggleItalic().run();
-    },
-  },
-  {
-    label: "To-do list",
-    shortcut: "Cmd + Shift + 9",
-    icon: ListTodo,
-    isActive: (editor) => editor.isActive("taskList"),
-    command: (editor) => {
-      editor.chain().focus().toggleTaskList().run();
-    },
-  },
-];
-
 type Props = {
   editor: Editor | null;
   currentColor: StickyColorKey;
@@ -71,6 +42,36 @@ export function StickyToolbar({
   onColorChange,
   onDelete,
 }: Props) {
+  const { t } = useTranslation("stickies");
+  const formattingActions: FormattingAction[] = [
+    {
+      label: t("toolbar.bold"),
+      shortcut: "Cmd + B",
+      icon: Bold,
+      isActive: (editor) => editor.isActive("bold"),
+      command: (editor) => {
+        editor.chain().focus().toggleBold().run();
+      },
+    },
+    {
+      label: t("toolbar.italic"),
+      shortcut: "Cmd + I",
+      icon: Italic,
+      isActive: (editor) => editor.isActive("italic"),
+      command: (editor) => {
+        editor.chain().focus().toggleItalic().run();
+      },
+    },
+    {
+      label: t("toolbar.todoList"),
+      shortcut: "Cmd + Shift + 9",
+      icon: ListTodo,
+      isActive: (editor) => editor.isActive("taskList"),
+      command: (editor) => {
+        editor.chain().focus().toggleTaskList().run();
+      },
+    },
+  ];
   const [showColorPalette, setShowColorPalette] = useState(false);
   const colorPaletteRef = useRef<HTMLDivElement>(null);
 
@@ -105,7 +106,7 @@ export function StickyToolbar({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                aria-label="Background color"
+                aria-label={t("toolbar.backgroundColor")}
                 onMouseDown={keepEditorFocus}
                 onClick={() => setShowColorPalette(!showColorPalette)}
                 className="flex text-foreground/50 transition-colors hover:text-foreground focus:outline-none"
@@ -114,14 +115,14 @@ export function StickyToolbar({
               </button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p className="text-xs">Background color</p>
+              <p className="text-xs">{t("toolbar.backgroundColor")}</p>
             </TooltipContent>
           </Tooltip>
 
           {/* Formatting items */}
           <div className="my-auto flex w-fit items-stretch justify-between gap-4 rounded-sm p-1">
             <div className="my-auto flex items-stretch gap-4">
-              {FORMATTING_ACTIONS.map((action) => {
+              {formattingActions.map((action) => {
                 const Icon = action.icon;
                 return (
                   <Tooltip key={action.label}>
@@ -159,7 +160,7 @@ export function StickyToolbar({
           <TooltipTrigger asChild>
             <button
               type="button"
-              aria-label="Delete"
+              aria-label={t("toolbar.delete")}
               onMouseDown={keepEditorFocus}
               onClick={onDelete}
               className="my-auto text-foreground/50 transition-colors hover:text-destructive focus:outline-none"
@@ -168,7 +169,7 @@ export function StickyToolbar({
             </button>
           </TooltipTrigger>
           <TooltipContent side="top">
-            <p className="text-xs">Delete</p>
+            <p className="text-xs">{t("toolbar.delete")}</p>
           </TooltipContent>
         </Tooltip>
       </div>

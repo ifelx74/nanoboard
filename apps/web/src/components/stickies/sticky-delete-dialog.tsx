@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -19,6 +20,7 @@ export function StickyDeleteDialog({
   onOpenChange: (open: boolean) => void;
   onConfirm: () => Promise<void> | void;
 }) {
+  const { t } = useTranslation("stickies");
   const [pending, setPending] = useState(false);
 
   async function handleDelete() {
@@ -36,16 +38,16 @@ export function StickyDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete sticky</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteDialog.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete this sticky?
+            {t("deleteDialog.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose
             render={<Button variant="outline" size="sm" disabled={pending} />}
           >
-            Cancel
+            {t("deleteDialog.cancel")}
           </AlertDialogClose>
           <Button
             variant="destructive"
@@ -53,7 +55,7 @@ export function StickyDeleteDialog({
             disabled={pending}
             onClick={() => void handleDelete()}
           >
-            {pending ? "Deleting..." : "Delete"}
+            {pending ? t("deleteDialog.deleting") : t("deleteDialog.delete")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

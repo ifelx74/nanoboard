@@ -4,6 +4,7 @@ import TaskList from "@tiptap/extension-task-list";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { GripVertical, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   memo,
   useCallback,
@@ -14,19 +15,13 @@ import {
 } from "react";
 import type { Sticky, StickyColorKey } from "@/lib/db/schema";
 import { deleteSticky, isStickyEmpty, updateSticky } from "@/lib/db/stickies";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { stickyBackgroundColor } from "./color-palette";
 import { StickyDeleteDialog } from "./sticky-delete-dialog";
 import "./sticky-editor.css";
 import { StickyToolbar } from "./sticky-toolbar";
-
-/**
- * Static markup for an empty note; rendered as a placeholder by the
- * `.is-editor-empty` rule in sticky-editor.css.
- */
-const EMPTY_NOTE_HTML =
-  '<p class="is-editor-empty" data-placeholder="Click to type here"></p>';
 
 type Props = {
   sticky: Sticky;
@@ -52,6 +47,7 @@ export const StickyCard = memo(function StickyCard({
   isDragging = false,
   maxEditorHeight = 540,
 }: Props) {
+  const { t } = useTranslation("stickies");
   const [isEditing, setIsEditing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
@@ -81,10 +77,12 @@ export const StickyCard = memo(function StickyCard({
   const handleDeleteConfirm = async () => {
     try {
       await deleteSticky(sticky.id);
-      toast.success("Sticky removed");
+      const message = i18n.t("stickies:card.removed");
+      toast.success(message);
       onClose?.();
     } catch (error) {
-      toast.error("Failed to remove sticky");
+      const fallback = i18n.t("stickies:card.removeFailed");
+      toast.error(fallback);
       console.error(error);
     }
   };
@@ -112,7 +110,7 @@ export const StickyCard = memo(function StickyCard({
         {dragHandleProps && (
           <div
             {...dragHandleProps}
-            aria-label="Drag sticky"
+            aria-label={t("card.drag")}
             className={cn(
               "absolute top-1 left-1/2 z-10 hidden -translate-x-1/2 rotate-90 cursor-grab items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground group-hover/sticky:flex",
               isDragging && "cursor-grabbing flex",
@@ -125,7 +123,7 @@ export const StickyCard = memo(function StickyCard({
         {onClose && (
           <button
             type="button"
-            aria-label="Close"
+            aria-label={t("card.close")}
             onClick={onClose}
             className="flex flex-shrink-0 justify-end p-2.5 text-muted-foreground transition-colors hover:text-foreground"
           >
@@ -148,7 +146,7 @@ export const StickyCard = memo(function StickyCard({
               onFocus={handleEditStart}
               dangerouslySetInnerHTML={{
                 __html: isStickyEmpty(sticky.contentHtml)
-                  ? EMPTY_NOTE_HTML
+                  ? `<p class="is-editor-empty" data-placeholder="${t("card.placeholder")}"></p>`
                   : sticky.contentHtml,
               }}
             />
@@ -178,6 +176,7 @@ type StickyEditorProps = {
 
 /** Editing surface for a focused note; owns the debounced-save lifecycle. */
 function StickyEditor({ sticky, onEditorReady, onEditEnd }: StickyEditorProps) {
+  const { t } = useTranslation("stickies");
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingHtmlRef = useRef<string | null>(null);
   const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -227,7 +226,7 @@ function StickyEditor({ sticky, onEditorReady, onEditEnd }: StickyEditorProps) {
       TaskList,
       TaskItem.configure({ nested: true }),
       Placeholder.configure({
-        placeholder: "Click to type here",
+        placeholder: t("card.placeholder"),
       }),
     ],
     content: sticky.contentHtml,

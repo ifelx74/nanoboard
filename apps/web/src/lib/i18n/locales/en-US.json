@@ -141,7 +141,64 @@
     "overflowMore_one": "+{{count}} more",
     "overflowMore_other": "+{{count}} more"
   },
-  "stickies": {},
+  "stickies": {
+    "title": "Stickies",
+    "addSticky": "Add sticky",
+    "all": "All stickies",
+    "recent": "Recent sticky",
+    "toggleMenu": "Toggle stickies menu",
+    "emptyNote": "Empty sticky note",
+    "modalTitle": "Your stickies",
+    "showAll": "Show all stickies →",
+    "search": {
+      "label": "Search stickies",
+      "placeholder": "Search stickies",
+      "clear": "Clear search"
+    },
+    "colors": {
+      "heading": "Background colors",
+      "gray": "Gray",
+      "peach": "Peach",
+      "pink": "Pink",
+      "orange": "Orange",
+      "green": "Green",
+      "lightBlue": "Light blue",
+      "darkBlue": "Dark blue",
+      "purple": "Purple"
+    },
+    "toolbar": {
+      "backgroundColor": "Background color",
+      "bold": "Bold",
+      "italic": "Italic",
+      "todoList": "To-do list",
+      "delete": "Delete"
+    },
+    "card": {
+      "drag": "Drag sticky",
+      "close": "Close",
+      "placeholder": "Click to type here",
+      "removed": "Sticky removed",
+      "removeFailed": "Failed to remove sticky"
+    },
+    "deleteDialog": {
+      "title": "Delete sticky",
+      "description": "Are you sure you want to delete this sticky?",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting..."
+    },
+    "empty": {
+      "title": "Capture your thoughts and ideas with stickies.",
+      "description": "Create stickies for quick notes and to-dos, and keep them with you wherever you go.",
+      "searchTitle": "That doesn't match any of your stickies.",
+      "searchDescription": "Try a different term or let us know if you are sure your search is right."
+    },
+    "create": {
+      "created": "Sticky created",
+      "emptyExists": "There already exists a sticky with no description",
+      "failed": "Failed to create sticky"
+    }
+  },
   "whiteboard": {},
   "project": {
     "archives": {

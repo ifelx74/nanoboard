@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ type Props = {
 };
 
 export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
+  const { t } = useTranslation("stickies");
   const [searchQuery, setSearchQuery] = useState("");
   const { isCreating, addSticky } = useCreateSticky();
 
@@ -52,7 +54,7 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
         <DialogHeader className="flex flex-row items-center justify-between border-b border-border px-6 py-4">
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
             <Stickies className="size-4 shrink-0 text-muted-foreground" />
-            <span>Your stickies</span>
+            <span>{t("modalTitle")}</span>
           </DialogTitle>
 
           <div className="flex items-center gap-2 pr-6">
@@ -92,7 +94,7 @@ export function AllStickiesModal({ open, onOpenChange, stickies }: Props) {
             onClick={() => onOpenChange(false)}
             className="text-xs font-medium text-primary hover:underline"
           >
-            Show all stickies &rarr;
+            {t("showAll")}
           </Link>
         </div>
       </DialogContent>

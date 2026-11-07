@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function StickySearch({ value, onChange, className }: Props) {
+  const { t } = useTranslation("stickies");
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +40,7 @@ export function StickySearch({ value, onChange, className }: Props) {
       {!isOpen && (
         <button
           type="button"
-          aria-label="Search stickies"
+          aria-label={t("search.label")}
           onClick={() => {
             setIsOpen(true);
             inputRef.current?.focus({ preventScroll: true });
@@ -63,13 +65,13 @@ export function StickySearch({ value, onChange, className }: Props) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Search stickies"
+          placeholder={t("search.placeholder")}
           className="w-full max-w-[234px] border-none bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         {isOpen && (
           <button
             type="button"
-            aria-label="Clear search"
+            aria-label={t("search.clear")}
             onClick={() => {
               onChange("");
               if (value.trim() === "") {

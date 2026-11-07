@@ -2,6 +2,7 @@ import { useLocation } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Plus, X } from "lucide-react";
 import { lazy, Suspense, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Popover,
   PopoverContent,
@@ -33,6 +34,7 @@ const AllStickiesModal = lazy(() =>
 );
 
 export function StickyActionBar() {
+  const { t } = useTranslation("stickies");
   const location = useLocation();
   const stickies = useLiveQuery(() => getStickies(), []);
   const { addSticky } = useCreateSticky();
@@ -125,7 +127,7 @@ export function StickyActionBar() {
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    aria-label="All stickies"
+                    aria-label={t("all")}
                     onClick={() => {
                       setHasOpenedModal(true);
                       setAllStickiesOpen(true);
@@ -137,7 +139,7 @@ export function StickyActionBar() {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
-                  <p className="text-xs">All stickies</p>
+                  <p className="text-xs">{t("all")}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -152,7 +154,7 @@ export function StickyActionBar() {
                       <PopoverTrigger asChild>
                         <button
                           type="button"
-                          aria-label="Recent sticky"
+                          aria-label={t("recent")}
                           onMouseEnter={() => setRecentPreviewOpen(true)}
                           onMouseLeave={() => setRecentPreviewOpen(false)}
                           onClick={() => {
@@ -171,7 +173,7 @@ export function StickyActionBar() {
                       </PopoverTrigger>
                     </TooltipTrigger>
                     <TooltipContent side="left">
-                      <p className="text-xs">Recent sticky</p>
+                      <p className="text-xs">{t("recent")}</p>
                     </TooltipContent>
                   </Tooltip>
 
@@ -186,7 +188,7 @@ export function StickyActionBar() {
                         dangerouslySetInnerHTML={{
                           __html:
                             recentSticky.contentHtml ||
-                            "<p class='italic text-muted-foreground'>Empty sticky note</p>",
+                            `<p class='italic text-muted-foreground'>${t("emptyNote")}</p>`,
                         }}
                       />
                       <div className="absolute inset-0 bg-linear-to-t from-background/90 via-transparent to-transparent pointer-events-none" />
@@ -200,7 +202,7 @@ export function StickyActionBar() {
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    aria-label="Add sticky"
+                    aria-label={t("addSticky")}
                     onClick={handleQuickAdd}
                     className="flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus:outline-none"
                   >
@@ -208,7 +210,7 @@ export function StickyActionBar() {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
-                  <p className="text-xs">Add sticky</p>
+                  <p className="text-xs">{t("addSticky")}</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -217,7 +219,7 @@ export function StickyActionBar() {
           {/* Main FAB Toggle Button */}
           <button
             type="button"
-            aria-label="Toggle stickies menu"
+            aria-label={t("toggleMenu")}
             onClick={() => setIsExpanded(!isExpanded)}
             className={cn(
               "flex size-10 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-md transition-all duration-300 hover:bg-muted focus:outline-none",
