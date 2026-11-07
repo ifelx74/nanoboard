@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Archive,
   CalendarDays,
   ChevronsUpDown,
   ClipboardClock,
@@ -75,62 +76,72 @@ export function ProjectLayout({
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden sm:inline-flex" />
                 <BreadcrumbItem>
-                  {isArchivesView ? (
-                    <span className="flex h-7 items-center gap-1.5 px-1.5 text-sm font-medium text-foreground">
-                      Archives
-                      {archiveCount > 0 && (
-                        <span
-                          aria-label={`${archiveCount} archived tasks`}
-                          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-100 px-1.5 text-[11px] font-semibold tabular-nums text-brand-800 dark:bg-brand-900 dark:text-brand-100"
-                        >
-                          {archiveCount}
-                        </span>
-                      )}
-                    </span>
-                  ) : (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="px-1.5 py-0.5 text-sm"
-                        >
-                          {isBacklogView ? "Backlog" : "Whiteboard"}
-                          <ChevronsUpDown className="size-3 text-foreground/70" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-44 rounded-sm"
-                        align="start"
-                        side="bottom"
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="px-1.5 py-0.5 text-sm"
                       >
-                        <DropdownMenuItem
-                          key={"backlog"}
-                          onClick={() =>
-                            navigate({
-                              to: `/project/$projectId/board`,
-                              params: { projectId },
-                            })
-                          }
-                        >
-                          <ClipboardClock />
-                          Backlog
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          key={"whiteboard"}
-                          onClick={() =>
-                            navigate({
-                              to: `/project/$projectId/whiteboard`,
-                              params: { projectId },
-                            })
-                          }
-                        >
-                          <PencilSparkles />
-                          Whiteboard
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                        {isBacklogView
+                          ? "Backlog"
+                          : isArchivesView
+                            ? "Archives"
+                            : "Whiteboard"}
+                        {isArchivesView && archiveCount > 0 && (
+                          <span
+                            aria-label={`${archiveCount} archived tasks`}
+                            className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-100 px-1.5 text-[11px] font-semibold tabular-nums text-brand-800 dark:bg-brand-900 dark:text-brand-100"
+                          >
+                            {archiveCount}
+                          </span>
+                        )}
+                        <ChevronsUpDown className="size-3 text-foreground/70" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      className="w-44 rounded-sm"
+                      align="start"
+                      side="bottom"
+                    >
+                      <DropdownMenuItem
+                        key={"backlog"}
+                        onClick={() =>
+                          navigate({
+                            to: `/project/$projectId/board`,
+                            params: { projectId },
+                          })
+                        }
+                      >
+                        <ClipboardClock />
+                        Backlog
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        key={"whiteboard"}
+                        onClick={() =>
+                          navigate({
+                            to: `/project/$projectId/whiteboard`,
+                            params: { projectId },
+                          })
+                        }
+                      >
+                        <PencilSparkles />
+                        Whiteboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        key={"archives"}
+                        onClick={() =>
+                          navigate({
+                            to: `/project/$projectId/archives`,
+                            params: { projectId },
+                          })
+                        }
+                      >
+                        <Archive />
+                        Archives
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
