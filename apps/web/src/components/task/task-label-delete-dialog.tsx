@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { deleteLabel } from "@/lib/db/queries";
 import type { Label } from "@/lib/db/schema";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 export default function TaskLabelDeleteDialog({
@@ -24,6 +26,7 @@ export default function TaskLabelDeleteDialog({
   label: Label | null;
   onDeleted: () => void;
 }) {
+  const { t } = useTranslation("task");
   const [pending, setPending] = useState(false);
 
   async function handleDelete() {
@@ -35,7 +38,9 @@ export default function TaskLabelDeleteDialog({
       onDeleted();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete label",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:labels.deleteDialog.error"),
       );
     } finally {
       setPending(false);
@@ -46,17 +51,16 @@ export default function TaskLabelDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete label?</AlertDialogTitle>
+          <AlertDialogTitle>{t("labels.deleteDialog.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            “{label?.name}” will be removed from every task in this project.
-            This cannot be undone.
+            {t("labels.deleteDialog.description", { name: label?.name ?? "" })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose
             render={<Button variant="outline" size="sm" disabled={pending} />}
           >
-            Cancel
+            {t("labels.deleteDialog.cancel")}
           </AlertDialogClose>
           <Button
             variant="destructive"
@@ -64,7 +68,9 @@ export default function TaskLabelDeleteDialog({
             disabled={pending}
             onClick={() => void handleDelete()}
           >
-            {pending ? "Deleting" : "Delete"}
+            {pending
+              ? t("labels.deleteDialog.deleting")
+              : t("labels.deleteDialog.delete")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

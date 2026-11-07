@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { Check, Pencil, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -18,6 +19,7 @@ import {
   renameLabel,
 } from "@/lib/db/queries";
 import type { Label, Task } from "@/lib/db/schema";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import TaskLabelDeleteDialog from "./task-label-delete-dialog";
 
@@ -36,6 +38,18 @@ export default function TaskLabelsPopover({
   disabled?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation("task");
+  const colorNames: Record<LabelColorValue, string> = {
+    gray: t("labels.color.gray"),
+    "dark-gray": t("labels.color.darkGray"),
+    purple: t("labels.color.purple"),
+    teal: t("labels.color.teal"),
+    green: t("labels.color.green"),
+    yellow: t("labels.color.yellow"),
+    orange: t("labels.color.orange"),
+    pink: t("labels.color.pink"),
+    red: t("labels.color.red"),
+  };
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<PopoverStep>("select");
   const [searchValue, setSearchValue] = useState("");
@@ -105,7 +119,7 @@ export default function TaskLabelsPopover({
         await attachLabel(task.id, label.id);
       }
     } catch (error) {
-      notifyError(error, "Failed to update labels");
+      notifyError(error, i18n.t("task:labels.errors.update"));
     }
   }
 
@@ -123,7 +137,7 @@ export default function TaskLabelsPopover({
       setOpen(false);
       setTimeout(resetPopover, 200);
     } catch (error) {
-      notifyError(error, "Failed to create label");
+      notifyError(error, i18n.t("task:labels.errors.create"));
     }
   }
 
@@ -141,7 +155,7 @@ export default function TaskLabelsPopover({
       await renameLabel(label.id, editValue.trim());
       setEditingId(null);
     } catch (error) {
-      notifyError(error, "Failed to rename label");
+      notifyError(error, i18n.t("task:labels.errors.rename"));
     }
   }
 
@@ -154,7 +168,7 @@ export default function TaskLabelsPopover({
             ref={searchInputRef}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Search labels"
+            placeholder={t("labels.search")}
             className="h-auto border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
           />
         </div>
@@ -162,7 +176,7 @@ export default function TaskLabelsPopover({
         <div className="py-1">
           {filteredLabels.length === 0 && searchValue.length === 0 && (
             <span className="px-2 text-xs text-muted-foreground">
-              No labels yet
+              {t("labels.none")}
             </span>
           )}
           {filteredLabels.map((label) => (
@@ -179,7 +193,7 @@ export default function TaskLabelsPopover({
                     if (e.key === "Enter") void commitRename(label);
                     if (e.key === "Escape") setEditingId(null);
                   }}
-                  aria-label={`Rename ${label.name}`}
+                  aria-label={t("labels.rename", { name: label.name })}
                   className="h-6 text-xs"
                 />
               ) : (
@@ -206,7 +220,7 @@ export default function TaskLabelsPopover({
                 <div className="ml-auto hidden shrink-0 items-center gap-0.5 group-hover:flex">
                   <button
                     type="button"
-                    aria-label={`Rename ${label.name}`}
+                    aria-label={t("labels.rename", { name: label.name })}
                     className="flex h-5 w-5 items-center justify-center rounded hover:bg-accent"
                     onClick={() => startRename(label)}
                   >
@@ -214,7 +228,7 @@ export default function TaskLabelsPopover({
                   </button>
                   <button
                     type="button"
-                    aria-label={`Delete ${label.name}`}
+                    aria-label={t("labels.delete", { name: label.name })}
                     className="flex h-5 w-5 items-center justify-center rounded hover:bg-accent"
                     onClick={() => setDeleteTarget(label)}
                   >
@@ -236,7 +250,9 @@ export default function TaskLabelsPopover({
               <div className="flex w-3 shrink-0 justify-center">
                 <Plus className="h-3 w-3" />
               </div>
-              <span className="truncate">Create “{searchValue.trim()}”</span>
+              <span className="truncate">
+                {t("labels.create", { name: searchValue.trim() })}
+              </span>
             </button>
           )}
         </div>
@@ -248,7 +264,7 @@ export default function TaskLabelsPopover({
     return (
       <div className="w-auto">
         <div className="flex items-center justify-between border-b border-border p-2">
-          <span className="text-xs font-medium">Choose a color</span>
+          <span className="text-xs font-medium">{t("labels.chooseColor")}</span>
           <button
             type="button"
             onClick={() => setStep("select")}
@@ -270,7 +286,7 @@ export default function TaskLabelsPopover({
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ backgroundColor: color.color }}
               />
-              <span className="truncate">{color.label}</span>
+              <span className="truncate">{colorNames[color.value]}</span>
               {selectedColor === color.value && (
                 <Check className="ml-auto h-3 w-3" />
               )}

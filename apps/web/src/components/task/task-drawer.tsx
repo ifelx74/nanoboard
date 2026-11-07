@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetPanel, SheetPopup } from "@/components/ui/sheet";
@@ -37,8 +38,10 @@ import { getColumnIcon } from "@/lib/column";
 import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
 import { db } from "@/lib/db/db";
 import { formatDateShort } from "@/lib/due-date-status";
+import type { TaskPriority } from "@/lib/db/schema";
 import { resolveLabelColor } from "@/lib/label-color";
-import { getPriorityIcon, priorityLabel } from "@/lib/priority";
+import { i18n } from "@/lib/i18n";
+import { getPriorityIcon } from "@/lib/priority";
 import { taskKey } from "@/lib/task-key";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -98,6 +101,7 @@ function DescriptionSaveIndicator({
   status: DescriptionSaveStatus;
   onRetry: () => void;
 }) {
+  const { t } = useTranslation("task");
   const [savedVisible, setSavedVisible] = useState(false);
 
   useEffect(() => {
@@ -119,7 +123,7 @@ function DescriptionSaveIndicator({
             className="size-3.5 animate-spin text-muted-foreground"
             aria-hidden="true"
           />
-          <span className="sr-only">Saving description</span>
+          <span className="sr-only">{t("drawer.descriptionSaving")}</span>
         </>
       )}
       {status === "failed" && (
@@ -128,13 +132,13 @@ function DescriptionSaveIndicator({
             variant="ghost"
             size="icon-xs"
             className="text-destructive hover:text-destructive"
-            aria-label="Retry saving description"
-            title="Retry"
+            aria-label={t("drawer.retrySaving")}
+            title={t("drawer.retry")}
             onClick={onRetry}
           >
             <X className="size-3.5" aria-hidden="true" />
           </Button>
-          <span className="sr-only">Failed to save description</span>
+          <span className="sr-only">{t("drawer.descriptionFailed")}</span>
         </>
       )}
       {status === "saved" && savedVisible && (
@@ -143,7 +147,7 @@ function DescriptionSaveIndicator({
             className="size-3.5 text-success-foreground"
             aria-hidden="true"
           />
-          <span className="sr-only">Description saved</span>
+          <span className="sr-only">{t("drawer.descriptionSaved")}</span>
         </>
       )}
     </span>
@@ -161,6 +165,14 @@ export default function TaskDrawer({
   onClose: () => void;
   onSelectTask: (taskId: string) => void;
 }) {
+  const { t } = useTranslation("task");
+  const priorityNames: Record<TaskPriority, string> = {
+    "no-priority": t("priority.noPriority"),
+    low: t("priority.low"),
+    medium: t("priority.medium"),
+    high: t("priority.high"),
+    urgent: t("priority.urgent"),
+  };
   const [currentTaskId, setCurrentTaskId] = useState<string | undefined>(
     taskId,
   );
@@ -212,7 +224,9 @@ export default function TaskDrawer({
       onSelectTask(id);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to duplicate task",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:drawer.errors.duplicate"),
       );
     } finally {
       setDuplicating(false);
@@ -224,10 +238,13 @@ export default function TaskDrawer({
     setRestoring(true);
     try {
       await restoreTask(db, task.id);
-      toast.success("Task restored");
+      const message = i18n.t("task:drawer.restored");
+      toast.success(message);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to restore task",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:drawer.errors.restore"),
       );
     } finally {
       setRestoring(false);
@@ -240,14 +257,17 @@ export default function TaskDrawer({
       navigator.clipboard
         .writeText(url)
         .then(() => {
-          toast.message("Link copied to clipboard");
+          const message = i18n.t("task:drawer.linkCopied");
+          toast.message(message);
         })
         .catch(() => {
-          toast.error("Failed to copy link");
+          const message = i18n.t("task:drawer.errors.copyLink");
+          toast.error(message);
         });
       return;
     }
-    toast.error("Copy is not supported in this browser");
+    const message = i18n.t("task:drawer.errors.copyUnsupported");
+    toast.error(message);
   }
 
   const taskColumn = columns?.find((column) => column.id === task?.columnId);
@@ -286,7 +306,7 @@ export default function TaskDrawer({
             {archived && (
               <Badge variant="secondary" className="gap-1">
                 <Archive className="size-3" aria-hidden="true" />
-                Archived
+                {t("drawer.archived")}
               </Badge>
             )}
           </div>
@@ -295,8 +315,8 @@ export default function TaskDrawer({
               <Button
                 variant="ghost"
                 size="sm"
-                aria-label="Copy link to task"
-                title="Copy link to task"
+                aria-label={t("drawer.copyLink")}
+                title={t("drawer.copyLink")}
                 onClick={handleCopyLink}
                 className="text-foreground"
               >
@@ -304,8 +324,8 @@ export default function TaskDrawer({
               </Button>
               {archived ? (
                 <DisabledHintButton
-                  label="Duplicate task"
-                  tooltip="Restore this task to duplicate it"
+                  label={t("drawer.duplicate")}
+                  tooltip={t("drawer.duplicateHint")}
                 >
                   <Button
                     variant="ghost"
@@ -320,8 +340,8 @@ export default function TaskDrawer({
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="Duplicate task"
-                  title="Duplicate task"
+                  aria-label={t("drawer.duplicate")}
+                  title={t("drawer.duplicate")}
                   disabled={!task || duplicating}
                   onClick={() => void handleDuplicate()}
                   className="text-foreground"
@@ -333,8 +353,8 @@ export default function TaskDrawer({
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="Restore task"
-                  title="Restore task"
+                  aria-label={t("drawer.restore")}
+                  title={t("drawer.restore")}
                   disabled={!task || restoring}
                   onClick={() => void handleRestore()}
                   className="text-foreground"
@@ -345,8 +365,8 @@ export default function TaskDrawer({
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="Archive task"
-                  title="Archive task"
+                  aria-label={t("drawer.archive")}
+                  title={t("drawer.archive")}
                   disabled={!task}
                   onClick={() => setArchiveOpen(true)}
                   className="text-foreground"
@@ -355,8 +375,8 @@ export default function TaskDrawer({
                 </Button>
               ) : (
                 <DisabledHintButton
-                  label="Archive task"
-                  tooltip="Only tasks in a completed column can be archived"
+                  label={t("drawer.archive")}
+                  tooltip={t("drawer.archiveHint")}
                 >
                   <Button
                     variant="ghost"
@@ -371,8 +391,8 @@ export default function TaskDrawer({
               <Button
                 variant="ghost"
                 size="sm"
-                aria-label="Delete task"
-                title="Delete task"
+                aria-label={t("drawer.delete")}
+                title={t("drawer.delete")}
                 disabled={!task}
                 onClick={() => setDeleteOpen(true)}
                 className="text-foreground"
@@ -382,8 +402,8 @@ export default function TaskDrawer({
               <Button
                 variant="ghost"
                 size="sm"
-                aria-label="Close"
-                title="Close"
+                aria-label={t("drawer.close")}
+                title={t("drawer.close")}
                 onClick={onClose}
                 className="text-foreground"
               >
@@ -450,7 +470,7 @@ export default function TaskDrawer({
                     >
                       {getPriorityIcon(task.priority)}
                       <span className="truncate text-xs font-semibold">
-                        {priorityLabel(task.priority)}
+                        {priorityNames[task.priority]}
                       </span>
                     </Button>
                   </TaskPriorityPopover>
@@ -473,7 +493,7 @@ export default function TaskDrawer({
                       >
                         {task.startDate
                           ? formatDateShort(parseLocalDate(task.startDate))
-                          : "Start"}
+                          : t("drawer.start")}
                       </span>
                     </Button>
                   </TaskStartDatePopover>
@@ -504,7 +524,7 @@ export default function TaskDrawer({
                             aria-hidden="true"
                           />
                           <span className="truncate text-xs font-semibold text-muted-foreground">
-                            No date
+                            {t("drawer.noDate")}
                           </span>
                         </>
                       )}
@@ -515,7 +535,7 @@ export default function TaskDrawer({
                 <div className="flex flex-col gap-3 px-3 p-2">
                   <div className="flex flex-col gap-1">
                     <span className="px-2 text-xs font-medium text-foreground/70">
-                      Labels
+                      {t("drawer.labelsHeading")}
                     </span>
                     <div className="flex flex-wrap items-center gap-1.5 px-2">
                       <TaskLabelsPopover task={task} disabled={archived}>
@@ -549,7 +569,7 @@ export default function TaskDrawer({
                           ))}
                           {taskLabels.length === 0 && (
                             <span className="text-xs text-muted-foreground">
-                              No labels
+                              {t("drawer.noLabels")}
                             </span>
                           )}
                           {!archived && (

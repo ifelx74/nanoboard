@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   QUICK_ADD_TITLE_MAX,
   QUICK_ADD_TITLE_MIN,
   updateTaskTitle,
 } from "@/lib/db/queries";
 import type { Task } from "@/lib/db/schema";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 export default function TaskTitle({
@@ -14,6 +16,7 @@ export default function TaskTitle({
   task: Task;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation("task");
   const [value, setValue] = useState(task.title);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<string | null>(null);
@@ -22,9 +25,8 @@ export default function TaskTitle({
 
   function persist(next: string) {
     updateTaskTitle(taskRef.current.id, next).catch((error: unknown) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update title",
-      );
+      const fallback = i18n.t("task:title.error");
+      toast.error(error instanceof Error ? error.message : fallback);
     });
   }
 
@@ -64,8 +66,8 @@ export default function TaskTitle({
       type="text"
       value={value}
       maxLength={QUICK_ADD_TITLE_MAX}
-      placeholder="Task title"
-      aria-label="Task title"
+      placeholder={t("title.placeholder")}
+      aria-label={t("title.ariaLabel")}
       disabled={disabled}
       onChange={(event) => handleChange(event.target.value)}
       className="block h-auto w-full appearance-none border-0 bg-transparent p-0 font-heading text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground outline-none placeholder:text-foreground/45 disabled:cursor-default disabled:text-foreground/80"

@@ -144,7 +144,165 @@
   "stickies": {},
   "whiteboard": {},
   "project": {},
-  "task": {},
+  "task": {
+    "drawer": {
+      "archived": "Archived",
+      "start": "Start",
+      "noDate": "No date",
+      "labelsHeading": "Labels",
+      "noLabels": "No labels",
+      "copyLink": "Copy link to task",
+      "duplicate": "Duplicate task",
+      "duplicateHint": "Restore this task to duplicate it",
+      "restore": "Restore task",
+      "archive": "Archive task",
+      "archiveHint": "Only tasks in a completed column can be archived",
+      "delete": "Delete task",
+      "close": "Close",
+      "descriptionSaving": "Saving description",
+      "descriptionFailed": "Failed to save description",
+      "descriptionSaved": "Description saved",
+      "retrySaving": "Retry saving description",
+      "retry": "Retry",
+      "restored": "Task restored",
+      "linkCopied": "Link copied to clipboard",
+      "errors": {
+        "duplicate": "Failed to duplicate task",
+        "restore": "Failed to restore task",
+        "copyLink": "Failed to copy link",
+        "copyUnsupported": "Copy is not supported in this browser"
+      }
+    },
+    "create": {
+      "newTask": "New Task",
+      "fallbackSlug": "TASK",
+      "description": "Create a new task by providing a title, description, and other details.",
+      "titlePlaceholder": "Task title",
+      "descriptionPlaceholder": "Add a description for your task...",
+      "startDate": "Start date",
+      "clearStartDate": "Clear start date",
+      "dueDate": "Due date",
+      "clearDueDate": "Clear due date",
+      "labels": "Labels",
+      "searchLabels": "Search labels...",
+      "noLabels": "No labels found",
+      "createLabel": "Create \"{{name}}\"",
+      "chooseColor": "Choose a color",
+      "createMore": "Create more",
+      "cancel": "Cancel",
+      "submit": "Create Task",
+      "discardTitle": "Discard task?",
+      "discardDescription": "Your unsaved task details will be lost.",
+      "discard": "Discard task",
+      "errors": {
+        "createTask": "Failed to create task",
+        "createLabel": "Failed to create label"
+      }
+    },
+    "title": {
+      "placeholder": "Task title",
+      "ariaLabel": "Task title",
+      "error": "Failed to update title"
+    },
+    "priority": {
+      "noPriority": "No priority",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent",
+      "error": "Failed to update priority"
+    },
+    "column": {
+      "error": "Failed to move task"
+    },
+    "dates": {
+      "clearStartDate": "Clear start date",
+      "clearDueDate": "Clear due date",
+      "startDateError": "Failed to update start date",
+      "dueDateError": "Failed to update due date"
+    },
+    "labels": {
+      "search": "Search labels",
+      "none": "No labels yet",
+      "create": "Create “{{name}}”",
+      "chooseColor": "Choose a color",
+      "rename": "Rename {{name}}",
+      "delete": "Delete {{name}}",
+      "color": {
+        "gray": "Stone",
+        "darkGray": "Slate",
+        "purple": "Lavender",
+        "teal": "Sage",
+        "green": "Forest",
+        "yellow": "Amber",
+        "orange": "Terracotta",
+        "pink": "Rose",
+        "red": "Crimson"
+      },
+      "deleteDialog": {
+        "title": "Delete label?",
+        "description": "“{{name}}” will be removed from every task in this project. This cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "deleting": "Deleting",
+        "error": "Failed to delete label"
+      },
+      "errors": {
+        "update": "Failed to update labels",
+        "create": "Failed to create label",
+        "rename": "Failed to rename label"
+      }
+    },
+    "archive": {
+      "title": "Archive {{taskKey}}?",
+      "description": "“{{title}}” will be removed from the board and every work surface. You can restore it from the archive at any time.",
+      "cancel": "Cancel",
+      "archive": "Archive",
+      "archiving": "Archiving",
+      "archived": "Task archived",
+      "error": "Failed to archive task"
+    },
+    "archiveCompleted": {
+      "title_one": "Archive {{count}} completed task?",
+      "title_other": "Archive {{count}} completed tasks?",
+      "description": "{{subject}} from {{source}} will be removed from the board and every work surface. You can restore {{restoreTarget}} from the archive at any time.",
+      "subjectOne": "This task",
+      "subjectOther": "These tasks",
+      "restoreOne": "it",
+      "restoreOther": "them",
+      "completedColumns": "completed columns",
+      "cancel": "Cancel",
+      "archive": "Archive",
+      "archiving": "Archiving",
+      "noTasks": "No completed tasks to archive",
+      "archived_one": "Archived {{count}} task",
+      "archived_other": "Archived {{count}} tasks",
+      "error": "Failed to archive completed tasks"
+    },
+    "deleteDialog": {
+      "title": "Delete task?",
+      "description": "“{{title}}” will be permanently deleted. This cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting",
+      "error": "Failed to delete task"
+    },
+    "resources": {
+      "title": "Resources",
+      "add": "Add resource",
+      "adding": "Adding...",
+      "empty": "No resources linked to this task.",
+      "remove": "Remove {{name}}",
+      "dialogDescription": "Add a URL link to this task",
+      "url": "URL",
+      "titleOptional": "Title (optional)",
+      "cancel": "Cancel",
+      "errors": {
+        "add": "Failed to add resource",
+        "remove": "Failed to remove the resource link."
+      }
+    }
+  },
   "activity": {},
   "settings": {
     "data": {

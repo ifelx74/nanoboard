@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { deleteTask } from "@/lib/db/queries";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 export default function TaskDeleteDialog({
@@ -25,6 +27,7 @@ export default function TaskDeleteDialog({
   taskTitle: string;
   onDeleted: () => void;
 }) {
+  const { t } = useTranslation("task");
   const [pending, setPending] = useState(false);
 
   async function handleDelete() {
@@ -36,7 +39,9 @@ export default function TaskDeleteDialog({
       onDeleted();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete task",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:deleteDialog.error"),
       );
     } finally {
       setPending(false);
@@ -47,16 +52,16 @@ export default function TaskDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete task?</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteDialog.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            “{taskTitle}” will be permanently deleted. This cannot be undone.
+            {t("deleteDialog.description", { title: taskTitle })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose
             render={<Button variant="outline" size="sm" disabled={pending} />}
           >
-            Cancel
+            {t("deleteDialog.cancel")}
           </AlertDialogClose>
           <Button
             variant="destructive"
@@ -64,7 +69,7 @@ export default function TaskDeleteDialog({
             disabled={pending}
             onClick={() => void handleDelete()}
           >
-            {pending ? "Deleting" : "Delete"}
+            {pending ? t("deleteDialog.deleting") : t("deleteDialog.delete")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

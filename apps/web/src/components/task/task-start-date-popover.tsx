@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -11,6 +12,7 @@ import { updateTaskStartDate } from "@/lib/db/queries";
 import type { StartDateString, Task } from "@/lib/db/schema";
 import { startDate as startDateString } from "@/lib/db/schema";
 import { parseDayString, toDayString } from "@/lib/due-date-status";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 function toISODate(date: Date): StartDateString {
@@ -34,6 +36,7 @@ export default function TaskStartDatePopover({
   disabled?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation("task");
   const [open, setOpen] = useState(false);
 
   async function handleDateChange(date: Date | undefined) {
@@ -42,7 +45,9 @@ export default function TaskStartDatePopover({
       setOpen(false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update start date",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:dates.startDateError"),
       );
     }
   }
@@ -71,7 +76,7 @@ export default function TaskStartDatePopover({
               onClick={() => void handleDateChange(undefined)}
             >
               <X className="h-4 w-4" />
-              Clear start date
+              {t("dates.clearStartDate")}
             </Button>
           </div>
         )}

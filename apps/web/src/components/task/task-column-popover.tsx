@@ -1,5 +1,6 @@
 import { moveTaskToColumn } from "@/lib/db/queries";
 import type { Column, Task } from "@/lib/db/schema";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import TaskOptionPopover from "./task-option-popover";
 
@@ -24,9 +25,8 @@ export default function TaskColumnPopover({
       await moveTaskToColumn(task.id, column.slug);
       return true;
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to move task",
-      );
+      const fallback = i18n.t("task:column.error");
+      toast.error(error instanceof Error ? error.message : fallback);
       return false;
     }
   }
