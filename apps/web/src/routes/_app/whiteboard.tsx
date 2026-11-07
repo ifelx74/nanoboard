@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useTranslation } from "react-i18next";
 import Layout from "@/components/common/layout";
 import { GalleryCard } from "@/components/whiteboard/gallery-card";
 import { GalleryEmptyState } from "@/components/whiteboard/gallery-empty-state";
@@ -21,6 +22,7 @@ function RouteComponent() {
   // nothing: falling through to the empty state here would flash "Nothing on
   // the whiteboard yet" on every gallery visit before real entries arrive.
   const list = entries ?? [];
+  const { t } = useTranslation("whiteboard");
 
   return (
     <>
@@ -33,7 +35,9 @@ function RouteComponent() {
             </div>
           ) : (
             <div className="@container mx-auto w-full px-6 py-10 lg:px-10">
-              <h1 className="text-xl font-semibold mb-3">Recently modified</h1>
+              <h1 className="text-xl font-semibold mb-3">
+                {t("gallery.recentlyModified")}
+              </h1>
               <div className="grid gap-3 @md:grid-cols-2 @3xl:grid-cols-3 @4xl:grid-cols-4 @6xl:grid-cols-5">
                 {list.map((entry) => (
                   <GalleryCard key={entry.projectId} entry={entry} />

@@ -11,6 +11,7 @@ import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getWhiteboard, saveWhiteboardScene } from "@/lib/db/whiteboards";
 import { db } from "@/lib/db/db";
 import {
@@ -57,6 +58,7 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
   const theme = useThemeStore((state) => state.theme);
   const localePreference = useLocaleStore((state) => state.locale);
   const resolvedLocale = getResolvedLocale(localePreference);
+  const { t } = useTranslation("whiteboard");
   const [initialData, setInitialData] = useState<InitialData | null>(null);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -201,6 +203,9 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
   // The app's class-flip treats only "dark" as dark ("system" renders light),
   // so the canvas mirrors that exact resolution.
   const appTheme = theme === "dark" ? "dark" : "light";
+  const fullscreenLabel = isFullscreen
+    ? t("canvas.exitFullscreen")
+    : t("canvas.enterFullscreen");
 
   if (!initialData) {
     return <WhiteboardSkeleton />;
@@ -219,8 +224,8 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
               size="lg"
               variant="secondary"
               onClick={toggleFullscreen}
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              title={fullscreenLabel}
+              aria-label={fullscreenLabel}
             >
               {isFullscreen ? <Minimize /> : <Fullscreen />}
             </Button>
@@ -242,7 +247,7 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
         <WelcomeScreen>
           <WelcomeScreen.Center>
             <WelcomeScreen.Center.Heading>
-              Welcome to the Whiteboard
+              {t("canvas.welcome")}
             </WelcomeScreen.Center.Heading>
             <WelcomeScreen.Center.Menu>
               <WelcomeScreen.Center.MenuItemLoadScene />
