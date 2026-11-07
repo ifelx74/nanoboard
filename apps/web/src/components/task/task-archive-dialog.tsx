@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { archiveTask } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 export default function TaskArchiveDialog({
@@ -26,6 +28,7 @@ export default function TaskArchiveDialog({
   taskKeyText: string;
   taskTitle: string;
 }) {
+  const { t } = useTranslation("task");
   const [pending, setPending] = useState(false);
 
   async function handleArchive() {
@@ -34,11 +37,11 @@ export default function TaskArchiveDialog({
     try {
       await archiveTask(db, taskId);
       onOpenChange(false);
-      toast.success("Task archived");
+      const message = i18n.t("task:archive.archived");
+      toast.success(message);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to archive task",
-      );
+      const fallback = i18n.t("task:archive.error");
+      toast.error(error instanceof Error ? error.message : fallback);
     } finally {
       setPending(false);
     }
@@ -48,24 +51,25 @@ export default function TaskArchiveDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Archive {taskKeyText}?</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t("archive.title", { taskKey: taskKeyText })}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            “{taskTitle}” will be removed from the board and every work
-            surface. You can restore it from the archive at any time.
+            {t("archive.description", { title: taskTitle })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose
             render={<Button variant="outline" size="sm" disabled={pending} />}
           >
-            Cancel
+            {t("archive.cancel")}
           </AlertDialogClose>
           <Button
             size="sm"
             disabled={pending}
             onClick={() => void handleArchive()}
           >
-            {pending ? "Archiving" : "Archive"}
+            {pending ? t("archive.archiving") : t("archive.archive")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

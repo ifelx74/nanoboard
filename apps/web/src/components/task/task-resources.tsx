@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChevronRight, Link, X } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -22,6 +23,7 @@ import {
   getTaskResources,
   RESOURCE_TITLE_MAX,
 } from "@/lib/db/queries";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { linkHost } from "./link-host";
 import { SectionAddButton } from "./sections/section-add-button";
@@ -42,6 +44,7 @@ export default function TaskResources({
   taskId: string;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation("task");
   const [isOpen, setIsOpen] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -76,7 +79,9 @@ export default function TaskResources({
       resetForm();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to add resource",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:resources.errors.add"),
       );
     } finally {
       setAdding(false);
@@ -92,7 +97,7 @@ export default function TaskResources({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to remove the resource link.",
+          : i18n.t("task:resources.errors.remove"),
       );
     } finally {
       setDeleting(false);
@@ -111,7 +116,7 @@ export default function TaskResources({
                   data-task-action="resources"
                   className="flex items-center gap-1 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  Resources
+                  {t("resources.title")}
                   {!isOpen && (
                     <ChevronRight
                       aria-hidden="true"
@@ -132,8 +137,8 @@ export default function TaskResources({
               !disabled && (
                 <SectionAddButton
                   data-task-action="addLink"
-                  aria-label="Add resource"
-                  title="Add resource"
+                  aria-label={t("resources.add")}
+                  title={t("resources.add")}
                   onClick={() => setDialogOpen(true)}
                 />
               )
@@ -165,7 +170,9 @@ export default function TaskResources({
                     {!disabled && (
                       <button
                         type="button"
-                        aria-label={`Remove ${resource.title || resource.url}`}
+                        aria-label={t("resources.remove", {
+                          name: resource.title || resource.url,
+                        })}
                         disabled={deleting}
                         onClick={() => void handleDelete(resource.id)}
                         className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 disabled:pointer-events-none"
@@ -178,7 +185,7 @@ export default function TaskResources({
               </div>
             ) : (
               <p className="px-2 py-1 text-muted-foreground text-xs">
-                No resources linked to this task.
+                {t("resources.empty")}
               </p>
             )}
           </CollapsibleContent>
@@ -189,9 +196,9 @@ export default function TaskResources({
         <DialogContent showCloseButton={false}>
           <form onSubmit={(event) => void handleSubmit(event)}>
             <DialogHeader>
-              <DialogTitle>Add resource</DialogTitle>
+              <DialogTitle>{t("resources.add")}</DialogTitle>
               <DialogDescription className="sr-only">
-                Add a URL link to this task
+                {t("resources.dialogDescription")}
               </DialogDescription>
             </DialogHeader>
 
@@ -201,7 +208,7 @@ export default function TaskResources({
                   htmlFor="task-resource-url"
                   className="text-sm font-medium"
                 >
-                  URL
+                  {t("resources.url")}
                 </label>
                 <Input
                   id="task-resource-url"
@@ -218,7 +225,7 @@ export default function TaskResources({
                   htmlFor="task-resource-title"
                   className="text-sm font-medium"
                 >
-                  Title (optional)
+                  {t("resources.titleOptional")}
                 </label>
                 <Input
                   id="task-resource-title"
@@ -236,10 +243,10 @@ export default function TaskResources({
                 onClick={() => handleDialogChange(false)}
                 disabled={adding}
               >
-                Cancel
+                {t("resources.cancel")}
               </Button>
               <Button type="submit" disabled={adding || !url.trim()}>
-                {adding ? "Adding..." : "Add resource"}
+                {adding ? t("resources.adding") : t("resources.add")}
               </Button>
             </DialogFooter>
           </form>

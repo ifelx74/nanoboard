@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { CalendarIcon, Check, Plus, Search, Tag, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -46,7 +47,8 @@ import { toDayString } from "@/lib/due-date-status";
 import { formatMediumDate } from "@/lib/format";
 import { LABEL_COLORS, resolveLabelColor } from "@/lib/label-color";
 import type { LabelColorValue } from "@/lib/label-color";
-import { getPriorityIcon, priorityLabel } from "@/lib/priority";
+import { i18n } from "@/lib/i18n";
+import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import TaskDescriptionInput from "./task-description-input";
@@ -78,6 +80,25 @@ export default function CreateTaskDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation("task");
+  const priorityNames: Record<TaskPriority, string> = {
+    "no-priority": t("priority.noPriority"),
+    low: t("priority.low"),
+    medium: t("priority.medium"),
+    high: t("priority.high"),
+    urgent: t("priority.urgent"),
+  };
+  const colorNames: Record<LabelColorValue, string> = {
+    gray: t("labels.color.gray"),
+    "dark-gray": t("labels.color.darkGray"),
+    purple: t("labels.color.purple"),
+    teal: t("labels.color.teal"),
+    green: t("labels.color.green"),
+    yellow: t("labels.color.yellow"),
+    orange: t("labels.color.orange"),
+    pink: t("labels.color.pink"),
+    red: t("labels.color.red"),
+  };
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   const palette = useLiveQuery(() => getProjectLabels(projectId), [projectId]);
 
@@ -195,7 +216,9 @@ export default function CreateTaskDialog({
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create task",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:create.errors.createTask"),
       );
     } finally {
       setSubmitting(false);
@@ -225,7 +248,9 @@ export default function CreateTaskDialog({
       }, 200);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create label",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:create.errors.createLabel"),
       );
     }
   }
@@ -241,18 +266,17 @@ export default function CreateTaskDialog({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="font-semibold tracking-wider text-muted-foreground">
-                  {project?.slug.toUpperCase() ?? "TASK"}
+                  {project?.slug.toUpperCase() ?? t("create.fallbackSlug")}
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem className="font-medium text-foreground">
-                  New Task
+                  {t("create.newTask")}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Create a new task by providing a title, description, and other
-            details.
+            {t("create.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -267,7 +291,7 @@ export default function CreateTaskDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               autoFocus
-              placeholder="Task title"
+              placeholder={t("create.titlePlaceholder")}
               className="w-full [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:py-3 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:leading-tight [&_[data-slot=input]]:tracking-tight [&_[data-slot=input]]:text-foreground [&_[data-slot=input]]:outline-none [&_[data-slot=input]]:placeholder:text-muted-foreground"
             />
 
@@ -275,7 +299,7 @@ export default function CreateTaskDialog({
               <TaskDescriptionInput
                 key={descKey}
                 onMarkdown={setDescription}
-                placeholder="Add a description for your task..."
+                placeholder={t("create.descriptionPlaceholder")}
                 className="[&_.tiptap]:min-h-[11rem] [&_.tiptap]:px-0 [&_.tiptap]:pt-1 [&_.tiptap]:pb-2"
               />
             </div>
@@ -321,7 +345,9 @@ export default function CreateTaskDialog({
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
                     <span>
-                      {startDate ? formatMediumDate(startDate) : "Start date"}
+                      {startDate
+                        ? formatMediumDate(startDate)
+                        : t("create.startDate")}
                     </span>
                   </button>
                 </PopoverTrigger>
@@ -344,7 +370,7 @@ export default function CreateTaskDialog({
                         className="w-full text-xs"
                         onClick={() => setStartDate(undefined)}
                       >
-                        Clear start date
+                        {t("create.clearStartDate")}
                       </Button>
                     </div>
                   )}
@@ -363,7 +389,7 @@ export default function CreateTaskDialog({
                     )}
                   >
                     {getPriorityIcon(priority)}
-                    <span>{priorityLabel(priority)}</span>
+                    <span>{priorityNames[priority]}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-48 p-1" align="start">
@@ -380,7 +406,7 @@ export default function CreateTaskDialog({
                       >
                         {getPriorityIcon(option)}
                         <span className="text-sm capitalize">
-                          {priorityLabel(option)}
+                          {priorityNames[option]}
                         </span>
                         {priority === option && (
                           <Check className="ml-auto h-4 w-4" />
@@ -403,7 +429,11 @@ export default function CreateTaskDialog({
                     )}
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
-                    <span>{dueDate ? formatMediumDate(dueDate) : "Due date"}</span>
+                    <span>
+                      {dueDate
+                        ? formatMediumDate(dueDate)
+                        : t("create.dueDate")}
+                    </span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0" align="start">
@@ -425,7 +455,7 @@ export default function CreateTaskDialog({
                         className="w-full text-xs"
                         onClick={() => setDueDate(undefined)}
                       >
-                        Clear due date
+                        {t("create.clearDueDate")}
                       </Button>
                     </div>
                   )}
@@ -444,7 +474,7 @@ export default function CreateTaskDialog({
                     )}
                   >
                     <Tag className="h-3.5 w-3.5" />
-                    <span>Labels</span>
+                    <span>{t("create.labels")}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0" align="start">
@@ -456,7 +486,7 @@ export default function CreateTaskDialog({
                           ref={searchInputRef}
                           value={searchValue}
                           onChange={(e) => setSearchValue(e.target.value)}
-                          placeholder="Search labels..."
+                          placeholder={t("create.searchLabels")}
                           className="h-auto border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
                         />
                       </div>
@@ -465,7 +495,7 @@ export default function CreateTaskDialog({
                         {filteredLabels.length === 0 &&
                           searchValue.length === 0 && (
                             <span className="px-2 text-xs text-muted-foreground">
-                              No labels found
+                              {t("create.noLabels")}
                             </span>
                           )}
                         {filteredLabels.map((label) => (
@@ -503,7 +533,9 @@ export default function CreateTaskDialog({
                               <Plus className="h-3 w-3" />
                             </div>
                             <span className="truncate">
-                              Create &quot;{searchValue.trim()}&quot;
+                              {t("create.createLabel", {
+                                name: searchValue.trim(),
+                              })}
                             </span>
                           </button>
                         )}
@@ -514,7 +546,7 @@ export default function CreateTaskDialog({
                     <div className="w-auto">
                       <div className="flex items-center justify-between border-b border-border p-2">
                         <span className="text-xs font-medium">
-                          Choose a color
+                          {t("create.chooseColor")}
                         </span>
                         <button
                           type="button"
@@ -540,7 +572,9 @@ export default function CreateTaskDialog({
                               className="h-2 w-2 shrink-0 rounded-full"
                               style={{ backgroundColor: color.color }}
                             />
-                            <span className="truncate">{color.label}</span>
+                            <span className="truncate">
+                              {colorNames[color.value]}
+                            </span>
                             {selectedColor === color.value && (
                               <Check className="ml-auto h-3 w-3" />
                             )}
@@ -563,7 +597,7 @@ export default function CreateTaskDialog({
                   onChange={(e) => setCreateMore(e.target.checked)}
                   className="rounded border-border bg-background text-primary transition-[border-color,box-shadow] focus:ring-2 focus:ring-ring focus:ring-offset-0"
                 />
-                Create more
+                {t("create.createMore")}
               </label>
             </div>
 
@@ -573,7 +607,7 @@ export default function CreateTaskDialog({
               variant="outline"
               size="sm"
             >
-              Cancel
+              {t("create.cancel")}
             </Button>
             <Button
               type="submit"
@@ -581,7 +615,7 @@ export default function CreateTaskDialog({
               size="sm"
               className="disabled:opacity-50"
             >
-              Create Task
+              {t("create.submit")}
             </Button>
           </DialogFooter>
         </form>
@@ -590,16 +624,16 @@ export default function CreateTaskDialog({
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard task?</AlertDialogTitle>
+            <AlertDialogTitle>{t("create.discardTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Your unsaved task details will be lost.
+              {t("create.discardDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogClose
               render={<Button type="button" variant="outline" size="sm" />}
             >
-              Cancel
+              {t("create.cancel")}
             </AlertDialogClose>
             <Button
               type="button"
@@ -607,7 +641,7 @@ export default function CreateTaskDialog({
               size="sm"
               onClick={onClose}
             >
-              Discard task
+              {t("create.discard")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -10,6 +11,7 @@ import {
 import { updateTaskDueDate } from "@/lib/db/queries";
 import type { DueDateString, Task } from "@/lib/db/schema";
 import { parseDayString, toDayString } from "@/lib/due-date-status";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 function toISODate(date: Date): DueDateString {
@@ -33,6 +35,7 @@ export default function TaskDueDatePopover({
   disabled?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation("task");
   const [open, setOpen] = useState(false);
 
   async function handleDateChange(date: Date | undefined) {
@@ -41,7 +44,9 @@ export default function TaskDueDatePopover({
       setOpen(false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update due date",
+        error instanceof Error
+          ? error.message
+          : i18n.t("task:dates.dueDateError"),
       );
     }
   }
@@ -72,7 +77,7 @@ export default function TaskDueDatePopover({
               onClick={() => void handleDateChange(undefined)}
             >
               <X className="h-4 w-4" />
-              Clear due date
+              {t("dates.clearDueDate")}
             </Button>
           </div>
         )}

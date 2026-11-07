@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { archiveCompletedTasks } from "@/lib/db/queries";
 import { archiveCompletedTasksInColumn } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 export default function ArchiveCompletedTasksDialog({
@@ -29,6 +31,7 @@ export default function ArchiveCompletedTasksDialog({
   columnName?: string;
   columnId?: string;
 }) {
+  const { t } = useTranslation("task");
   const [pending, setPending] = useState(false);
 
   async function handleArchive() {
@@ -40,17 +43,17 @@ export default function ArchiveCompletedTasksDialog({
         : await archiveCompletedTasks(db, projectId);
       onOpenChange(false);
       if (count === 0) {
-        toast.info("No completed tasks to archive");
+        const message = i18n.t("task:archiveCompleted.noTasks");
+        toast.info(message);
       } else {
-        toast.success(
-          `Archived ${count} task${count === 1 ? "" : "s"}`,
-        );
+        const message = i18n.t("task:archiveCompleted.archived", { count });
+        toast.success(message);
       }
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to archive completed tasks",
+          : i18n.t("task:archiveCompleted.error"),
       );
     } finally {
       setPending(false);
@@ -62,29 +65,36 @@ export default function ArchiveCompletedTasksDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Archive {eligibleCount} completed task
-            {eligibleCount === 1 ? "" : "s"}?
+            {t("archiveCompleted.title", { count: eligibleCount })}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {eligibleCount === 1 ? "This task" : "These tasks"} from
-            {columnName ? ` ${columnName}` : " completed columns"} will be
-            removed from the board and every work surface. You can restore
-            {eligibleCount === 1 ? " it" : " them"} from the archive at any
-            time.
+            {t("archiveCompleted.description", {
+              subject:
+                eligibleCount === 1
+                  ? t("archiveCompleted.subjectOne")
+                  : t("archiveCompleted.subjectOther"),
+              source: columnName ?? t("archiveCompleted.completedColumns"),
+              restoreTarget:
+                eligibleCount === 1
+                  ? t("archiveCompleted.restoreOne")
+                  : t("archiveCompleted.restoreOther"),
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose
             render={<Button variant="outline" size="sm" disabled={pending} />}
           >
-            Cancel
+            {t("archiveCompleted.cancel")}
           </AlertDialogClose>
           <Button
             size="sm"
             disabled={pending}
             onClick={() => void handleArchive()}
           >
-            {pending ? "Archiving" : "Archive"}
+            {pending
+              ? t("archiveCompleted.archiving")
+              : t("archiveCompleted.archive")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
