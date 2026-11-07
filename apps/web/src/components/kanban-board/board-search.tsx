@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -20,6 +21,7 @@ export function BoardSearch({
   onChange: (value: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation("board");
   const [forceOpen, setForceOpen] = useState(false);
   const expanded = forceOpen || value !== "";
 
@@ -47,7 +49,7 @@ export function BoardSearch({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Search"
+              aria-label={t("search.label")}
               onClick={() => setForceOpen(true)}
             >
               <Search />
@@ -55,7 +57,7 @@ export function BoardSearch({
           </TooltipTrigger>
           <TooltipContent>
             <span className="inline-flex items-center gap-1.5">
-              Search <Kbd>/</Kbd>
+              {t("search.label")} <Kbd>/</Kbd>
             </span>
           </TooltipContent>
         </Tooltip>
@@ -71,8 +73,8 @@ export function BoardSearch({
         type="search"
         value={value}
         maxLength={256}
-        aria-label="Search tasks"
-        placeholder="Search"
+        aria-label={t("search.inputLabel")}
+        placeholder={t("search.placeholder")}
         onChange={(event) => onChange(event.target.value)}
         onBlur={() => setForceOpen(false)}
         onKeyDown={(event) => {
@@ -89,7 +91,7 @@ export function BoardSearch({
         <Button
           variant="ghost"
           size="icon-xs"
-          aria-label="Clear search"
+          aria-label={t("search.clearLabel")}
           // Keep focus in the field so the click reliably fires and the
           // cleared field stays expanded, matching Esc-clear.
           onMouseDown={(event) => event.preventDefault()}

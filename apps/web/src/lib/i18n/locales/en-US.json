@@ -25,6 +25,13 @@
       "goHome": "Go to Home",
       "message": "Sorry, the page you are looking for cannot be found. It may have been removed, had its name changed, or is temporarily unavailable.",
       "title": "Oops! Something went wrong."
+    },
+    "priority": {
+      "urgent": "Urgent",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "noPriority": "No priority"
     }
   },
   "navigation": {
@@ -71,8 +78,58 @@
       "today": "Today"
     }
   },
-  "board": {},
-  "list": {},
+  "board": {
+    "search": {
+      "label": "Search",
+      "inputLabel": "Search tasks",
+      "placeholder": "Search",
+      "clearLabel": "Clear search"
+    },
+    "taskCount_one": "{{count}} task",
+    "taskCount_other": "{{count}} tasks",
+    "taskCountShown": "{{shown}} of {{total}} shown",
+    "column": {
+      "archiveLabel_one": "Archive {{count}} completed task in {{columnName}}",
+      "archiveLabel_other": "Archive {{count}} completed tasks in {{columnName}}",
+      "addTaskToColumn": "Add task to {{columnName}}",
+      "noTasks": "No tasks",
+      "noMatchingTasks": "No matching tasks"
+    },
+    "filter": {
+      "trigger": "Filter by status, priority, labels, or due date",
+      "triggerWithActive": "Filter by status, priority, labels, or due date, {{count}} active",
+      "tooltip": "Filter",
+      "backToFilters": "Back to filters",
+      "matchOperator": "Match operator",
+      "is": "Is",
+      "isNot": "Is not",
+      "noValues": "No values yet",
+      "clear": "Clear",
+      "status": "Status",
+      "priority": "Priority",
+      "labels": "Labels",
+      "dueDate": "Due date",
+      "dueThisWeek": "Due this week",
+      "dueNextWeek": "Due next week",
+      "noDueDate": "No due date"
+    },
+    "activeFilters": {
+      "label": "Active filters",
+      "searchPrefix": "Search:",
+      "clearSearchFor": "Clear search for {{query}}",
+      "not": "not",
+      "removeFilter": "Remove {{label}} {{subject}} filter",
+      "clearAll": "Clear all"
+    },
+    "moveTaskFailed": "Failed to move task"
+  },
+  "list": {
+    "priority": "Priority: {{priority}}",
+    "addTaskToColumn": "Add task to {{columnName}}",
+    "noTasks": "No tasks",
+    "moreLabels_one": "+{{count}}",
+    "moreLabels_other": "+{{count}}"
+  },
   "calendar": {
     "overflowMore_one": "+{{count}} more",
     "overflowMore_other": "+{{count}} more"

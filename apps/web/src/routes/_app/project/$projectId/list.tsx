@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChevronRight, Plus, SquareCheck } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ProjectLayout } from "@/components/common/project-layout";
 import CreateTaskDialog from "@/components/task/create-task-dialog";
 import TaskDrawer from "@/components/task/task-drawer";
@@ -23,7 +24,7 @@ import {
 import { db } from "@/lib/db/db";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { resolveLabelColor } from "@/lib/label-color";
-import { getPriorityIcon, priorityLabel } from "@/lib/priority";
+import { getPriorityIcon } from "@/lib/priority";
 import { getChecklistStats } from "@/lib/task-checklist";
 import { formatMediumDate } from "@/lib/format";
 import { taskKey } from "@/lib/task-key";
@@ -74,6 +75,15 @@ function TaskRow({
   isFinal: boolean;
   onOpen: (taskId: string) => void;
 }) {
+  const { t } = useTranslation("list");
+  const { t: tCommon } = useTranslation("common");
+  const priorityLabels: Record<Task["priority"], string> = {
+    urgent: tCommon("priority.urgent"),
+    high: tCommon("priority.high"),
+    medium: tCommon("priority.medium"),
+    low: tCommon("priority.low"),
+    "no-priority": tCommon("priority.noPriority"),
+  };
   const stats = getChecklistStats(task.description);
   const dueStatus =
     task.dueDate === undefined ? null : getDueDateStatus(task.dueDate, isFinal);
@@ -86,8 +96,10 @@ function TaskRow({
       <TaskPriorityPopover task={task}>
         <button
           type="button"
-          aria-label={`Priority: ${priorityLabel(task.priority)}`}
-          title={`Priority: ${priorityLabel(task.priority)}`}
+          aria-label={t("priority", {
+            priority: priorityLabels[task.priority],
+          })}
+          title={t("priority", { priority: priorityLabels[task.priority] })}
           onClick={(event) => event.stopPropagation()}
           className="flex size-5.5 shrink-0 cursor-pointer items-center justify-center rounded-md outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5"
         >
@@ -130,7 +142,7 @@ function TaskRow({
             ))}
             {labels.length > 2 && (
               <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                +{labels.length - 2}
+                {t("moreLabels", { count: labels.length - 2 })}
               </span>
             )}
           </span>
@@ -162,6 +174,7 @@ function RouteComponent() {
   const { projectId } = Route.useParams();
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
+  const { t } = useTranslation("list");
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   const columns = useLiveQuery(
     () => getProjectColumns(db, projectId),
@@ -250,8 +263,10 @@ function RouteComponent() {
                   </button>
                   <button
                     type="button"
-                    title={`Add task to ${column.name}`}
-                    aria-label={`Add task to ${column.name}`}
+                    title={t("addTaskToColumn", { columnName: column.name })}
+                    aria-label={t("addTaskToColumn", {
+                      columnName: column.name,
+                    })}
                     onClick={() => setCreateColumn(column)}
                     className="rounded p-1 text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   >
@@ -274,7 +289,7 @@ function RouteComponent() {
                     </div>
                   ) : (
                     <div className="px-4 py-6 text-center text-xs text-muted-foreground">
-                      No tasks
+                      {t("noTasks")}
                     </div>
                   ))}
               </section>
