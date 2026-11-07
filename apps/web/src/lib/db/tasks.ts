@@ -66,6 +66,44 @@ export function countProjectTasks(
     .count();
 }
 
+/** An open task with the project key joined on, as the week strip needs it. */
+export interface OpenTask extends Task {
+  projectSlug: string;
+}
+
+/**
+ * Open (non-archived, non-final-column) tasks due within the inclusive
+ * `yyyy-mm-dd` window, across all projects. The indexed `dueDate` range
+ * keeps the result set to the week at hand instead of the whole task table
+ * — far-future and undated tasks never serialize into the live query.
+ * Callers bucket the returned rows by due day.
+ */
+export async function getOpenTasks(
+  database: NanoboardDB,
+  from: DueDateString,
+  to: DueDateString,
+): Promise<OpenTask[]> {
+  const [columns, projects, tasks] = await Promise.all([
+    database.columns.toArray(),
+    database.projects.toArray(),
+    database.tasks.where("dueDate").between(from, to, true, true).toArray(),
+  ]);
+  const finalIds = new Set(
+    columns.filter((column) => column.isFinal).map((column) => column.id),
+  );
+  const slugByProject = new Map(
+    projects.map((project) => [project.id, project.slug]),
+  );
+  const open: OpenTask[] = [];
+  for (const task of tasks) {
+    if (isTaskArchived(task) || finalIds.has(task.columnId)) continue;
+    const projectSlug = slugByProject.get(task.projectId);
+    if (projectSlug === undefined) continue;
+    open.push({ ...task, projectSlug });
+  }
+  return open;
+}
+
 export const QUICK_ADD_TITLE_MIN = 3;
 export const QUICK_ADD_TITLE_MAX = 256;
 

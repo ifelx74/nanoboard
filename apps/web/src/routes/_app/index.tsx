@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useMemo } from "react";
 import Layout from "@/components/common/layout";
 import { SectionHeader } from "@/components/home/section-header";
-import { getProjects, getProjectsStats } from "@/lib/db/queries";
+import { WeekStrip } from "@/components/home/week-strip";
+import { weekWindow } from "@/components/home/build-week";
+import { useLocalDay } from "@/hooks/use-local-day";
+import { getOpenTasks, getProjects, getProjectsStats } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
 import type { ProjectStats } from "@/lib/db/queries";
 import type { Project } from "@/lib/db/schema";
@@ -80,6 +84,10 @@ function ProjectCard({
 function RouteComponent() {
   const projects = useLiveQuery(() => getProjects(), []);
   const statsByProject = useLiveQuery(() => getProjectsStats(db), []);
+  const day = useLocalDay();
+  const { from, to } = useMemo(() => weekWindow(new Date(day)), [day]);
+  const openTasks = useLiveQuery(() => getOpenTasks(db, from, to), [from, to]);
+
   const now = new Date();
   const dateLine = now.toLocaleDateString(undefined, {
     weekday: "long",
@@ -126,6 +134,8 @@ function RouteComponent() {
                 </h1>
               </div>
             </header>
+
+            <WeekStrip tasks={openTasks ?? []} day={day} />
 
             <section className="flex flex-col gap-3">
               <SectionHeader title="Projects" />
