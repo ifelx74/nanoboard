@@ -1,6 +1,6 @@
 import { SettingsHeading } from "../../../heading";
 import DefaultSettingPreferencesList from "./default-preferences-list";
-import InstallAppList from "./install-app-list";
+// import InstallAppList from "./install-app-list";
 import LanguageAndTimezoneList from "./language-and-timezone-list";
 
 export const PreferencesSettings = () => {
@@ -18,9 +18,9 @@ export const PreferencesSettings = () => {
           <div className="font-medium text-primary">Language & Time</div>
           <LanguageAndTimezoneList />
         </section>
-        <section className="mt-auto border-t border-border">
+        {/* <section className="mt-auto border-t border-border">
           <InstallAppList />
-        </section>
+        </section> */}
       </div>
     </div>
   );
