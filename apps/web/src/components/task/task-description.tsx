@@ -1,12 +1,17 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { updateTaskDescription } from "@/lib/db/queries";
 import type { Task } from "@/lib/db/schema";
 import { createDescriptionExtensions } from "@/lib/editor/preset";
 import { formatMarkdown } from "@/lib/editor/markdown";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import DescriptionBubbleMenu from "./description-bubble-menu";
-import { SlashCommands } from "./description-slash-menu";
+import {
+  createSlashCommands,
+  useSlashItems,
+} from "./description-slash-menu";
 import "./task-description.css";
 
 const AUTOSAVE_DELAY = 700;
@@ -31,6 +36,8 @@ export default function TaskDescription({
   onStatusChange,
   retryRef,
 }: TaskDescriptionProps) {
+  const { t } = useTranslation("task");
+  const slashItems = useSlashItems();
   const [status, setStatus] = useState<DescriptionSaveStatus>("idle");
   const savedRef = useRef(task.description);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -39,8 +46,8 @@ export default function TaskDescription({
   const editor = useEditor(
     {
       extensions: [
-        ...createDescriptionExtensions("Add a description"),
-        SlashCommands,
+        ...createDescriptionExtensions(t("description.placeholder")),
+        createSlashCommands(slashItems),
       ],
       content: "",
       editable: !disabled,
@@ -94,7 +101,7 @@ export default function TaskDescription({
           toast.error(
             error instanceof Error
               ? error.message
-              : "Failed to save description",
+              : i18n.t("task:drawer.descriptionFailed"),
           );
         },
       );
@@ -128,7 +135,10 @@ export default function TaskDescription({
   return (
     <div className="flex flex-col gap-1">
       <div className="nb-description">
-        <EditorContent editor={editor} aria-label="Task description" />
+        <EditorContent
+          editor={editor}
+          aria-label={t("description.ariaLabel")}
+        />
       </div>
       {editor && !disabled && <DescriptionBubbleMenu editor={editor} />}
     </div>

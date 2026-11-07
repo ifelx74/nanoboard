@@ -16,6 +16,7 @@ import {
   Unlink,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 function normalizeHref(raw: string): string {
@@ -52,6 +53,7 @@ function MenuButton({
 }
 
 export default function DescriptionBubbleMenu({ editor }: { editor: Editor }) {
+  const { t } = useTranslation("task");
   const [linkOpen, setLinkOpen] = useState(false);
   const [href, setHref] = useState("");
 
@@ -83,42 +85,42 @@ export default function DescriptionBubbleMenu({ editor }: { editor: Editor }) {
       className="flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-md"
     >
       <MenuButton
-        label="Heading 2"
+        label={t("description.heading2")}
         active={editor.isActive("heading", { level: 2 })}
         onRun={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
       >
         <Heading2 className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Bullet list"
+        label={t("description.bulletList")}
         active={editor.isActive("bulletList")}
         onRun={() => editor.chain().focus().toggleBulletList().run()}
       >
         <List className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Task list"
+        label={t("description.taskList")}
         active={editor.isActive("taskList")}
         onRun={() => editor.chain().focus().toggleTaskList().run()}
       >
         <ListTodo className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Ordered list"
+        label={t("description.orderedList")}
         active={editor.isActive("orderedList")}
         onRun={() => editor.chain().focus().toggleOrderedList().run()}
       >
         <ListOrdered className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Blockquote"
+        label={t("description.blockquote")}
         active={editor.isActive("blockquote")}
         onRun={() => editor.chain().focus().toggleBlockquote().run()}
       >
         <TextQuote className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Code block"
+        label={t("description.codeBlock")}
         active={editor.isActive("codeBlock")}
         onRun={() => editor.chain().focus().toggleCodeBlock().run()}
       >
@@ -126,42 +128,42 @@ export default function DescriptionBubbleMenu({ editor }: { editor: Editor }) {
       </MenuButton>
       <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-border" />
       <MenuButton
-        label="Bold"
+        label={t("description.bold")}
         active={editor.isActive("bold")}
         onRun={() => editor.chain().focus().toggleBold().run()}
       >
         <Bold className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Italic"
+        label={t("description.italic")}
         active={editor.isActive("italic")}
         onRun={() => editor.chain().focus().toggleItalic().run()}
       >
         <Italic className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Underline"
+        label={t("description.underline")}
         active={editor.isActive("underline")}
         onRun={() => editor.chain().focus().toggleUnderline().run()}
       >
         <Underline className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Strikethrough"
+        label={t("description.strikethrough")}
         active={editor.isActive("strike")}
         onRun={() => editor.chain().focus().toggleStrike().run()}
       >
         <Strikethrough className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Inline code"
+        label={t("description.inlineCode")}
         active={editor.isActive("code")}
         onRun={() => editor.chain().focus().toggleCode().run()}
       >
         <Code className={iconClass} aria-hidden="true" />
       </MenuButton>
       <MenuButton
-        label="Link"
+        label={t("description.link")}
         active={editor.isActive("link")}
         onRun={() => setLinkOpen((open) => !open)}
       >
@@ -172,8 +174,8 @@ export default function DescriptionBubbleMenu({ editor }: { editor: Editor }) {
           <input
             autoFocus
             value={href}
-            aria-label="Link URL"
-            placeholder="https://…"
+            aria-label={t("description.linkUrl")}
+            placeholder={t("description.linkPlaceholder")}
             onChange={(event) => setHref(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -188,12 +190,12 @@ export default function DescriptionBubbleMenu({ editor }: { editor: Editor }) {
               "outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring",
             )}
           />
-          <MenuButton label="Apply link" onRun={applyLink}>
+          <MenuButton label={t("description.applyLink")} onRun={applyLink}>
             <Link2 className={iconClass} aria-hidden="true" />
           </MenuButton>
           {editor.isActive("link") && (
             <MenuButton
-              label="Remove link"
+              label={t("description.removeLink")}
               onRun={() => {
                 editor
                   .chain()

@@ -1,10 +1,14 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { createDescriptionExtensions } from "@/lib/editor/preset";
 import { formatMarkdown } from "@/lib/editor/markdown";
 import DescriptionBubbleMenu from "./description-bubble-menu";
-import { SlashCommands } from "./description-slash-menu";
+import {
+  createSlashCommands,
+  useSlashItems,
+} from "./description-slash-menu";
 import "./task-description.css";
 
 /**
@@ -15,16 +19,22 @@ import "./task-description.css";
  */
 export default function TaskDescriptionInput({
   onMarkdown,
-  placeholder = "Add a description",
+  placeholder,
   className,
 }: {
   onMarkdown: (markdown: string) => void;
   placeholder?: string;
   className?: string;
 }) {
+  const { t } = useTranslation("task");
+  const slashItems = useSlashItems();
+  const resolvedPlaceholder = placeholder ?? t("description.placeholder");
   const extensions = useMemo(
-    () => [...createDescriptionExtensions(placeholder), SlashCommands],
-    [placeholder],
+    () => [
+      ...createDescriptionExtensions(resolvedPlaceholder),
+      createSlashCommands(slashItems),
+    ],
+    [resolvedPlaceholder, slashItems],
   );
 
   const editor = useEditor(
@@ -40,7 +50,10 @@ export default function TaskDescriptionInput({
 
   return (
     <div className={cn("nb-description", className)}>
-      <EditorContent editor={editor} aria-label="Task description" />
+      <EditorContent
+        editor={editor}
+        aria-label={t("description.ariaLabel")}
+      />
       {editor && <DescriptionBubbleMenu editor={editor} />}
     </div>
   );
