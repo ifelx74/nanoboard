@@ -119,6 +119,58 @@ async function getArchivableTasks(
   );
 }
 
+interface ColumnArchiveTarget {
+  columnId: string;
+  count: number;
+}
+
+export async function archiveCompletedTasksInColumn(
+  database: NanoboardDB,
+  projectId: string,
+  columnId: string,
+): Promise<number> {
+  const now = Date.now();
+  return database.transaction(
+    "rw",
+    database.tasks,
+    database.columns,
+    async () => {
+      const column = await database.columns.get(columnId);
+      if (!column || column.projectId !== projectId || !column.isFinal) {
+        return 0;
+      }
+      const archivable = (await getArchivableTasks(database, projectId)).filter(
+        (task) => task.columnId === columnId,
+      );
+      if (archivable.length > 0) {
+        await database.tasks.bulkPut(
+          archivable.map((task) => ({
+            ...task,
+            archivedAt: now,
+            updatedAt: now,
+          })),
+        );
+      }
+      return archivable.length;
+    },
+  );
+}
+
+export async function countArchivableTasksByFinalColumn(
+  database: NanoboardDB,
+  projectId: string,
+): Promise<ColumnArchiveTarget[]> {
+  const archivable = await getArchivableTasks(database, projectId);
+  const counts = new Map<string, number>();
+  for (const task of archivable) {
+    counts.set(task.columnId, (counts.get(task.columnId) ?? 0) + 1);
+  }
+  return [...counts.entries()].map(([columnId, count]) => ({
+    columnId,
+    count,
+  }));
+}
+
 /**
  * How many tasks the "Archive completed tasks" sweep would file right
  * now — backs the sweep's confirm dialog and the archive empty-state CTA.

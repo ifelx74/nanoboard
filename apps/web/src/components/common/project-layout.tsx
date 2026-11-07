@@ -45,7 +45,6 @@ type ProjectLayoutProps = {
   projectId: string;
   activeView: ProjectView;
   children: ReactNode;
-  headerAction?: ReactNode;
   archiveCount?: number;
 };
 
@@ -53,7 +52,6 @@ export function ProjectLayout({
   projectId,
   activeView,
   children,
-  headerAction,
   archiveCount = 0,
 }: ProjectLayoutProps) {
   const navigate = useNavigate();
@@ -162,13 +160,12 @@ export function ProjectLayout({
                 </button>
               ))}
             </div>
-          ) : isArchivesView && headerAction ? (
-            <div className="flex shrink-0 items-center gap-1">
-              {headerAction}
-            </div>
+          ) : isArchivesView ? (
+            <div className="flex shrink-0 items-center" />
           ) : null}
         </div>
       </Layout.Header>
+
       <Layout.Content>{children}</Layout.Content>
     </>
   );

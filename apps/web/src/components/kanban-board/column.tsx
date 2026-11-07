@@ -6,7 +6,13 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { format } from "date-fns";
-import { Calendar, CalendarClock, CalendarX, Plus } from "lucide-react";
+import {
+  Archive,
+  Calendar,
+  CalendarClock,
+  CalendarX,
+  Plus,
+} from "lucide-react";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { getColumnIcon } from "@/lib/column";
@@ -187,6 +193,7 @@ export default function BoardColumn({
   justDraggedRef,
   onOpenTask,
   onCreateTask,
+  onArchiveColumn,
   registerLaneRef,
   projectSlug,
 }: {
@@ -198,6 +205,7 @@ export default function BoardColumn({
   justDraggedRef: React.RefObject<boolean>;
   onOpenTask: (taskId: string) => void;
   onCreateTask: (columnId: string) => void;
+  onArchiveColumn: (column: Column) => void;
   registerLaneRef: (columnId: string, element: HTMLElement | null) => void;
   projectSlug: string;
 }) {
@@ -206,6 +214,8 @@ export default function BoardColumn({
     data: { type: "column", taskIds: tasks.map((task) => task.id) },
     disabled,
   });
+  const showArchiveAction = column.isFinal && tasks.length > 0;
+  const archiveLabel = `Archive ${tasks.length} completed task${tasks.length === 1 ? "" : "s"} in ${column.name}`;
 
   return (
     <section
@@ -227,15 +237,28 @@ export default function BoardColumn({
             {tasks.length}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => onCreateTask(column.id)}
-          title={`Add task to ${column.name}`}
-          aria-label={`Add task to ${column.name}`}
-          className="flex shrink-0 items-center rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-accent/50"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {showArchiveAction && (
+            <button
+              type="button"
+              onClick={() => onArchiveColumn(column)}
+              title={archiveLabel}
+              aria-label={archiveLabel}
+              className="flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Archive className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onCreateTask(column.id)}
+            title={`Add task to ${column.name}`}
+            aria-label={`Add task to ${column.name}`}
+            className="flex shrink-0 items-center rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-accent/50"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </header>
       <div className="flex flex-col gap-2 overflow-auto">
         <SortableContext

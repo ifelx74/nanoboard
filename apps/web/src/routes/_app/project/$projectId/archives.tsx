@@ -170,35 +170,9 @@ function RouteComponent() {
     }
   }
 
-  function handleSweepClick() {
-    if (eligibleCount === undefined) return;
-    if (eligibleCount === 0) {
-      toast.info("No completed tasks to archive");
-      return;
-    }
-    setSweepOpen(true);
-  }
-
-  const sweepButton = (
-    <Button
-      variant="outline"
-      size="sm"
-      aria-label="Archive completed tasks"
-      title="Archive completed tasks"
-      onClick={handleSweepClick}
-    >
-      <Archive />
-      <span className="hidden sm:inline">Archive completed tasks</span>
-    </Button>
-  );
-
   if (archivedTasks === undefined || project === undefined) {
     return (
-      <ProjectLayout
-        projectId={projectId}
-        activeView="archives"
-        headerAction={sweepButton}
-      >
+      <ProjectLayout projectId={projectId} activeView="archives">
         <ArchivesSkeleton />
         <TaskDrawer
           projectId={projectId}
@@ -216,7 +190,6 @@ function RouteComponent() {
     <ProjectLayout
       projectId={projectId}
       activeView="archives"
-      headerAction={sweepButton}
       archiveCount={archiveCount}
     >
       {archiveCount === 0 ? (

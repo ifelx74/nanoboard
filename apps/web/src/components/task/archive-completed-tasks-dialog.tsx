@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { archiveCompletedTasks } from "@/lib/db/queries";
+import { archiveCompletedTasksInColumn } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
 import { toast } from "@/lib/toast";
 
@@ -18,11 +19,15 @@ export default function ArchiveCompletedTasksDialog({
   onOpenChange,
   projectId,
   eligibleCount,
+  columnName,
+  columnId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
   eligibleCount: number;
+  columnName?: string;
+  columnId?: string;
 }) {
   const [pending, setPending] = useState(false);
 
@@ -30,7 +35,9 @@ export default function ArchiveCompletedTasksDialog({
     if (pending) return;
     setPending(true);
     try {
-      const count = await archiveCompletedTasks(db, projectId);
+      const count = columnId
+        ? await archiveCompletedTasksInColumn(db, projectId, columnId)
+        : await archiveCompletedTasks(db, projectId);
       onOpenChange(false);
       if (count === 0) {
         toast.info("No completed tasks to archive");
@@ -59,7 +66,8 @@ export default function ArchiveCompletedTasksDialog({
             {eligibleCount === 1 ? "" : "s"}?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {eligibleCount === 1 ? "This task" : "These tasks"} will be
+            {eligibleCount === 1 ? "This task" : "These tasks"} from
+            {columnName ? ` ${columnName}` : " completed columns"} will be
             removed from the board and every work surface. You can restore
             {eligibleCount === 1 ? " it" : " them"} from the archive at any
             time.
