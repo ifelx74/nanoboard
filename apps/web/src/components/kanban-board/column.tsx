@@ -12,12 +12,13 @@ import {
   CalendarX,
   Plus,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { getColumnIcon } from "@/lib/column";
 import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
 import { formatShortDate } from "@/lib/format";
-import { getPriorityIcon, priorityLabel } from "@/lib/priority";
+import { getPriorityIcon } from "@/lib/priority";
 import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
 import { TaskLabels } from "@/components/task/task-labels";
@@ -53,6 +54,15 @@ export function TaskCardView({
 }) {
   const dueDateStatus = getDueDateStatus(task.dueDate, isFinal);
   const isOverdue = dueDateStatus === "overdue";
+  const { t: tCommon } = useTranslation("common");
+  const priorityLabels: Record<Task["priority"], string> = {
+    urgent: tCommon("priority.urgent"),
+    high: tCommon("priority.high"),
+    medium: tCommon("priority.medium"),
+    low: tCommon("priority.low"),
+    "no-priority": tCommon("priority.noPriority"),
+  };
+  const priorityText = priorityLabels[task.priority];
 
   return (
     <article
@@ -98,11 +108,11 @@ export function TaskCardView({
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
           <Badge
             variant={task.priority === "urgent" ? "destructive" : "outline"}
-            title={priorityLabel(task.priority)}
+            title={priorityText}
             className="gap-1 font-medium rounded-md! text-sm h-6!"
           >
             {getPriorityIcon(task.priority)}
-            <span>{priorityLabel(task.priority)}</span>
+            <span>{priorityText}</span>
           </Badge>
           {task.dueDate && (
             <div
@@ -214,8 +224,12 @@ export default function BoardColumn({
     data: { type: "column", taskIds: tasks.map((task) => task.id) },
     disabled,
   });
+  const { t } = useTranslation("board");
   const showArchiveAction = column.isFinal && tasks.length > 0;
-  const archiveLabel = `Archive ${tasks.length} completed task${tasks.length === 1 ? "" : "s"} in ${column.name}`;
+  const archiveLabel = t("column.archiveLabel", {
+    count: tasks.length,
+    columnName: column.name,
+  });
 
   return (
     <section
@@ -252,8 +266,10 @@ export default function BoardColumn({
           <button
             type="button"
             onClick={() => onCreateTask(column.id)}
-            title={`Add task to ${column.name}`}
-            aria-label={`Add task to ${column.name}`}
+            title={t("column.addTaskToColumn", { columnName: column.name })}
+            aria-label={t("column.addTaskToColumn", {
+              columnName: column.name,
+            })}
             className="flex shrink-0 items-center rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-accent/50"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -280,7 +296,7 @@ export default function BoardColumn({
         </SortableContext>
         {tasks.length === 0 && (
           <p className="px-1.5 py-1 text-xs text-muted-foreground">
-            {filterActive ? "No matching tasks" : "No tasks"}
+            {filterActive ? t("column.noMatchingTasks") : t("column.noTasks")}
           </p>
         )}
       </div>

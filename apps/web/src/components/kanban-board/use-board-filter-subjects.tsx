@@ -2,12 +2,13 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { CalendarDays, CircleDot, Tag } from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import { getColumnIcon } from "@/lib/column";
 import { getProjectLabels } from "@/lib/db/queries";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { resolveLabelColor } from "@/lib/label-color";
-import { getPriorityIcon, priorityLabel } from "@/lib/priority";
+import { getPriorityIcon } from "@/lib/priority";
 import {
   DUE_DATE_FILTER_VALUES,
   EMPTY_BOARD_FILTERS,
@@ -44,10 +45,12 @@ const PRIORITY_ORDER: Task["priority"][] = [
 ];
 
 const DUE_DATE_OPTIONS = [
-  { value: DUE_DATE_FILTER_VALUES.dueThisWeek, label: "Due this week" },
-  { value: DUE_DATE_FILTER_VALUES.dueNextWeek, label: "Due next week" },
-  { value: DUE_DATE_FILTER_VALUES.noDueDate, label: "No due date" },
+  DUE_DATE_FILTER_VALUES.dueThisWeek,
+  DUE_DATE_FILTER_VALUES.dueNextWeek,
+  DUE_DATE_FILTER_VALUES.noDueDate,
 ] as const;
+
+type DueDateOption = (typeof DUE_DATE_OPTIONS)[number];
 
 function countBy<T>(items: Iterable<T>, key: (item: T) => string) {
   const counts = new Map<string, number>();
@@ -77,6 +80,20 @@ export function useBoardFilterSubjects(
     projectId: string;
   },
 ): BoardFilterSubjectDef[] {
+  const { t } = useTranslation("board");
+  const { t: tCommon } = useTranslation("common");
+  const priorityLabels: Record<Task["priority"], string> = {
+    urgent: tCommon("priority.urgent"),
+    high: tCommon("priority.high"),
+    medium: tCommon("priority.medium"),
+    low: tCommon("priority.low"),
+    "no-priority": tCommon("priority.noPriority"),
+  };
+  const dueDateLabels: Record<DueDateOption, string> = {
+    dueThisWeek: t("filter.dueThisWeek"),
+    dueNextWeek: t("filter.dueNextWeek"),
+    noDueDate: t("filter.noDueDate"),
+  };
   const [weekStartsOn] = useWeekStartsOn();
   const palette = useLiveQuery(() => getProjectLabels(projectId), [projectId]);
   const { filters, toggleFilter, setNegated, clearSubject } = view;
@@ -111,10 +128,10 @@ export function useBoardFilterSubjects(
   const dueCounts = useMemo(() => {
     const dueContext = { query: "", today: new Date(), weekStartsOn };
     const counts = new Map<string, number>();
-    for (const option of DUE_DATE_OPTIONS) {
+    for (const value of DUE_DATE_OPTIONS) {
       const optionFilters = {
         ...EMPTY_BOARD_FILTERS,
-        dueDate: [option.value],
+        dueDate: [value],
       };
       let count = 0;
       for (const task of tasks) {
@@ -129,14 +146,14 @@ export function useBoardFilterSubjects(
           count += 1;
         }
       }
-      counts.set(option.value, count);
+      counts.set(value, count);
     }
     return counts;
   }, [tasks, labelsByTask, weekStartsOn]);
 
   return [
     makeSubjectDef("status", {
-      label: "Status",
+      label: t("filter.status"),
       icon: <CircleDot />,
       options: columns.map((column) => ({
         value: column.id,
@@ -146,17 +163,17 @@ export function useBoardFilterSubjects(
       })),
     }),
     makeSubjectDef("priority", {
-      label: "Priority",
+      label: t("filter.priority"),
       icon: getPriorityIcon("high"),
       options: PRIORITY_ORDER.map((priority) => ({
         value: priority,
-        label: priorityLabel(priority),
+        label: priorityLabels[priority],
         count: priorityCounts.get(priority) ?? 0,
         icon: getPriorityIcon(priority),
       })),
     }),
     makeSubjectDef("labels", {
-      label: "Labels",
+      label: t("filter.labels"),
       icon: <Tag />,
       options: (palette ?? []).map((label) => ({
         value: label.id,
@@ -172,12 +189,12 @@ export function useBoardFilterSubjects(
       })),
     }),
     makeSubjectDef("dueDate", {
-      label: "Due date",
+      label: t("filter.dueDate"),
       icon: <CalendarDays />,
-      options: DUE_DATE_OPTIONS.map((option) => ({
-        value: option.value,
-        label: option.label,
-        count: dueCounts.get(option.value) ?? 0,
+      options: DUE_DATE_OPTIONS.map((value) => ({
+        value,
+        label: dueDateLabels[value],
+        count: dueCounts.get(value) ?? 0,
       })),
     }),
   ];

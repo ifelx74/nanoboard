@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 export function BoardTaskCount({
   shown,
   total,
@@ -7,7 +9,7 @@ export function BoardTaskCount({
   total: number;
   className?: string;
 }) {
-  const units = total === 1 ? "task" : "tasks";
+  const { t } = useTranslation("board");
   return (
     <span
       aria-live="polite"
@@ -15,7 +17,9 @@ export function BoardTaskCount({
         className ?? "truncate text-xs text-muted-foreground tabular-nums"
       }
     >
-      {shown === total ? `${total} ${units}` : `${shown} of ${total} shown`}
+      {shown === total
+        ? t("taskCount", { count: total })
+        : t("taskCountShown", { shown, total })}
     </span>
   );
 }

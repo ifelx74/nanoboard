@@ -20,6 +20,7 @@ import { countArchivableTasksByFinalColumn } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import ArchiveCompletedTasksDialog from "@/components/task/archive-completed-tasks-dialog";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { taskKey } from "@/lib/task-key";
 import BoardColumn, { TaskCardView } from "./column";
@@ -297,11 +298,10 @@ export default function KanbanBoard({
     setWriting(true);
     try {
       await reorderTasks(projectId, computed.dirty);
-    } catch (error) {
+    } catch {
       setPreview(null);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to move task",
-      );
+      const message = i18n.t("board:moveTaskFailed");
+      toast.error(message);
     } finally {
       setWriting(false);
     }

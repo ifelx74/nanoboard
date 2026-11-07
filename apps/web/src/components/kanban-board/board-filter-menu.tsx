@@ -1,5 +1,6 @@
 import { Check, ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import {
@@ -17,6 +18,9 @@ import { cn } from "@/lib/utils";
 import type { BoardFilterSubject } from "./board-filter-model";
 import { useToolbarShortcut } from "./use-toolbar-shortcut";
 import type { BoardFilterSubjectDef } from "./use-board-filter-subjects";
+
+// Physical keyboard key that toggles the filter menu; not translated.
+const FILTER_SHORTCUT_KEY = "f";
 
 function MenuRow({
   onClick,
@@ -49,13 +53,14 @@ function SubjectPanel({
   subject: BoardFilterSubjectDef;
   onBack: () => void;
 }) {
+  const { t } = useTranslation("board");
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back to filters"
+          aria-label={t("filter.backToFilters")}
           className="flex min-w-0 items-center gap-1 px-2 py-1.5 text-left text-xs font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ChevronLeft className="h-3 w-3 shrink-0" aria-hidden="true" />
@@ -63,13 +68,13 @@ function SubjectPanel({
         </button>
         <div
           role="group"
-          aria-label="Match operator"
+          aria-label={t("filter.matchOperator")}
           className="flex shrink-0 gap-1 pr-1"
         >
           {(
             [
-              { value: false, label: "Is" },
-              { value: true, label: "Is not" },
+              { value: false, label: t("filter.is") },
+              { value: true, label: t("filter.isNot") },
             ] as const
           ).map((option) => (
             <button
@@ -92,7 +97,7 @@ function SubjectPanel({
       <div className="py-1">
         {subject.options.length === 0 && (
           <p className="px-2 py-1.5 text-xs text-muted-foreground">
-            No values yet
+            {t("filter.noValues")}
           </p>
         )}
         {subject.options.map((option) => {
@@ -127,7 +132,7 @@ function SubjectPanel({
             onClick={subject.onClear}
             className="flex w-full items-center px-2 py-1.5 text-left text-xs text-muted-foreground outline-none hover:bg-accent/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Clear
+            {t("filter.clear")}
           </button>
         </>
       )}
@@ -144,10 +149,14 @@ export function BoardFilterMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [subjectId, setSubjectId] = useState<BoardFilterSubject | null>(null);
+  const { t } = useTranslation("board");
   const subject = subjects.find((entry) => entry.id === subjectId) ?? null;
-  const triggerLabel = `Filter by status, priority, labels, or due date${activeCount > 0 ? `, ${activeCount} active` : ""}`;
+  const triggerLabel =
+    activeCount > 0
+      ? t("filter.triggerWithActive", { count: activeCount })
+      : t("filter.trigger");
 
-  useToolbarShortcut("f", () => setOpen((value) => !value));
+  useToolbarShortcut(FILTER_SHORTCUT_KEY, () => setOpen((value) => !value));
 
   return (
     <Popover
@@ -182,7 +191,7 @@ export function BoardFilterMenu({
           </TooltipTrigger>
           <TooltipContent>
             <span className="inline-flex items-center gap-1.5">
-              Filter <Kbd>f</Kbd>
+              {t("filter.tooltip")} <Kbd>{FILTER_SHORTCUT_KEY}</Kbd>
             </span>
           </TooltipContent>
         </Tooltip>
