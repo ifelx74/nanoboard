@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import Stickies from "@/icons/stickies";
 import { SidebarTriggerHeader } from "../common/sidebar-trigger-header";
@@ -18,6 +19,7 @@ export function StickyHeader({
   onAddSticky,
   isCreating,
 }: Props) {
+  const { t } = useTranslation("stickies");
   return (
     <Layout.Header>
       <div className="flex w-full items-center justify-between">
@@ -26,7 +28,7 @@ export function StickyHeader({
           <div className="flex items-center gap-1.5">
             <Stickies className="size-4 shrink-0" />
             <span className="text-sm font-semibold text-card-foreground">
-              Stickies
+              {t("title")}
             </span>
           </div>
         </div>
@@ -35,7 +37,7 @@ export function StickyHeader({
           <StickySearch value={searchQuery} onChange={onSearchChange} />
           <Button onClick={onAddSticky} disabled={isCreating}>
             {isCreating && <Loader2 className="size-3.5 animate-spin" />}
-            <span>Add sticky</span>
+            <span>{t("addSticky")}</span>
           </Button>
         </div>
       </div>

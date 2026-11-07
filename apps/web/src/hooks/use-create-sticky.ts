@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import type { Sticky } from "@/lib/db/schema";
 import { createSticky, EmptyStickyExistsError } from "@/lib/db/stickies";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 export type CreateStickyResult =
@@ -24,14 +25,17 @@ export function useCreateSticky() {
     setIsCreating(true);
     try {
       const sticky = await createSticky();
-      toast.success("Sticky created");
+      const message = i18n.t("stickies:create.created");
+      toast.success(message);
       return { ok: true, sticky };
     } catch (error: unknown) {
       if (error instanceof EmptyStickyExistsError) {
-        toast.warning("There already exists a sticky with no description");
+        const message = i18n.t("stickies:create.emptyExists");
+        toast.warning(message);
         return { ok: false, reason: "empty-exists" };
       }
-      toast.error("Failed to create sticky");
+      const fallback = i18n.t("stickies:create.failed");
+      toast.error(fallback);
       return { ok: false, reason: "failed" };
     } finally {
       setIsCreating(false);
