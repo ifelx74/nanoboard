@@ -1,6 +1,10 @@
 {
   "common": {
     "logo": "nanoboard logo",
+    "breadcrumb": "Breadcrumb",
+    "close": "Close",
+    "closeToast": "Close toast",
+    "more": "More",
     "error": {
       "badRequestMessage": "The request could not be completed. Please try again.",
       "badRequestTitle": "Bad request",
@@ -37,6 +41,8 @@
   "navigation": {
     "githubLabel": "GitHub repository",
     "home": "Home",
+    "title": "Navigation",
+    "sidebarDescription": "Sidebar navigation",
     "projects": {
       "add": "Add project",
       "archives": "Archives",
