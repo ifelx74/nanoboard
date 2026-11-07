@@ -12,10 +12,11 @@ describe("parseLocalePreference", () => {
 
   it("accepts an explicit supported locale", () => {
     expect(parseLocalePreference("en-US")).toBe("en-US");
+    expect(parseLocalePreference("fr-FR")).toBe("fr-FR");
   });
 
   it("fails closed to system on anything that is not a known value", () => {
-    for (const value of ["de-DE", "fr", "", null, undefined, 42, {}, ["en-US"]]) {
+    for (const value of ["de-DE", "fr", "fr-CA", "", null, undefined, 42, {}, ["en-US"]]) {
       expect(parseLocalePreference(value)).toBe("system");
     }
   });
@@ -24,15 +25,19 @@ describe("parseLocalePreference", () => {
 describe("resolveLocale", () => {
   it("returns an explicit supported locale as-is", () => {
     expect(resolveLocale("en-US", "de-DE")).toBe("en-US");
+    expect(resolveLocale("fr-FR", "de-DE")).toBe("fr-FR");
   });
 
   it("resolves system to the browser locale on exact match", () => {
     expect(resolveLocale("system", "en-US")).toBe("en-US");
+    expect(resolveLocale("system", "fr-FR")).toBe("fr-FR");
   });
 
   it("resolves system to the browser locale on same-language match", () => {
     // No exact "en-GB" support, but the same language "en" is supported.
     expect(resolveLocale("system", "en-GB")).toBe("en-US");
+    // No exact "fr-CA" support, but the same language "fr" is supported.
+    expect(resolveLocale("system", "fr-CA")).toBe("fr-FR");
   });
 
   it("falls back to the default locale when the browser locale matches nothing", () => {
@@ -43,7 +48,7 @@ describe("resolveLocale", () => {
   });
 
   it("fails closed to the default locale on a corrupt preference", () => {
-    expect(resolveLocale("de-DE" as never, "fr-FR")).toBe(DEFAULT_LOCALE);
+    expect(resolveLocale("de-DE" as never, "es-ES")).toBe(DEFAULT_LOCALE);
     expect(
       resolveLocale("" as never, undefined),
     ).toBe(DEFAULT_LOCALE);

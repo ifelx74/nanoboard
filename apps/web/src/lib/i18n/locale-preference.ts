@@ -6,8 +6,8 @@
  * here, so resolution is a pure function of its arguments.
  */
 
-/** Every locale the registry ships; the default is the only entry for now. */
-export const SUPPORTED_LOCALES = ["en-US"] as const;
+/** Every locale the registry ships; the first entry is the default. */
+export const SUPPORTED_LOCALES = ["en-US", "fr-FR"] as const;
 
 /** The locale a fresh user — and every fallback chain — lands on. */
 export const DEFAULT_LOCALE = "en-US";

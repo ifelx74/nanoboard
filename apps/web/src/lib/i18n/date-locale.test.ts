@@ -6,6 +6,10 @@ describe("getDateLocale", () => {
     expect(getDateLocale("en-US").code).toBe("en-US");
   });
 
+  it("returns the date-fns locale matching the resolved fr-FR locale", () => {
+    expect(getDateLocale("fr-FR").code).toBe("fr");
+  });
+
   it("falls back to the default date locale for anything unknown", () => {
     expect(getDateLocale("de-DE" as never).code).toBe("en-US");
   });

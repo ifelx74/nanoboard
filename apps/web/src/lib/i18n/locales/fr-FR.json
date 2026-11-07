@@ -1,0 +1,628 @@
+{
+  "common": {
+    "logo": "logo nanoboard",
+    "breadcrumb": "Fil d'Ariane",
+    "close": "Fermer",
+    "closeToast": "Fermer la notification",
+    "more": "Plus",
+    "error": {
+      "badRequestMessage": "La demande n'a pas pu être traitée. Veuillez réessayer.",
+      "badRequestTitle": "Mauvaise demande",
+      "componentStack": "Pile de composants",
+      "copyDetails": "Copier les détails de l'erreur",
+      "copyFailed": "Échec de la copie des détails de l'erreur",
+      "copied": "Détails de l'erreur copiés dans le presse-papiers",
+      "errorDetailsDev": "Détails de l'erreur (développement)",
+      "goHome": "Aller à l'accueil",
+      "message": "Message",
+      "notFoundMessage": "La page ou l'élément recherché est introuvable.",
+      "notFoundTitle": "Introuvable",
+      "serverErrorMessage": "Un problème est survenu de notre côté. Veuillez réessayer.",
+      "serverErrorTitle": "Erreur interne du serveur",
+      "somethingWentWrong": "Un problème est survenu",
+      "stackTrace": "Trace de la pile",
+      "tryAgain": "Réessayer",
+      "unexpected": "Une erreur inattendue a empêché cette page de s'afficher. Vous pouvez réessayer ou revenir à l'accueil.",
+      "unexpectedOccurred": "Une erreur inattendue s'est produite."
+    },
+    "notFound": {
+      "goHome": "Aller à l'accueil",
+      "message": "Désolé, la page recherchée est introuvable. Elle a peut-être été supprimée, renommée ou est temporairement indisponible.",
+      "title": "Oups ! Un problème est survenu."
+    },
+    "priority": {
+      "urgent": "Urgent",
+      "high": "Haute",
+      "medium": "Moyenne",
+      "low": "Basse",
+      "noPriority": "Sans priorité"
+    }
+  },
+  "navigation": {
+    "githubLabel": "Dépôt GitHub",
+    "home": "Accueil",
+    "title": "Navigation",
+    "sidebarDescription": "Navigation latérale",
+    "projects": {
+      "add": "Ajouter un projet",
+      "archives": "Archives",
+      "delete": "Supprimer le projet",
+      "edit": "Modifier le projet",
+      "export": "Exporter les tâches",
+      "exportFailed": "Impossible d'exporter les tâches.",
+      "exported": "Tâches exportées.",
+      "import": "Importer des tâches",
+      "label": "Projets",
+      "moreActions": "Plus d'actions pour {{name}}",
+      "view": "Voir le projet"
+    },
+    "settings": "Paramètres",
+    "sidebarToggle": "Afficher/masquer la barre latérale",
+    "stickies": "Post-it",
+    "themeSwitch": {
+      "toDark": "Passer au thème sombre (actuellement clair)",
+      "toLight": "Passer au thème clair (actuellement sombre)"
+    },
+    "whiteboard": "Tableau blanc"
+  },
+  "home": {
+    "greeting": {
+      "afternoon": "Bon après-midi",
+      "evening": "Bonsoir",
+      "morning": "Bonjour"
+    },
+    "projects": {
+      "empty": "Aucun projet pour le moment",
+      "title": "Projets"
+    },
+    "tasks_one": "{{count}} tâche",
+    "tasks_other": "{{count}} tâches",
+    "weekStrip": {
+      "overflowMore_one": "+{{count}} autre",
+      "overflowMore_other": "+{{count}} autres",
+      "overdue": "En retard",
+      "today": "Aujourd'hui"
+    }
+  },
+  "board": {
+    "search": {
+      "label": "Recherche",
+      "inputLabel": "Rechercher des tâches",
+      "placeholder": "Rechercher",
+      "clearLabel": "Effacer la recherche"
+    },
+    "taskCount_one": "{{count}} tâche",
+    "taskCount_other": "{{count}} tâches",
+    "taskCountShown": "{{shown}} sur {{total}} affichées",
+    "column": {
+      "archiveLabel_one": "Archiver {{count}} tâche terminée dans {{columnName}}",
+      "archiveLabel_other": "Archiver {{count}} tâches terminées dans {{columnName}}",
+      "addTaskToColumn": "Ajouter une tâche à {{columnName}}",
+      "noTasks": "Aucune tâche",
+      "noMatchingTasks": "Aucune tâche correspondante"
+    },
+    "filter": {
+      "trigger": "Filtrer par statut, priorité, étiquettes ou date d'échéance",
+      "triggerWithActive": "Filtrer par statut, priorité, étiquettes ou date d'échéance, {{count}} actif(s)",
+      "tooltip": "Filtrer",
+      "backToFilters": "Retour aux filtres",
+      "matchOperator": "Opérateur de correspondance",
+      "is": "Est",
+      "isNot": "N'est pas",
+      "noValues": "Aucune valeur pour le moment",
+      "clear": "Effacer",
+      "status": "Statut",
+      "priority": "Priorité",
+      "labels": "Étiquettes",
+      "dueDate": "Date d'échéance",
+      "dueThisWeek": "Due cette semaine",
+      "dueNextWeek": "Due la semaine prochaine",
+      "noDueDate": "Sans date d'échéance"
+    },
+    "activeFilters": {
+      "label": "Filtres actifs",
+      "searchPrefix": "Recherche :",
+      "clearSearchFor": "Effacer la recherche pour {{query}}",
+      "not": "pas",
+      "removeFilter": "Retirer le filtre {{label}} {{subject}}",
+      "clearAll": "Tout effacer"
+    },
+    "moveTaskFailed": "Échec du déplacement de la tâche"
+  },
+  "list": {
+    "priority": "Priorité : {{priority}}",
+    "addTaskToColumn": "Ajouter une tâche à {{columnName}}",
+    "noTasks": "Aucune tâche",
+    "moreLabels_one": "+{{count}}",
+    "moreLabels_other": "+{{count}}"
+  },
+  "calendar": {
+    "title": "Calendrier",
+    "today": "Aujourd'hui",
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "tasksOnDay": "Tâches le {{date}}",
+    "taskBarTitle": "{{label}} · {{range}}",
+    "taskBarLabel": "{{label}}, {{range}}",
+    "overflowMore_one": "+{{count}} autre",
+    "overflowMore_other": "+{{count}} autres"
+  },
+  "stickies": {
+    "title": "Post-it",
+    "addSticky": "Ajouter un post-it",
+    "all": "Tous les post-it",
+    "recent": "Post-it récent",
+    "toggleMenu": "Afficher/masquer le menu des post-it",
+    "emptyNote": "Note post-it vide",
+    "modalTitle": "Vos post-it",
+    "showAll": "Afficher tous les post-it →",
+    "search": {
+      "label": "Rechercher des post-it",
+      "placeholder": "Rechercher des post-it",
+      "clear": "Effacer la recherche"
+    },
+    "colors": {
+      "heading": "Couleurs de fond",
+      "gray": "Gris",
+      "peach": "Pêche",
+      "pink": "Rose",
+      "orange": "Orange",
+      "green": "Vert",
+      "lightBlue": "Bleu clair",
+      "darkBlue": "Bleu foncé",
+      "purple": "Violet"
+    },
+    "toolbar": {
+      "backgroundColor": "Couleur de fond",
+      "bold": "Gras",
+      "italic": "Italique",
+      "todoList": "Liste de tâches",
+      "delete": "Supprimer"
+    },
+    "card": {
+      "drag": "Glisser le post-it",
+      "close": "Fermer",
+      "placeholder": "Cliquez pour saisir du texte ici",
+      "removed": "Post-it supprimé",
+      "removeFailed": "Échec de la suppression du post-it"
+    },
+    "deleteDialog": {
+      "title": "Supprimer le post-it",
+      "description": "Voulez-vous vraiment supprimer ce post-it ?",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "deleting": "Suppression..."
+    },
+    "empty": {
+      "title": "Capturez vos pensées et idées avec des post-it.",
+      "description": "Créez des post-it pour vos notes rapides et tâches à faire, et gardez-les avec vous partout.",
+      "searchTitle": "Aucun de vos post-it ne correspond.",
+      "searchDescription": "Essayez un autre terme ou vérifiez que votre recherche est correcte."
+    },
+    "create": {
+      "created": "Post-it créé",
+      "emptyExists": "Un post-it sans description existe déjà",
+      "failed": "Échec de la création du post-it"
+    }
+  },
+  "whiteboard": {
+    "header": {
+      "title": "Tableau blanc"
+    },
+    "gallery": {
+      "recentlyModified": "Modifié récemment"
+    },
+    "emptyState": {
+      "title": "Rien sur le tableau blanc pour le moment.",
+      "description": "Les tableaux apparaissent ici dès que vous dessinez quelque chose dans la vue Tableau blanc d'un projet.",
+      "backToHome": "Retour à l'accueil"
+    },
+    "canvas": {
+      "welcome": "Bienvenue sur le tableau blanc",
+      "enterFullscreen": "Plein écran",
+      "exitFullscreen": "Quitter le plein écran"
+    }
+  },
+  "project": {
+    "archives": {
+      "archivedOn": "Archivée le {{date}}",
+      "archiveCompleted": "Archiver les tâches terminées",
+      "deleteTask": "Supprimer la tâche",
+      "emptyDescription": "Les tâches que vous archivez — terminées ou annulées — apparaîtront ici.",
+      "emptyTitle": "Aucune tâche archivée pour le moment",
+      "errors": {
+        "restore": "Échec de la restauration de la tâche"
+      },
+      "restoreTask": "Restaurer la tâche",
+      "restored": "Tâche restaurée"
+    },
+    "create": {
+      "appName": "NANOBOARD",
+      "cancel": "Annuler",
+      "creating": "Création",
+      "description": "Créer un nouveau projet",
+      "errors": {
+        "create": "Échec de la création du projet"
+      },
+      "keyExampleFallback": "ABC",
+      "keyHint": "Les tâches s'affichent comme {{example}}-1, {{example}}-2, …",
+      "keyLabel": "Clé",
+      "keyPlaceholder": "PRO",
+      "namePlaceholder": "Nom du projet",
+      "submit": "Créer",
+      "title": "Nouveau projet"
+    },
+    "delete": {
+      "cancel": "Annuler",
+      "deleting": "Suppression",
+      "description": "« {{name}} » et toutes ses colonnes, tâches et étiquettes seront définitivement supprimés. Cette action est irréversible.",
+      "errors": {
+        "delete": "Échec de la suppression du projet"
+      },
+      "submit": "Supprimer",
+      "title": "Supprimer le projet ?"
+    },
+    "edit": {
+      "cancel": "Annuler",
+      "description": "Renommer {{name}}, modifier son slug, son icône ou sa description",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "De quoi parle ce projet ?",
+      "errors": {
+        "update": "Échec de la mise à jour du projet"
+      },
+      "fallbackName": "projet",
+      "nameLabel": "Nom",
+      "saving": "Enregistrement",
+      "slugLabel": "Slug (lettres et chiffres, 5 max, commence par une lettre)",
+      "submit": "Enregistrer",
+      "title": "Modifier le projet"
+    },
+    "iconPicker": {
+      "pickTitle": "Choisir une icône",
+      "searchPlaceholder": "Rechercher des icônes"
+    },
+    "import": {
+      "back": "Retour",
+      "cancel": "Annuler",
+      "changeFile": "Changer de fichier",
+      "chooseJsonError": "Choisissez un fichier JSON.",
+      "completeDescription": "Import terminé dans « {{name}} ».",
+      "completeTitle": "Import terminé",
+      "counts": {
+        "failed": "Échouées",
+        "imported": "Importées",
+        "ready": "Prêtes",
+        "warnings": "Avertissements"
+      },
+      "description": "Ajouter des tâches depuis un fichier JSON à « {{name}} ».",
+      "done": "Terminé",
+      "dragHint": "Un export complet, un objet de tâches ou un tableau de tâches.",
+      "dragTitle": "Glissez-déposez un fichier JSON",
+      "errors": {
+        "import": "Impossible d'importer les tâches."
+      },
+      "expectedFormat": "Format attendu",
+      "importAnother": "Importer un autre fichier",
+      "importButton_one": "Importer {{count}} tâche",
+      "importButton_other": "Importer {{count}} tâches",
+      "importFailed": "Échec de l'import.",
+      "importing": "Import en cours",
+      "readFailed": "Impossible de lire ce fichier.",
+      "reading": "Lecture",
+      "selectFile": "Sélectionner un fichier",
+      "tasksHeading": "Tâches",
+      "title": "Importer des tâches",
+      "toasts": {
+        "failed_one": "{{count}} tâche n'a pas pu être importée.",
+        "failed_other": "{{count}} tâches n'ont pas pu être importées.",
+        "imported_one": "{{count}} tâche importée.",
+        "imported_other": "{{count}} tâches importées."
+      }
+    },
+    "toolbar": {
+      "archivedTasks_one": "{{count}} tâche archivée",
+      "archivedTasks_other": "{{count}} tâches archivées",
+      "archives": "Archives",
+      "backlog": "En attente",
+      "board": "Tableau",
+      "calendar": "Calendrier",
+      "fallbackProject": "Projet",
+      "list": "Liste",
+      "whiteboard": "Tableau blanc"
+    }
+  },
+  "task": {
+    "drawer": {
+      "archived": "Archivée",
+      "start": "Début",
+      "noDate": "Sans date",
+      "labelsHeading": "Étiquettes",
+      "noLabels": "Aucune étiquette",
+      "copyLink": "Copier le lien vers la tâche",
+      "duplicate": "Dupliquer la tâche",
+      "duplicateHint": "Restaurez cette tâche pour la dupliquer",
+      "restore": "Restaurer la tâche",
+      "archive": "Archiver la tâche",
+      "archiveHint": "Seules les tâches d'une colonne terminée peuvent être archivées",
+      "delete": "Supprimer la tâche",
+      "close": "Fermer",
+      "descriptionSaving": "Enregistrement de la description",
+      "descriptionFailed": "Échec de l'enregistrement de la description",
+      "descriptionSaved": "Description enregistrée",
+      "retrySaving": "Réessayer l'enregistrement de la description",
+      "retry": "Réessayer",
+      "restored": "Tâche restaurée",
+      "linkCopied": "Lien copié dans le presse-papiers",
+      "errors": {
+        "duplicate": "Échec de la duplication de la tâche",
+        "restore": "Échec de la restauration de la tâche",
+        "copyLink": "Échec de la copie du lien",
+        "copyUnsupported": "La copie n'est pas prise en charge dans ce navigateur"
+      }
+    },
+    "create": {
+      "newTask": "Nouvelle tâche",
+      "fallbackSlug": "TÂCHE",
+      "description": "Créez une nouvelle tâche en renseignant un titre, une description et d'autres détails.",
+      "titlePlaceholder": "Titre de la tâche",
+      "descriptionPlaceholder": "Ajoutez une description pour votre tâche...",
+      "startDate": "Date de début",
+      "clearStartDate": "Effacer la date de début",
+      "dueDate": "Date d'échéance",
+      "clearDueDate": "Effacer la date d'échéance",
+      "labels": "Étiquettes",
+      "searchLabels": "Rechercher des étiquettes...",
+      "noLabels": "Aucune étiquette trouvée",
+      "createLabel": "Créer « {{name}} »",
+      "chooseColor": "Choisissez une couleur",
+      "createMore": "Créer plus",
+      "cancel": "Annuler",
+      "submit": "Créer la tâche",
+      "discardTitle": "Abandonner la tâche ?",
+      "discardDescription": "Les détails non enregistrés de votre tâche seront perdus.",
+      "discard": "Abandonner la tâche",
+      "errors": {
+        "createTask": "Échec de la création de la tâche",
+        "createLabel": "Échec de la création de l'étiquette"
+      }
+    },
+    "title": {
+      "placeholder": "Titre de la tâche",
+      "ariaLabel": "Titre de la tâche",
+      "error": "Échec de la mise à jour du titre"
+    },
+    "priority": {
+      "noPriority": "Sans priorité",
+      "low": "Basse",
+      "medium": "Moyenne",
+      "high": "Haute",
+      "urgent": "Urgent",
+      "error": "Échec de la mise à jour de la priorité"
+    },
+    "column": {
+      "error": "Échec du déplacement de la tâche"
+    },
+    "dates": {
+      "clearStartDate": "Effacer la date de début",
+      "clearDueDate": "Effacer la date d'échéance",
+      "startDateError": "Échec de la mise à jour de la date de début",
+      "dueDateError": "Échec de la mise à jour de la date d'échéance"
+    },
+    "labels": {
+      "search": "Rechercher des étiquettes",
+      "none": "Aucune étiquette pour le moment",
+      "create": "Créer « {{name}} »",
+      "chooseColor": "Choisissez une couleur",
+      "rename": "Renommer {{name}}",
+      "delete": "Supprimer {{name}}",
+      "color": {
+        "gray": "Pierre",
+        "darkGray": "Ardoise",
+        "purple": "Lavande",
+        "teal": "Sauge",
+        "green": "Forêt",
+        "yellow": "Ambre",
+        "orange": "Terracotta",
+        "pink": "Rose",
+        "red": "Cramoisi"
+      },
+      "deleteDialog": {
+        "title": "Supprimer l'étiquette ?",
+        "description": "« {{name}} » sera supprimée de toutes les tâches de ce projet. Cette action est irréversible.",
+        "cancel": "Annuler",
+        "delete": "Supprimer",
+        "deleting": "Suppression",
+        "error": "Échec de la suppression de l'étiquette"
+      },
+      "errors": {
+        "update": "Échec de la mise à jour des étiquettes",
+        "create": "Échec de la création de l'étiquette",
+        "rename": "Échec du renommage de l'étiquette"
+      }
+    },
+    "archive": {
+      "title": "Archiver {{taskKey}} ?",
+      "description": "« {{title}} » sera retirée du tableau et de toutes les surfaces de travail. Vous pouvez la restaurer depuis les archives à tout moment.",
+      "cancel": "Annuler",
+      "archive": "Archiver",
+      "archiving": "Archivage",
+      "archived": "Tâche archivée",
+      "error": "Échec de l'archivage de la tâche"
+    },
+    "archiveCompleted": {
+      "title_one": "Archiver {{count}} tâche terminée ?",
+      "title_other": "Archiver {{count}} tâches terminées ?",
+      "description": "{{subject}} de {{source}} sera retirée du tableau et de toutes les surfaces de travail. Vous pouvez restaurer {{restoreTarget}} depuis les archives à tout moment.",
+      "subjectOne": "Cette tâche",
+      "subjectOther": "Ces tâches",
+      "restoreOne": "la",
+      "restoreOther": "les",
+      "completedColumns": "colonnes terminées",
+      "cancel": "Annuler",
+      "archive": "Archiver",
+      "archiving": "Archivage",
+      "noTasks": "Aucune tâche terminée à archiver",
+      "archived_one": "{{count}} tâche archivée",
+      "archived_other": "{{count}} tâches archivées",
+      "error": "Échec de l'archivage des tâches terminées"
+    },
+    "deleteDialog": {
+      "title": "Supprimer la tâche ?",
+      "description": "« {{title}} » sera définitivement supprimée. Cette action est irréversible.",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "deleting": "Suppression",
+      "error": "Échec de la suppression de la tâche"
+    },
+    "resources": {
+      "title": "Ressources",
+      "add": "Ajouter une ressource",
+      "adding": "Ajout...",
+      "empty": "Aucune ressource liée à cette tâche.",
+      "remove": "Retirer {{name}}",
+      "dialogDescription": "Ajouter un lien URL à cette tâche",
+      "url": "URL",
+      "titleOptional": "Titre (facultatif)",
+      "cancel": "Annuler",
+      "errors": {
+        "add": "Échec de l'ajout de la ressource",
+        "remove": "Échec de la suppression du lien de ressource."
+      }
+    },
+    "description": {
+      "placeholder": "Ajouter une description",
+      "ariaLabel": "Description de la tâche",
+      "heading2": "Titre 2",
+      "bulletList": "Liste à puces",
+      "taskList": "Liste de tâches",
+      "orderedList": "Liste numérotée",
+      "blockquote": "Citation",
+      "codeBlock": "Bloc de code",
+      "bold": "Gras",
+      "italic": "Italique",
+      "underline": "Souligné",
+      "strikethrough": "Barré",
+      "inlineCode": "Code en ligne",
+      "link": "Lien",
+      "linkUrl": "URL du lien",
+      "linkPlaceholder": "https://…",
+      "applyLink": "Appliquer le lien",
+      "removeLink": "Retirer le lien",
+      "text": "Texte",
+      "textHint": "Paragraphe simple",
+      "heading2Hint": "Titre de section",
+      "bulletListHint": "Liste à puces",
+      "taskListHint": "Cases à cocher",
+      "orderedListHint": "Liste numérotée",
+      "blockquoteHint": "Texte cité",
+      "codeBlockHint": "Bloc monospace",
+      "blockTypesLabel": "Types de blocs"
+    }
+  },
+  "activity": {},
+  "settings": {
+    "data": {
+      "description": "Enregistrez tout votre espace de travail dans un seul fichier JSON",
+      "restoreDescription": "Remplacez tout dans l'application par le contenu d'un fichier de sauvegarde.",
+      "export": {
+        "button": "Exporter la sauvegarde",
+        "description": "Téléchargez tout — projets, tâches, tableaux blancs et post-it — en un seul fichier JSON.",
+        "exportFailed": "Impossible d'exporter la sauvegarde.",
+        "exported": "Sauvegarde exportée.",
+        "summary": {
+          "columns_one": "{{count}} colonne",
+          "columns_other": "{{count}} colonnes",
+          "labelAssignments_one": "{{count}} attribution d'étiquette",
+          "labelAssignments_other": "{{count}} attributions d'étiquettes",
+          "labels_one": "{{count}} étiquette",
+          "labels_other": "{{count}} étiquettes",
+          "projects_one": "{{count}} projet",
+          "projects_other": "{{count}} projets",
+          "stickies_one": "{{count}} post-it",
+          "stickies_other": "{{count}} post-it",
+          "taskLinks_one": "{{count}} lien de tâche",
+          "taskLinks_other": "{{count}} liens de tâches",
+          "tasks_one": "{{count}} tâche",
+          "tasks_other": "{{count}} tâches",
+          "whiteboards_one": "{{count}} tableau blanc",
+          "whiteboards_other": "{{count}} tableaux blancs"
+        },
+        "title": "Exporter la sauvegarde"
+      },
+      "restore": {
+        "back": "Retour",
+        "backupContains": "La sauvegarde contient",
+        "cancel": "Annuler",
+        "changeFile": "Changer de fichier",
+        "chooseJsonError": "Choisissez un fichier JSON.",
+        "descriptionPick": "Remplacez tout dans l'application par un fichier de sauvegarde complet.",
+        "descriptionSummary": "La restauration remplace tout le contenu actuel de l'application par celui de la sauvegarde.",
+        "downloadCurrent": "Télécharger d'abord les données actuelles",
+        "downloadFailed": "Impossible d'exporter les données actuelles.",
+        "downloaded": "Données actuelles téléchargées en sauvegarde.",
+        "dragHint": "Un fichier exporté par « Exporter la sauvegarde » de nanoboard.",
+        "dragTitle": "Glissez-déposez un fichier JSON de sauvegarde",
+        "readFailed": "Impossible de lire ce fichier.",
+        "reading": "Lecture",
+        "restoreEverything": "Tout restaurer",
+        "restoreFailed": "Impossible de restaurer la sauvegarde.",
+        "restored": "Espace de travail restauré.",
+        "restoring": "Restauration",
+        "selectFile": "Sélectionner un fichier",
+        "tables": {
+          "columns": "Colonnes",
+          "labels": "Étiquettes",
+          "projects": "Projets",
+          "stickies": "Post-it",
+          "taskLabels": "Attributions d'étiquettes",
+          "taskResources": "Liens de tâches",
+          "tasks": "Tâches",
+          "whiteboardPreviews": "Aperçus de tableaux blancs",
+          "whiteboards": "Tableaux blancs"
+        },
+        "title": "Restaurer depuis une sauvegarde",
+        "willBeDestroyed": "Sera détruit"
+      },
+      "title": "Données"
+    },
+    "dialogTitle": "Paramètres",
+    "install": {
+      "browserDescription": "Utilisez l'option d'installation de votre navigateur pour ajouter Nanoboard à votre appareil.",
+      "browserMenuToast": "Utilisez le menu de votre navigateur pour installer Nanoboard",
+      "dismissedToast": "Installation annulée",
+      "installButton": "Installer",
+      "installDescription": "Installez Nanoboard pour continuer à travailler hors ligne.",
+      "installedButton": "Installé",
+      "installedDescription": "Nanoboard est installé et disponible hors ligne.",
+      "installedToast": "Nanoboard installé",
+      "iosDescription": "Touchez Partager, puis Sur l'écran d'accueil pour installer Nanoboard.",
+      "title": "Installer l'application"
+    },
+    "language": {
+      "description": "Choisissez la langue utilisée dans l'interface utilisateur.",
+      "monday": "Lundi",
+      "saturday": "Samedi",
+      "sunday": "Dimanche",
+      "system": "Système",
+      "title": "Langue",
+      "weekStartDescription": "Choisissez le jour de début de votre semaine.",
+      "weekStartTitle": "Premier jour de la semaine"
+    },
+    "preferences": {
+      "description": "Personnalisez votre expérience comme vous travaillez",
+      "languageTime": "Langue et heure",
+      "title": "Préférences"
+    },
+    "tabs": {
+      "data": "Données",
+      "preferences": "Préférences"
+    },
+    "theme": {
+      "dark": "Sombre",
+      "description": "Sélectionnez ou personnalisez le thème de couleurs de votre interface.",
+      "light": "Clair",
+      "systemPreference": "Préférence système",
+      "title": "Thème"
+    }
+  }
+}

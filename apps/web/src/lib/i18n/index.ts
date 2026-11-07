@@ -5,8 +5,8 @@
  * are code-split chunks (precached like the rest of the app shell) and
  * non-default locales never enter the initial bundle.
  *
- * Adding a second locale later = one JSON file under `locales/` plus one
- * entry in SUPPORTED_LOCALES. Nothing below changes.
+ * Adding another locale = one JSON file under `locales/` plus one entry in
+ * SUPPORTED_LOCALES (and one date-locale map entry). Nothing below changes.
  */
 import i18next, { type i18n as I18nInstance } from "i18next";
 import { initReactI18next } from "react-i18next";

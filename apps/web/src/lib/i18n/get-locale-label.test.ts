@@ -13,6 +13,10 @@ describe("getLocaleLabel", () => {
     expect(getLocaleLabel("en-US")).toBe("English");
   });
 
+  it("labels fr-FR as français (its own language)", () => {
+    expect(getLocaleLabel("fr-FR")).toBe("français");
+  });
+
   it("falls back to the locale code when the platform cannot label it", () => {
     expect(getLocaleLabel("not-a-locale")).toBe("not-a-locale");
   });

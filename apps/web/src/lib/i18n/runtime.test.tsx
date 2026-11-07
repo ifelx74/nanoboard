@@ -56,7 +56,7 @@ describe("translation runtime", () => {
     expect(screen.getByText("+1 more")).toBeTruthy();
     expect(document.documentElement.lang).toBe("en-US");
 
-    // Test-only second locale, injected as data; shipped locales stay en-US.
+    // Test-only second locale, injected as data alongside the shipped ones.
     const en = (await import("./locales/en-US.json")).default;
     const de = deBundle(en as Record<string, unknown>) as Record<
       string,
@@ -86,10 +86,10 @@ describe("translation runtime", () => {
     expect(document.documentElement.lang).toBe("en-US");
 
     // Missing-locale chunk degrades to fallback strings, never raw keys:
-    // fr-FR has no shipped chunk, so lookup walks to en-US and the
+    // es-ES has no shipped chunk, so lookup walks to en-US and the
     // resolved language reports the fallback.
     await act(async () => {
-      await i18n.changeLanguage("fr-FR");
+      await i18n.changeLanguage("es-ES");
     });
     const fallbackHome = i18n.t("navigation:home");
     expect(fallbackHome).toBe("Home");
