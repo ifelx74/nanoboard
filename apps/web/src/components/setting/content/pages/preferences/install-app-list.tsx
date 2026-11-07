@@ -1,32 +1,34 @@
 import { Download } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { toast } from "@/lib/toast";
 import { SettingsControlItem } from "../../../control-item";
 
 export default function InstallAppList() {
+  const { t } = useTranslation("settings");
   const { canInstall, isInstalled, isIos, install } = useInstallPrompt();
 
   const handleInstall = async () => {
     const outcome = await install();
 
     if (outcome === "accepted") {
-      toast.success("Nanoboard installed");
+      toast.success(t("install.installedToast"));
     } else if (outcome === "dismissed") {
-      toast.info("Installation dismissed");
+      toast.info(t("install.dismissedToast"));
     } else {
-      toast.info("Use your browser menu to install Nanoboard");
+      toast.info(t("install.browserMenuToast"));
     }
   };
 
   if (isInstalled) {
     return (
       <SettingsControlItem
-        title="Install app"
-        description="Nanoboard is installed and available offline."
+        title={t("install.title")}
+        description={t("install.installedDescription")}
         control={
           <Button variant="outline" size="sm" disabled>
-            Installed
+            {t("install.installedButton")}
           </Button>
         }
       />
@@ -36,12 +38,12 @@ export default function InstallAppList() {
   if (canInstall) {
     return (
       <SettingsControlItem
-        title="Install app"
-        description="Install Nanoboard to keep working offline."
+        title={t("install.title")}
+        description={t("install.installDescription")}
         control={
           <Button size="sm" onClick={handleInstall}>
             <Download aria-hidden="true" />
-            Install
+            {t("install.installButton")}
           </Button>
         }
       />
@@ -50,16 +52,14 @@ export default function InstallAppList() {
 
   return (
     <SettingsControlItem
-      title="Install app"
+      title={t("install.title")}
       description={
-        isIos
-          ? "Tap Share, then Add to Home Screen to install Nanoboard."
-          : "Use your browser's install option to add Nanoboard to your device."
+        isIos ? t("install.iosDescription") : t("install.browserDescription")
       }
       control={
         <Button variant="outline" size="sm" disabled>
           <Download aria-hidden="true" />
-          Install
+          {t("install.installButton")}
         </Button>
       }
     />

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { SettingsControlItem } from "../../../control-item";
 import {
   Select,
@@ -11,21 +12,27 @@ import { I_THEME_OPTION, THEME_OPTIONS } from "@/constants/theme";
 import { parseTheme, type Theme } from "@/lib/theme-preference";
 import { useThemeStore } from "@/store/theme";
 
-const items: { value: Theme; label: string }[] = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-];
-
 export default function DefaultSettingPreferencesList() {
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
+  const { t } = useTranslation("settings");
+
+  function labelFor(value: Theme): string {
+    if (value === "dark") return t("theme.dark");
+    if (value === "light") return t("theme.light");
+    return t("theme.systemPreference");
+  }
+
+  const items: { value: Theme; label: string }[] = [
+    { value: "light", label: t("theme.light") },
+    { value: "dark", label: t("theme.dark") },
+  ];
 
   return (
     <div className="flex flex-col gap-y-1">
-      {/* Theme Selection */}
       <SettingsControlItem
-        title={"Theme"}
-        description={"Select or customize your interface color scheme."}
+        title={t("theme.title")}
+        description={t("theme.description")}
         control={
           <Select
             items={items}
@@ -37,7 +44,7 @@ export default function DefaultSettingPreferencesList() {
                 <ThemeOptionIcon
                   option={THEME_OPTIONS.find((o) => o.value === theme)!}
                 />
-                {THEME_OPTIONS.find((o) => o.value === theme)?.label}
+                {labelFor(theme)}
               </SelectValue>
             </SelectTrigger>
             <SelectContent

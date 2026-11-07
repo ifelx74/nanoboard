@@ -13,6 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -41,18 +42,6 @@ import { toast } from "@/lib/toast";
 import { cn, errorMessage } from "@/lib/utils";
 import { downloadBackupDocument } from "./download";
 
-const TABLE_LABELS: Record<BackupTableName, string> = {
-  projects: "Projects",
-  columns: "Columns",
-  tasks: "Tasks",
-  labels: "Labels",
-  taskLabels: "Label assignments",
-  taskResources: "Task links",
-  stickies: "Stickies",
-  whiteboards: "Whiteboards",
-  whiteboardPreviews: "Whiteboard previews",
-};
-
 type Mode = "pick" | "summary";
 
 export function RestoreBackupDialog({
@@ -62,6 +51,7 @@ export function RestoreBackupDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation("settings");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<Mode>("pick");
   const [fileName, setFileName] = useState<string | null>(null);
@@ -92,7 +82,7 @@ export function RestoreBackupDialog({
   async function handleFile(file: File) {
     if (parsing) return;
     if (!isJsonFile(file)) {
-      setError("Choose a JSON file.");
+      setError(t("data.restore.chooseJsonError"));
       return;
     }
 
@@ -109,7 +99,7 @@ export function RestoreBackupDialog({
       setCurrentCounts(null);
       setFileName(null);
       setMode("pick");
-      setError(errorMessage(cause, "Could not read this file."));
+      setError(errorMessage(cause, t("data.restore.readFailed")));
     } finally {
       setParsing(false);
     }
@@ -133,9 +123,9 @@ export function RestoreBackupDialog({
     setDownloadingEscape(true);
     try {
       downloadBackupDocument(await createBackupDocument(db));
-      toast.success("Current data downloaded as a backup.");
+      toast.success(t("data.restore.downloaded"));
     } catch (cause) {
-      toast.error(errorMessage(cause, "Could not export the current data."));
+      toast.error(errorMessage(cause, t("data.restore.downloadFailed")));
     } finally {
       setDownloadingEscape(false);
     }
@@ -146,13 +136,13 @@ export function RestoreBackupDialog({
     setRestoring(true);
     try {
       await applyBackupDocument(db, document);
-      toast.success("Workspace restored.");
+      toast.success(t("data.restore.restored"));
       globalThis.window.location.reload();
     } catch (cause) {
       // The apply path is atomic — a failure here left the database as it
       // was, so staying in the summary is safe.
       setRestoring(false);
-      const message = errorMessage(cause, "Could not restore backup.");
+      const message = errorMessage(cause, t("data.restore.restoreFailed"));
       setError(message);
       toast.error(message);
     }
@@ -168,6 +158,18 @@ export function RestoreBackupDialog({
 
   const contains = document ? backupTableCounts(document) : null;
 
+  const tableLabels: Record<BackupTableName, string> = {
+    projects: t("data.restore.tables.projects"),
+    columns: t("data.restore.tables.columns"),
+    tasks: t("data.restore.tables.tasks"),
+    labels: t("data.restore.tables.labels"),
+    taskLabels: t("data.restore.tables.taskLabels"),
+    taskResources: t("data.restore.tables.taskResources"),
+    stickies: t("data.restore.tables.stickies"),
+    whiteboards: t("data.restore.tables.whiteboards"),
+    whiteboardPreviews: t("data.restore.tables.whiteboardPreviews"),
+  };
+
   return (
     <Dialog
       open={open}
@@ -178,11 +180,11 @@ export function RestoreBackupDialog({
     >
       <DialogPopup className="max-w-lg" showCloseButton={!restoring}>
         <DialogHeader>
-          <DialogTitle>Restore from backup</DialogTitle>
+          <DialogTitle>{t("data.restore.title")}</DialogTitle>
           <DialogDescription>
             {mode === "summary"
-              ? "Restoring replaces everything currently in the app with the backup's contents."
-              : "Replace everything in the app with a whole-workspace backup file."}
+              ? t("data.restore.descriptionSummary")
+              : t("data.restore.descriptionPick")}
           </DialogDescription>
         </DialogHeader>
 
@@ -207,10 +209,10 @@ export function RestoreBackupDialog({
                 />
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
-                    Drag and drop a backup JSON file
+                    {t("data.restore.dragTitle")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    A file exported by nanoboard's "Export backup".
+                    {t("data.restore.dragHint")}
                   </p>
                 </div>
                 <input
@@ -232,7 +234,7 @@ export function RestoreBackupDialog({
                   ) : (
                     <FileJson aria-hidden="true" />
                   )}
-                  {parsing ? "Reading" : "Select file"}
+                  {parsing ? t("data.restore.reading") : t("data.restore.selectFile")}
                 </Button>
               </div>
               {error && (
@@ -256,7 +258,7 @@ export function RestoreBackupDialog({
                   disabled={restoring}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  Change file
+                  {t("data.restore.changeFile")}
                 </button>
               </div>
               <input
@@ -268,14 +270,16 @@ export function RestoreBackupDialog({
               />
               <div className="grid grid-cols-2 gap-3">
                 <CountsCard
-                  title="Backup contains"
+                  title={t("data.restore.backupContains")}
                   counts={contains}
                   tone="default"
+                  tableLabels={tableLabels}
                 />
                 <CountsCard
-                  title="Will be destroyed"
+                  title={t("data.restore.willBeDestroyed")}
                   counts={currentCounts}
                   tone="destructive"
+                  tableLabels={tableLabels}
                 />
               </div>
               <Button
@@ -291,7 +295,7 @@ export function RestoreBackupDialog({
                 ) : (
                   <HardDriveDownload aria-hidden="true" />
                 )}
-                Download current data first
+                {t("data.restore.downloadCurrent")}
               </Button>
               {error && (
                 <p
@@ -308,7 +312,7 @@ export function RestoreBackupDialog({
         <DialogFooter>
           {mode === "pick" && (
             <DialogClose render={<Button variant="outline" size="sm" />}>
-              Cancel
+              {t("data.restore.cancel")}
             </DialogClose>
           )}
           {mode === "summary" && (
@@ -319,7 +323,7 @@ export function RestoreBackupDialog({
                 disabled={restoring}
                 onClick={resetToPick}
               >
-                Back
+                {t("data.restore.back")}
               </Button>
               <Button
                 variant="destructive"
@@ -330,7 +334,7 @@ export function RestoreBackupDialog({
                 {restoring && (
                   <Loader2 className="animate-spin" aria-hidden="true" />
                 )}
-                {restoring ? "Restoring" : "Restore everything"}
+                {restoring ? t("data.restore.restoring") : t("data.restore.restoreEverything")}
               </Button>
             </>
           )}
@@ -351,10 +355,12 @@ function CountsCard({
   title,
   counts,
   tone,
+  tableLabels,
 }: {
   title: string;
   counts: Record<BackupTableName, number>;
   tone: "default" | "destructive";
+  tableLabels: Record<BackupTableName, string>;
 }) {
   return (
     <div
@@ -379,7 +385,7 @@ function CountsCard({
       <ul className="mt-1.5 space-y-0.5 text-sm tabular-nums">
         {BACKUP_TABLES.map((key) => (
           <li key={key} className="flex justify-between gap-2">
-            <span className="text-muted-foreground">{TABLE_LABELS[key]}</span>
+            <span className="text-muted-foreground">{tableLabels[key]}</span>
             <span className={cn(tone === "destructive" && "text-destructive")}>
               {counts[key]}
             </span>

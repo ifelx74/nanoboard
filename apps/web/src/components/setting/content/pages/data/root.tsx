@@ -1,5 +1,7 @@
 import { HardDriveDownload, RotateCcw } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Button } from "@/components/ui/button";
 import { createBackupDocument } from "@/lib/backup/create";
 import type { BackupDocument } from "@/lib/backup/types";
@@ -11,27 +13,25 @@ import { SettingsControlItem } from "../../../control-item";
 import { downloadBackupDocument } from "./download";
 import { RestoreBackupDialog } from "./restore-backup-dialog";
 
-/** "1 task" / "2 tasks"; pass the irregular plural (e.g. "stickies") if any. */
-function counted(value: number, one: string, many = `${one}s`): string {
-  return `${value} ${value === 1 ? one : many}`;
-}
-
-/** Every table's row count, for the export toast. */
-function exportSummary(document: BackupDocument): string {
-  const t = document.tables;
+/** Translated export summary: every table's row count, for the export toast. */
+function exportSummary(document: BackupDocument, t: TFunction<"settings">): string {
+  const t2 = document.tables;
   return [
-    counted(t.projects.length, "project"),
-    counted(t.columns.length, "column"),
-    counted(t.tasks.length, "task"),
-    counted(t.labels.length, "label"),
-    counted(t.taskLabels.length, "label assignment"),
-    counted(t.taskResources.length, "task link"),
-    counted(t.stickies.length, "sticky", "stickies"),
-    counted(t.whiteboards.length, "whiteboard"),
+    t("data.export.summary.projects", { count: t2.projects.length }),
+    t("data.export.summary.columns", { count: t2.columns.length }),
+    t("data.export.summary.tasks", { count: t2.tasks.length }),
+    t("data.export.summary.labels", { count: t2.labels.length }),
+    t("data.export.summary.labelAssignments", {
+      count: t2.taskLabels.length,
+    }),
+    t("data.export.summary.taskLinks", { count: t2.taskResources.length }),
+    t("data.export.summary.stickies", { count: t2.stickies.length }),
+    t("data.export.summary.whiteboards", { count: t2.whiteboards.length }),
   ].join(", ");
 }
 
 export const DataSettings = () => {
+  const { t } = useTranslation("settings");
   const [exporting, setExporting] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
 
@@ -41,11 +41,11 @@ export const DataSettings = () => {
     try {
       const document = await createBackupDocument(db);
       downloadBackupDocument(document);
-      toast.success("Backup exported.", {
-        description: `${exportSummary(document)}.`,
+      toast.success(t("data.export.exported"), {
+        description: `${exportSummary(document, t)}.`,
       });
     } catch (cause) {
-      toast.error(errorMessage(cause, "Could not export backup."));
+      toast.error(errorMessage(cause, t("data.export.exportFailed")));
     } finally {
       setExporting(false);
     }
@@ -54,14 +54,14 @@ export const DataSettings = () => {
   return (
     <div className="size-full">
       <SettingsHeading
-        title="Data"
-        description="Snapshot your whole workspace into a single JSON file"
+        title={t("data.title")}
+        description={t("data.description")}
       />
       <div className="mt-7 flex w-full flex-col gap-6">
         <section>
           <SettingsControlItem
-            title="Export backup"
-            description="Download everything — projects, tasks, whiteboards, and stickies — as one JSON file."
+            title={t("data.export.title")}
+            description={t("data.export.description")}
             control={
               <Button
                 size="sm"
@@ -69,15 +69,15 @@ export const DataSettings = () => {
                 disabled={exporting}
               >
                 <HardDriveDownload aria-hidden="true" />
-                Export backup
+                {t("data.export.button")}
               </Button>
             }
           />
         </section>
         <section>
           <SettingsControlItem
-            title="Restore from backup"
-            description="Replace everything in the app with the contents of a backup file."
+            title={t("data.restore.title")}
+            description={t("data.restoreDescription")}
             control={
               <Button
                 variant="outline"
@@ -85,7 +85,7 @@ export const DataSettings = () => {
                 onClick={() => setRestoreOpen(true)}
               >
                 <RotateCcw aria-hidden="true" />
-                Restore
+                {t("data.restore.restoreEverything")}
               </Button>
             }
           />

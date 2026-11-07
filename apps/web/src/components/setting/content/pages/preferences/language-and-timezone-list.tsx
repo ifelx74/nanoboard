@@ -20,17 +20,20 @@ import {
 } from "@/lib/i18n/locale-preference";
 import { useLocaleStore } from "@/store/locale";
 
-const WEEK_START_OPTIONS: { value: WeekStartsOnPreference; label: string }[] = [
-  { value: 0, label: "Sunday" },
-  { value: 1, label: "Monday" },
-  { value: 6, label: "Saturday" },
-];
-
 export default function LanguageAndTimezoneList() {
   const [weekStartsOn, setWeekStartsOn] = useWeekStartsOn();
   const { t } = useTranslation("settings");
   const locale = useLocaleStore((state) => state.locale);
   const setLocale = useLocaleStore((state) => state.setLocale);
+
+  const weekStartOptions: {
+    value: WeekStartsOnPreference;
+    label: string;
+  }[] = [
+    { value: 0, label: t("language.sunday") },
+    { value: 1, label: t("language.monday") },
+    { value: 6, label: t("language.saturday") },
+  ];
 
   // "System" plus every supported locale, each labeled in its own language
   // and driven by the supported-locale list so future locales appear here
@@ -74,11 +77,11 @@ export default function LanguageAndTimezoneList() {
         }
       />
       <SettingsControlItem
-        title="First day of the week"
-        description="Choose which day your week starts on."
+        title={t("language.weekStartTitle")}
+        description={t("language.weekStartDescription")}
         control={
           <Select
-            items={WEEK_START_OPTIONS}
+            items={weekStartOptions}
             value={weekStartsOn}
             onValueChange={(value) => {
               if (value !== null) setWeekStartsOn(value);
@@ -93,7 +96,7 @@ export default function LanguageAndTimezoneList() {
               className="rounded-sm"
             >
               <SelectGroup>
-                {WEEK_START_OPTIONS.map((item) => (
+                {weekStartOptions.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
                     {item.label}
                   </SelectItem>

@@ -1,5 +1,6 @@
 import type * as React from "react";
 
+import { useTranslation } from "react-i18next";
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -15,6 +16,7 @@ import { Button } from "./ui/button";
 import Github from "@/icons/github";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { t } = useTranslation("navigation");
   return (
     <Sidebar collapsible="offcanvas" className="border-none" {...props}>
       <SidebarHeader className="pt-1 pb-1.5">
@@ -39,7 +41,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 href="https://github.com/ifelx74/nanoboard"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="GitHub repository"
+                aria-label={t("githubLabel")}
               />
             }
           >

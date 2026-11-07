@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { buttonVariants } from "@/components/ui/button";
 import notFoundIllustration from "@/icons/not-found-illustration.svg";
 import notFoundIllustrationDark from "@/icons/not-found-illustration-dark.svg";
@@ -7,6 +8,7 @@ import notFoundIllustrationDark from "@/icons/not-found-illustration-dark.svg";
 // The illustration ships as two colorways — its ground and outlines are
 // baked-in fills, so dark mode swaps to a recolored copy instead of CSS.
 export function NotFound() {
+  const { t } = useTranslation("common");
   return (
     <div className="grid h-svh w-full place-items-center p-4">
       <div className="flex flex-col items-center gap-8 text-center">
@@ -22,15 +24,14 @@ export function NotFound() {
         />
         <div className="flex flex-col gap-2">
           <h1 className="text-base font-semibold text-foreground">
-            Oops! Something went wrong.
+            {t("notFound.title")}
           </h1>
           <p className="max-w-sm text-[13px] text-muted-foreground">
-            Sorry, the page you are looking for cannot be found. It may have
-            been removed, had its name changed, or is temporarily unavailable.
+            {t("notFound.message")}
           </p>
         </div>
         <Link to="/" className={buttonVariants({ variant: "secondary" })}>
-          Go to Home
+          {t("notFound.goHome")}
         </Link>
       </div>
     </div>

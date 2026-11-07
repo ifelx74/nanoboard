@@ -4,19 +4,19 @@ export type SettingTab = "preferences" | "data";
 
 export type SettingNavItem = {
   key: SettingTab;
-  label: string;
   icon: LucideIcon;
+  labelKey: "tabs.preferences" | "tabs.data";
 };
 
 export const SETTING_NAV_ITEMS: SettingNavItem[] = [
   {
     key: "preferences",
-    label: "Preferences",
     icon: SlidersHorizontal,
+    labelKey: "tabs.preferences",
   },
   {
     key: "data",
-    label: "Data",
     icon: Database,
+    labelKey: "tabs.data",
   },
 ];

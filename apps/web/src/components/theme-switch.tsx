@@ -1,5 +1,6 @@
 import { MoonIcon, SunIcon } from "lucide-react";
 import type * as React from "react";
+import { useTranslation } from "react-i18next";
 import { revealEndRadius, shouldUseRevealTransition } from "@/lib/theme-reveal";
 import { cn } from "@/lib/utils";
 import { useThemeStore } from "@/store/theme";
@@ -22,6 +23,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const isDark = theme === "dark";
+  const { t } = useTranslation("navigation");
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     const doc = document as ViewTransitionDocument;
@@ -91,11 +93,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
   return (
     <button
       aria-checked={isDark}
-      aria-label={
-        isDark
-          ? "Switch to light theme (currently dark)"
-          : "Switch to dark theme (currently light)"
-      }
+      aria-label={isDark ? t("themeSwitch.toLight") : t("themeSwitch.toDark")}
       className={cn(
         "relative inline-grid h-7 cursor-pointer grid-cols-[1fr_1fr] items-center rounded-full bg-input/50 font-medium text-sm outline-none transition-colors motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         className,

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,7 @@ function ProjectRow({
   isActive: boolean;
   onDeleted: (projectId: string) => void;
 }) {
+  const { t } = useTranslation("navigation");
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -92,11 +94,9 @@ function ProjectRow({
     try {
       const source = await readProjectTransferSource(db, project.id);
       downloadTaskTransferDocument(await buildTaskTransferDocument(source));
-      toast.success("Tasks exported.");
+      toast.success(t("projects.exported"));
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not export tasks.",
-      );
+      toast.error(error instanceof Error ? error.message : t("projects.exportFailed"));
     } finally {
       setExporting(false);
     }
@@ -121,7 +121,7 @@ function ProjectRow({
 
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger
-          aria-label={`More actions for ${project.name}`}
+          aria-label={t("projects.moreActions", { name: project.name })}
           className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground ring-sidebar-ring transition-transform outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-popup-open:opacity-100 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 md:opacity-0"
         >
           <MoreHorizontal className="size-4" />
@@ -134,7 +134,7 @@ function ProjectRow({
             }}
           >
             <Folder className="size-4 shrink-0" />
-            <span>View project</span>
+            <span>{t("projects.view")}</span>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
@@ -143,7 +143,7 @@ function ProjectRow({
             }}
           >
             <Pencil className="size-4 shrink-0" />
-            <span>Edit project</span>
+            <span>{t("projects.edit")}</span>
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={exporting}
@@ -153,7 +153,7 @@ function ProjectRow({
             }}
           >
             <ArrowUpFromLine className="size-4 shrink-0" />
-            <span>Export tasks</span>
+            <span>{t("projects.export")}</span>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
@@ -162,7 +162,7 @@ function ProjectRow({
             }}
           >
             <FileDown className="size-4 shrink-0" />
-            <span>Import tasks</span>
+            <span>{t("projects.import")}</span>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
@@ -171,12 +171,12 @@ function ProjectRow({
             }}
           >
             <Archive className="size-4 shrink-0" />
-            <span>Archives</span>
+            <span>{t("projects.archives")}</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={handleDeleteRequest}>
             <Trash2 className="size-4 shrink-0" />
-            <span>Delete project</span>
+            <span>{t("projects.delete")}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -205,6 +205,7 @@ function ProjectRow({
 
 export function NavProjects() {
   const navigate = useNavigate();
+  const { t } = useTranslation("navigation");
   const { projectId: activeProjectId } = useParams({ strict: false });
   const projects = useLiveQuery(() => getProjects(), []);
   const statsByProject = useLiveQuery(() => getProjectsStats(db), []);
@@ -227,7 +228,7 @@ export function NavProjects() {
             )}
             onClick={() => setGroupOpen((open) => !open)}
           >
-            <span>Projects</span>
+            <span>{t("projects.label")}</span>
             <ChevronRight
               aria-hidden="true"
               className={cn(
@@ -238,11 +239,11 @@ export function NavProjects() {
           </SidebarGroupLabel>
           <SidebarGroupAction
             className="top-2 right-2 text-sidebar-foreground/70"
-            title="Add project"
+            title={t("projects.add")}
             onClick={() => setCreateOpen(true)}
           >
             <Plus />
-            <span className="sr-only">Add project</span>
+            <span className="sr-only">{t("projects.add")}</span>
           </SidebarGroupAction>
         </div>
         {groupOpen && (

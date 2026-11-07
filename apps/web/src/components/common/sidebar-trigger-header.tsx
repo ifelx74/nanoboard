@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Tooltip,
@@ -18,6 +19,7 @@ type SidebarTriggerHeaderProps = {
 export function SidebarTriggerHeader({
   triggerClassName = "-ml-1 size-6",
 }: SidebarTriggerHeaderProps) {
+  const { t } = useTranslation("navigation");
   return (
     <>
       <TooltipProvider>
@@ -26,7 +28,7 @@ export function SidebarTriggerHeader({
             <SidebarTrigger className={triggerClassName} />
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-[10px]">Toggle sidebar</p>
+            <p className="text-[10px]">{t("sidebarToggle")}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

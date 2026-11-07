@@ -1,11 +1,76 @@
 {
-  "common": {},
+  "common": {
+    "logo": "nanoboard logo",
+    "error": {
+      "badRequestMessage": "The request could not be completed. Please try again.",
+      "badRequestTitle": "Bad request",
+      "componentStack": "Component stack",
+      "copyDetails": "Copy error details",
+      "copyFailed": "Failed to copy error details",
+      "copied": "Error details copied to clipboard",
+      "errorDetailsDev": "Error details (development)",
+      "goHome": "Go to Home",
+      "message": "Message",
+      "notFoundMessage": "The page or item you were looking for could not be found.",
+      "notFoundTitle": "Not found",
+      "serverErrorMessage": "Something went wrong on our side. Please try again.",
+      "serverErrorTitle": "Internal server error",
+      "somethingWentWrong": "Something went wrong",
+      "stackTrace": "Stack trace",
+      "tryAgain": "Try again",
+      "unexpected": "An unexpected error stopped this page from loading. You can try again, or head back home.",
+      "unexpectedOccurred": "An unexpected error occurred."
+    },
+    "notFound": {
+      "goHome": "Go to Home",
+      "message": "Sorry, the page you are looking for cannot be found. It may have been removed, had its name changed, or is temporarily unavailable.",
+      "title": "Oops! Something went wrong."
+    }
+  },
   "navigation": {
+    "githubLabel": "GitHub repository",
     "home": "Home",
+    "projects": {
+      "add": "Add project",
+      "archives": "Archives",
+      "delete": "Delete project",
+      "edit": "Edit project",
+      "export": "Export tasks",
+      "exportFailed": "Could not export tasks.",
+      "exported": "Tasks exported.",
+      "import": "Import tasks",
+      "label": "Projects",
+      "moreActions": "More actions for {{name}}",
+      "view": "View project"
+    },
+    "settings": "Settings",
+    "sidebarToggle": "Toggle sidebar",
     "stickies": "Stickies",
+    "themeSwitch": {
+      "toDark": "Switch to dark theme (currently light)",
+      "toLight": "Switch to light theme (currently dark)"
+    },
     "whiteboard": "Whiteboard"
   },
-  "home": {},
+  "home": {
+    "greeting": {
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "morning": "Good morning"
+    },
+    "projects": {
+      "empty": "No projects yet",
+      "title": "Projects"
+    },
+    "tasks_one": "{{count}} task",
+    "tasks_other": "{{count}} tasks",
+    "weekStrip": {
+      "overflowMore_one": "+{{count}} more",
+      "overflowMore_other": "+{{count}} more",
+      "overdue": "Overdue",
+      "today": "Today"
+    }
+  },
   "board": {},
   "list": {},
   "calendar": {
@@ -18,10 +83,108 @@
   "task": {},
   "activity": {},
   "settings": {
+    "data": {
+      "description": "Snapshot your whole workspace into a single JSON file",
+      "restoreDescription": "Replace everything in the app with the contents of a backup file.",
+      "export": {
+        "button": "Export backup",
+        "description": "Download everything — projects, tasks, whiteboards, and stickies — as one JSON file.",
+        "exportFailed": "Could not export backup.",
+        "exported": "Backup exported.",
+        "summary": {
+          "columns_one": "{{count}} column",
+          "columns_other": "{{count}} columns",
+          "labelAssignments_one": "{{count}} label assignment",
+          "labelAssignments_other": "{{count}} label assignments",
+          "labels_one": "{{count}} label",
+          "labels_other": "{{count}} labels",
+          "projects_one": "{{count}} project",
+          "projects_other": "{{count}} projects",
+          "stickies_one": "{{count}} sticky",
+          "stickies_other": "{{count}} stickies",
+          "taskLinks_one": "{{count}} task link",
+          "taskLinks_other": "{{count}} task links",
+          "tasks_one": "{{count}} task",
+          "tasks_other": "{{count}} tasks",
+          "whiteboards_one": "{{count}} whiteboard",
+          "whiteboards_other": "{{count}} whiteboards"
+        },
+        "title": "Export backup"
+      },
+      "restore": {
+        "back": "Back",
+        "backupContains": "Backup contains",
+        "cancel": "Cancel",
+        "changeFile": "Change file",
+        "chooseJsonError": "Choose a JSON file.",
+        "descriptionPick": "Replace everything in the app with a whole-workspace backup file.",
+        "descriptionSummary": "Restoring replaces everything currently in the app with the backup's contents.",
+        "downloadCurrent": "Download current data first",
+        "downloadFailed": "Could not export the current data.",
+        "downloaded": "Current data downloaded as a backup.",
+        "dragHint": "A file exported by nanoboard's \"Export backup\".",
+        "dragTitle": "Drag and drop a backup JSON file",
+        "readFailed": "Could not read this file.",
+        "reading": "Reading",
+        "restoreEverything": "Restore everything",
+        "restoreFailed": "Could not restore backup.",
+        "restored": "Workspace restored.",
+        "restoring": "Restoring",
+        "selectFile": "Select file",
+        "tables": {
+          "columns": "Columns",
+          "labels": "Labels",
+          "projects": "Projects",
+          "stickies": "Stickies",
+          "taskLabels": "Label assignments",
+          "taskResources": "Task links",
+          "tasks": "Tasks",
+          "whiteboardPreviews": "Whiteboard previews",
+          "whiteboards": "Whiteboards"
+        },
+        "title": "Restore from backup",
+        "willBeDestroyed": "Will be destroyed"
+      },
+      "title": "Data"
+    },
+    "dialogTitle": "Settings",
+    "install": {
+      "browserDescription": "Use your browser's install option to add Nanoboard to your device.",
+      "browserMenuToast": "Use your browser menu to install Nanoboard",
+      "dismissedToast": "Installation dismissed",
+      "installButton": "Install",
+      "installDescription": "Install Nanoboard to keep working offline.",
+      "installedButton": "Installed",
+      "installedDescription": "Nanoboard is installed and available offline.",
+      "installedToast": "Nanoboard installed",
+      "iosDescription": "Tap Share, then Add to Home Screen to install Nanoboard.",
+      "title": "Install app"
+    },
     "language": {
-      "title": "Language",
       "description": "Choose the language used in the user interface.",
-      "system": "System"
+      "monday": "Monday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "system": "System",
+      "title": "Language",
+      "weekStartDescription": "Choose which day your week starts on.",
+      "weekStartTitle": "First day of the week"
+    },
+    "preferences": {
+      "description": "Customize your app experience the way you work",
+      "languageTime": "Language & Time",
+      "title": "Preferences"
+    },
+    "tabs": {
+      "data": "Data",
+      "preferences": "Preferences"
+    },
+    "theme": {
+      "dark": "Dark",
+      "description": "Select or customize your interface color scheme.",
+      "light": "Light",
+      "systemPreference": "System preference",
+      "title": "Theme"
     }
   }
 }
