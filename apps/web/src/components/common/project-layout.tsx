@@ -100,7 +100,7 @@ export function ProjectLayout({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                      className="w-44 rounded-sm"
+                      className="w-48 rounded-sm"
                       align="start"
                       side="bottom"
                     >
