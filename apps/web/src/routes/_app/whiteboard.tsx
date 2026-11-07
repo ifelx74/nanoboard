@@ -7,6 +7,7 @@ import { GalleryEmptyState } from "@/components/whiteboard/gallery-empty-state";
 import { GalleryHeader } from "@/components/whiteboard/gallery-header";
 import { db } from "@/lib/db/db";
 import { listWhiteboardGallery } from "@/lib/db/whiteboard-previews";
+import { compareStrings } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/whiteboard")({
   component: RouteComponent,
@@ -21,7 +22,9 @@ function RouteComponent() {
   // While the first query run is still pending (entries === undefined) render
   // nothing: falling through to the empty state here would flash "Nothing on
   // the whiteboard yet" on every gallery visit before real entries arrive.
-  const list = entries ?? [];
+  const list = entries === undefined ? [] : [...entries].sort((a, b) =>
+    b.updatedAt - a.updatedAt || compareStrings(a.projectName, b.projectName),
+  );
   const { t } = useTranslation("whiteboard");
 
   return (

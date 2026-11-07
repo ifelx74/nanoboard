@@ -45,27 +45,6 @@ export function parseLocalePreference(value: unknown): LocalePreference {
 }
 
 /**
- * Resolve the raw string from storage to a preference value. Understands
- * the zustand persist envelope (`{"state":{"locale":...},"version":...}`) —
- * not a bare-string comparison — and fails closed to "system" on missing,
- * corrupt, or foreign values, exactly like the theme store's parser.
- */
-export function parseStoredLocalePreference(
-  raw: string | null | undefined,
-): LocalePreference {
-  if (typeof raw !== "string" || raw === "") return "system";
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) return "system";
-    const state = (parsed as { state?: unknown }).state;
-    if (typeof state !== "object" || state === null) return "system";
-    return parseLocalePreference((state as { locale?: unknown }).locale);
-  } catch {
-    return "system";
-  }
-}
-
-/**
  * Resolve a preference to the concrete locale to render, given the browser
  * locale:
  *  - an explicit supported locale is used as-is;

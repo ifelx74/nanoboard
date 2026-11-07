@@ -51,13 +51,12 @@ export const useLocaleStore = create<LocaleStore>()(
 );
 
 /**
- * Apply a preference: switch the runtime live (no reload) and track the
- * document language attribute. Idempotent — safe on every change and after
- * rehydration.
+ * Apply a preference: switch the runtime live (no reload), which also drives
+ * `document.lang` via the provider's language listener. Idempotent — safe on
+ * every change and after rehydration.
  */
 export function applyLocale(preference: LocalePreference): void {
   const resolved = getResolvedLocale(preference);
-  document.documentElement.lang = resolved;
   // Before boot's init runs there is nothing to switch; initI18n resolves
   // the locale itself, so only switch once the runtime is ready.
   if (i18n.isInitialized) void i18n.changeLanguage(resolved);

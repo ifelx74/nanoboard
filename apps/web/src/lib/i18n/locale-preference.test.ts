@@ -2,14 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LOCALE,
   parseLocalePreference,
-  parseStoredLocalePreference,
   resolveLocale,
 } from "./locale-preference";
-
-/** Build a zustand-persist envelope like the theme store writes. */
-function envelope(locale: unknown): string {
-  return JSON.stringify({ state: { locale }, version: 0 });
-}
 
 describe("parseLocalePreference", () => {
   it("accepts the system choice", () => {
@@ -24,29 +18,6 @@ describe("parseLocalePreference", () => {
     for (const value of ["de-DE", "fr", "", null, undefined, 42, {}, ["en-US"]]) {
       expect(parseLocalePreference(value)).toBe("system");
     }
-  });
-});
-
-describe("parseStoredLocalePreference", () => {
-  it("reads the locale out of the persist envelope", () => {
-    expect(parseStoredLocalePreference(envelope("en-US"))).toBe("en-US");
-    expect(parseStoredLocalePreference(envelope("system"))).toBe("system");
-  });
-
-  it("fails closed to system on missing, corrupt, or foreign envelopes", () => {
-    expect(parseStoredLocalePreference(null)).toBe("system");
-    expect(parseStoredLocalePreference(undefined)).toBe("system");
-    expect(parseStoredLocalePreference("")).toBe("system");
-    expect(parseStoredLocalePreference("{not json")).toBe("system");
-    expect(parseStoredLocalePreference("42")).toBe("system");
-    expect(parseStoredLocalePreference(JSON.stringify({ version: 0 }))).toBe(
-      "system",
-    );
-    expect(parseStoredLocalePreference(JSON.stringify({ state: null }))).toBe(
-      "system",
-    );
-    expect(parseStoredLocalePreference(envelope("de-DE"))).toBe("system");
-    expect(parseStoredLocalePreference(envelope(null))).toBe("system");
   });
 });
 

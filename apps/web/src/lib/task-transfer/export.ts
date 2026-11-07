@@ -6,6 +6,9 @@ function isoDay(value: string | undefined): string | null {
   return value ? `${value}T00:00:00.000Z` : null;
 }
 
+// Deterministic code-point order for interchange: export bytes must not
+// depend on the viewer's locale, so this intentionally avoids locale
+// collation (which lives at the presentation boundary for on-screen sorts).
 function compareLabels(a: Label, b: Label): number {
   if (a.name === b.name) return 0;
   return a.name < b.name ? -1 : 1;

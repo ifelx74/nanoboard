@@ -67,11 +67,13 @@ export interface WhiteboardGalleryEntry {
  * The gallery listing: every project with a preview row (the "has content"
  * index — scene rows are never read here), joined with its project for the
  * card's title, icon, and navigation target, ordered most-recently-edited
- * first with ties broken by project name. A preview whose project row is
- * gone is dropped rather than rendered as a ghost card (the deletion
- * transaction already evicts previews with their project, so this only
- * guards against out-of-band drift). Called from a live query, so every
- * table it reads is observed: edits, deletions, and renames all re-run it.
+ * first with ties broken by project id. The data layer stays pure: locale
+ * collation of names happens at the presentation boundary (see the route),
+ * so this layer never couples to i18n. A preview whose project row is gone
+ * is dropped rather than rendered as a ghost card (the deletion transaction
+ * already evicts previews with their project, so this only guards against
+ * out-of-band drift). Called from a live query, so every table it reads is
+ * observed: edits, deletions, and renames all re-run it.
  */
 export async function listWhiteboardGallery(
   db: NanoboardDB,
@@ -94,6 +96,7 @@ export async function listWhiteboardGallery(
   }
   return entries.sort(
     (a, b) =>
-      b.updatedAt - a.updatedAt || a.projectName.localeCompare(b.projectName),
+      b.updatedAt - a.updatedAt ||
+      (a.projectId < b.projectId ? -1 : a.projectId > b.projectId ? 1 : 0),
   );
 }

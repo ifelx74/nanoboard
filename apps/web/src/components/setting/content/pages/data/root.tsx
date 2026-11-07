@@ -15,18 +15,18 @@ import { RestoreBackupDialog } from "./restore-backup-dialog";
 
 /** Translated export summary: every table's row count, for the export toast. */
 function exportSummary(document: BackupDocument, t: TFunction<"settings">): string {
-  const t2 = document.tables;
+  const tables = document.tables;
   return [
-    t("data.export.summary.projects", { count: t2.projects.length }),
-    t("data.export.summary.columns", { count: t2.columns.length }),
-    t("data.export.summary.tasks", { count: t2.tasks.length }),
-    t("data.export.summary.labels", { count: t2.labels.length }),
+    t("data.export.summary.projects", { count: tables.projects.length }),
+    t("data.export.summary.columns", { count: tables.columns.length }),
+    t("data.export.summary.tasks", { count: tables.tasks.length }),
+    t("data.export.summary.labels", { count: tables.labels.length }),
     t("data.export.summary.labelAssignments", {
-      count: t2.taskLabels.length,
+      count: tables.taskLabels.length,
     }),
-    t("data.export.summary.taskLinks", { count: t2.taskResources.length }),
-    t("data.export.summary.stickies", { count: t2.stickies.length }),
-    t("data.export.summary.whiteboards", { count: t2.whiteboards.length }),
+    t("data.export.summary.taskLinks", { count: tables.taskResources.length }),
+    t("data.export.summary.stickies", { count: tables.stickies.length }),
+    t("data.export.summary.whiteboards", { count: tables.whiteboards.length }),
   ].join(", ");
 }
 

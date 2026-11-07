@@ -25,21 +25,21 @@ export function formatDateShort(date: Date): string {
   return formatShortDate(date);
 }
 
-/**
- * relative chip label for list rows: Today / Tomorrow /
- * Yesterday / in N days / N days ago, short date beyond 30 days out.
- */
-export function formatRelativeDueDate(due: Date, today = new Date()): string {
+export function formatRelativeDueDate(
+  due: Date,
+  today = new Date(),
+  locale?: string,
+): string {
   const startOfDay = (value: Date) =>
     new Date(value.getFullYear(), value.getMonth(), value.getDate());
   const diff = Math.round(
     (startOfDay(due).getTime() - startOfDay(today).getTime()) / 86_400_000,
   );
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Tomorrow";
-  if (diff === -1) return "Yesterday";
-  if (diff > 1 && diff <= 30) return formatRelativeTime(diff, "day");
-  if (diff < -1) return formatRelativeTime(diff, "day");
+  if (diff === 0) return formatRelativeTime(0, "day", locale, "auto");
+  if (diff === 1) return formatRelativeTime(1, "day", locale, "auto");
+  if (diff === -1) return formatRelativeTime(-1, "day", locale, "auto");
+  if (diff > 1 && diff <= 30) return formatRelativeTime(diff, "day", locale);
+  if (diff < -1) return formatRelativeTime(diff, "day", locale);
   return formatDateShort(due);
 }
 

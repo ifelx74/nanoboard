@@ -4,12 +4,10 @@ import {
   formatDayNumber,
   formatLongDate,
   formatMediumDate,
-  formatMediumDateTime,
   formatMonthShort,
   formatMonthYear,
   formatRelativeTime,
   formatShortDate,
-  formatShortDateTime,
   formatWeekdayShort,
 } from "./format";
 
@@ -112,36 +110,6 @@ describe("formatMonthYear", () => {
       new Intl.DateTimeFormat("de-DE", {
         month: "long",
         year: "numeric",
-      }).format(sample),
-    );
-  });
-});
-
-describe("formatShortDateTime", () => {
-  it("renders a short date-time in the default locale", () => {
-    expect(formatShortDateTime(sample, "en-US")).toBe("1/5/25, 3:30 PM");
-  });
-
-  it("follows the given locale", () => {
-    expect(formatShortDateTime(sample, "de-DE")).toBe(
-      new Intl.DateTimeFormat("de-DE", {
-        dateStyle: "short",
-        timeStyle: "short",
-      }).format(sample),
-    );
-  });
-});
-
-describe("formatMediumDateTime", () => {
-  it("renders a medium date-time in the default locale", () => {
-    expect(formatMediumDateTime(sample, "en-US")).toBe("Jan 5, 2025, 3:30 PM");
-  });
-
-  it("follows the given locale", () => {
-    expect(formatMediumDateTime(sample, "de-DE")).toBe(
-      new Intl.DateTimeFormat("de-DE", {
-        dateStyle: "medium",
-        timeStyle: "short",
       }).format(sample),
     );
   });

@@ -84,5 +84,20 @@ describe("translation runtime", () => {
 
     expect(screen.getByText("Home")).toBeTruthy();
     expect(document.documentElement.lang).toBe("en-US");
+
+    // Missing-locale chunk degrades to fallback strings, never raw keys:
+    // fr-FR has no shipped chunk, so lookup walks to en-US and the
+    // resolved language reports the fallback.
+    await act(async () => {
+      await i18n.changeLanguage("fr-FR");
+    });
+    const fallbackHome = i18n.t("navigation:home");
+    expect(fallbackHome).toBe("Home");
+    expect(i18n.resolvedLanguage).toBe("en-US");
+    expect(screen.getByText("Home")).toBeTruthy();
+
+    await act(async () => {
+      await i18n.changeLanguage("en-US");
+    });
   });
 });
