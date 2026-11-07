@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { formatDayRange } from "@/lib/due-date-status";
 import type { PackableTask, WeekSegment } from "./month-grid-model";
@@ -38,6 +39,7 @@ export default function CalendarTaskBar({
   segment,
   onOpenTask,
 }: CalendarTaskBarProps): JSX.Element {
+  const { t } = useTranslation("calendar");
   const {
     task,
     lane,
@@ -58,8 +60,8 @@ export default function CalendarTaskBar({
         // Row 1 holds the date numbers, so lanes start at row 2.
         gridRow: lane + 2,
       }}
-      title={`${prefix} · ${range}`}
-      aria-label={`${prefix}, ${range}`}
+      title={t("taskBarTitle", { label: prefix, range })}
+      aria-label={t("taskBarLabel", { label: prefix, range })}
       data-task-status={task.status}
       onClick={() => onOpenTask(task.id)}
       className={cn(

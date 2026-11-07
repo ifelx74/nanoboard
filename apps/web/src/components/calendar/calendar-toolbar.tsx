@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { JSX } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { formatMonthYear } from "@/lib/format";
 
@@ -16,12 +17,13 @@ export default function CalendarToolbar({
   onNextMonth,
   onToday,
 }: CalendarToolbarProps): JSX.Element {
+  const { t } = useTranslation("calendar");
   return (
     <div className="border-b border-border/80 px-3 py-3 sm:px-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <h1 className="truncate text-sm font-semibold text-foreground">
-            Calendar
+            {t("title")}
           </h1>
           <span
             className="truncate text-sm text-muted-foreground"
@@ -36,7 +38,7 @@ export default function CalendarToolbar({
             variant="outline"
             size="icon-xs"
             className="min-h-11 touch-manipulation sm:min-h-0"
-            aria-label="Previous month"
+            aria-label={t("previousMonth")}
             onClick={onPreviousMonth}
           >
             <ChevronLeft />
@@ -47,13 +49,13 @@ export default function CalendarToolbar({
             className="min-h-11 touch-manipulation sm:min-h-0"
             onClick={onToday}
           >
-            Today
+            {t("today")}
           </Button>
           <Button
             variant="outline"
             size="icon-xs"
             className="min-h-11 touch-manipulation sm:min-h-0"
-            aria-label="Next month"
+            aria-label={t("nextMonth")}
             onClick={onNextMonth}
           >
             <ChevronRight />
