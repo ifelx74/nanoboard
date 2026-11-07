@@ -3,6 +3,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,10 +28,11 @@ const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 function MobileSidebarHeader() {
+  const { t } = useTranslation("navigation");
   return (
     <SheetHeader className="sr-only">
-      <SheetTitle>Navigation</SheetTitle>
-      <SheetDescription>Sidebar navigation</SheetDescription>
+      <SheetTitle>{t("title")}</SheetTitle>
+      <SheetDescription>{t("sidebarDescription")}</SheetDescription>
     </SheetHeader>
   );
 }
@@ -277,6 +279,7 @@ function SidebarTrigger({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar();
+  const { t } = useTranslation("navigation");
 
   return (
     <Button
@@ -292,17 +295,18 @@ function SidebarTrigger({
       {...props}
     >
       <PanelLeftIcon />
-      <span className="sr-only">Toggle sidebar</span>
+      <span className="sr-only">{t("sidebarToggle")}</span>
     </Button>
   );
 }
 
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   const { toggleSidebar } = useSidebar();
+  const { t } = useTranslation("navigation");
 
   return (
     <button
-      aria-label="Toggle sidebar"
+      aria-label={t("sidebarToggle")}
       className={cn(
         "-translate-x-1/2 group-data-[side=left]:-right-4 absolute inset-y-0 z-20 hidden w-4 transition-[left,right,translate,background-color] duration-200 ease-in-out after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 hover:after:bg-sidebar-border group-data-[side=right]:left-0 sm:flex",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
@@ -316,7 +320,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
       data-slot="sidebar-rail"
       onClick={toggleSidebar}
       tabIndex={-1}
-      title="Toggle sidebar"
+      title={t("sidebarToggle")}
       type="button"
       {...props}
     />
