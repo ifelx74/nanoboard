@@ -131,6 +131,13 @@
     "moreLabels_other": "+{{count}}"
   },
   "calendar": {
+    "title": "Calendar",
+    "today": "Today",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "tasksOnDay": "Tasks on {{date}}",
+    "taskBarTitle": "{{label}} · {{range}}",
+    "taskBarLabel": "{{label}}, {{range}}",
     "overflowMore_one": "+{{count}} more",
     "overflowMore_other": "+{{count}} more"
   },

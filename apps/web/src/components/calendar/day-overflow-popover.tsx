@@ -1,4 +1,5 @@
 import { type JSX, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Popover,
   PopoverContent,
@@ -22,6 +23,7 @@ export default function DayOverflowPopover({
   hiddenCount,
   onOpenTask,
 }: DayOverflowPopoverProps): JSX.Element {
+  const { t } = useTranslation("calendar");
   const [open, setOpen] = useState(false);
 
   const dayLabel = formatLongDate(day);
@@ -34,10 +36,10 @@ export default function DayOverflowPopover({
   return (
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger
-        aria-label={`Tasks on ${dayLabel}`}
+        aria-label={t("tasksOnDay", { date: dayLabel })}
         className="w-full truncate rounded-sm px-1.5 pb-1 text-left text-[10px] leading-tight text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        +{hiddenCount} more
+        {t("overflowMore", { count: hiddenCount })}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-2">
         <div className="space-y-1">
