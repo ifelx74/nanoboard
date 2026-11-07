@@ -1,0 +1,21 @@
+{
+  "common": {},
+  "navigation": {
+    "home": "Home",
+    "stickies": "Stickies",
+    "whiteboard": "Whiteboard"
+  },
+  "home": {},
+  "board": {},
+  "list": {},
+  "calendar": {
+    "overflowMore_one": "+{{count}} more",
+    "overflowMore_other": "+{{count}} more"
+  },
+  "stickies": {},
+  "whiteboard": {},
+  "project": {},
+  "task": {},
+  "activity": {},
+  "settings": {}
+}

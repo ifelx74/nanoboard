@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { House, PencilRuler } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -38,6 +39,7 @@ export function NavMain() {
   const pathname = useLocation({
     select: (location) => location.pathname.replace(/\/+$/, ""),
   });
+  const { t } = useTranslation("navigation");
 
   return (
     <SidebarGroup className="shrink-0 gap-1 p-2">
@@ -45,25 +47,25 @@ export function NavMain() {
         <SidebarMenu className="gap-0.5">
           <SidebarMenuItem>
             <NavButton
-              tooltip="Home"
+              tooltip={t("home")}
               isActive={pathname === "" || pathname === "/"}
               onClick={() => navigate({ to: "/" })}
               icon={<House aria-hidden="true" />}
-              label="Home"
+              label={t("home")}
             />
             <NavButton
-              tooltip="Stickies"
+              tooltip={t("stickies")}
               isActive={pathname === "/stickies"}
               onClick={() => navigate({ to: "/stickies" })}
               icon={<Stickies className="shrink-0 size-4" aria-hidden="true" />}
-              label="Stickies"
+              label={t("stickies")}
             />
             <NavButton
-              tooltip="Whiteboard"
+              tooltip={t("whiteboard")}
               isActive={pathname === "/whiteboard"}
               onClick={() => navigate({ to: "/whiteboard" })}
               icon={<PencilRuler aria-hidden="true" />}
-              label="Whiteboard"
+              label={t("whiteboard")}
             />
           </SidebarMenuItem>
         </SidebarMenu>
