@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SettingTab } from "@/constants/setting";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { SettingsContentRoot } from "./content/root";
@@ -12,6 +13,7 @@ export default function AppSettingDialog({
   onClose: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<SettingTab>("preferences");
+  const { t } = useTranslation("settings");
 
   return (
     <Dialog
@@ -27,7 +29,7 @@ export default function AppSettingDialog({
         bottomStickOnMobile={false}
       >
         <div className="sr-only">
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>{t("dialogTitle")}</DialogTitle>
         </div>
         <div className="@container flex min-h-0 flex-1">
           <SettingsSidebarRoot

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useLayoutEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { formatDayNumber, formatWeekdayShort } from "@/lib/format";
 import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ type WeekStripProps = {
 const VISIBLE_TASKS_PER_DAY = 2;
 
 export function WeekStrip({ tasks, day }: WeekStripProps) {
+  const { t } = useTranslation("home");
   const week = useMemo(() => buildWeek(tasks, new Date(day)), [tasks, day]);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLLIElement>(null);
@@ -47,7 +49,7 @@ export function WeekStrip({ tasks, day }: WeekStripProps) {
             <div className="flex items-center gap-1.5 text-xs">
               {day.isToday ? (
                 <>
-                  <span className="font-semibold text-foreground">Today</span>
+                  <span className="font-semibold text-foreground">{t("weekStrip.today")}</span>
                   {day.tasks.length > 0 && (
                     <span className="flex size-4.5 items-center justify-center rounded-full bg-foreground font-semibold text-[11px] text-background tabular-nums">
                       {day.tasks.length}
@@ -91,7 +93,7 @@ export function WeekStrip({ tasks, day }: WeekStripProps) {
                     )}
                   >
                     {day.isPast
-                      ? "Overdue"
+                      ? t("weekStrip.overdue")
                       : taskKey(task.projectSlug, task.number)}
                   </span>
                   <span className="truncate text-foreground text-xs">
@@ -101,7 +103,9 @@ export function WeekStrip({ tasks, day }: WeekStripProps) {
               ))}
               {day.tasks.length > VISIBLE_TASKS_PER_DAY && (
                 <span className="px-2 font-medium text-[11px] text-muted-foreground">
-                  +{day.tasks.length - VISIBLE_TASKS_PER_DAY} more
+                  {t("weekStrip.overflowMore", {
+                    count: day.tasks.length - VISIBLE_TASKS_PER_DAY,
+                  })}
                 </span>
               )}
             </div>

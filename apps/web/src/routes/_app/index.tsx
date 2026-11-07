@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import Layout from "@/components/common/layout";
 import { SectionHeader } from "@/components/home/section-header";
 import { WeekStrip } from "@/components/home/week-strip";
@@ -18,12 +19,6 @@ import { SidebarTriggerHeader } from "@/components/common/sidebar-trigger-header
 export const Route = createFileRoute("/_app/")({
   component: RouteComponent,
 });
-
-const GREETINGS = {
-  morning: "Good morning",
-  afternoon: "Good afternoon",
-  evening: "Good evening",
-} as const;
 
 function HomeSkeleton() {
   return (
@@ -47,6 +42,7 @@ function ProjectCard({
   project: Project;
   stats: ProjectStats | undefined;
 }) {
+  const { t } = useTranslation("home");
   const ProjectIcon = getProjectIcon(project.icon);
   const completionPercentage = stats?.completionPercentage ?? 0;
   const totalTasks = stats?.totalTasks ?? 0;
@@ -76,13 +72,14 @@ function ProjectCard({
         />
       </div>
       <span className="text-xs text-muted-foreground">
-        {totalTasks === 1 ? "1 task" : `${totalTasks} tasks`}
+        {t("tasks", { count: totalTasks })}
       </span>
     </Link>
   );
 }
 
 function RouteComponent() {
+  const { t } = useTranslation("home");
   const projects = useLiveQuery(() => getProjects(), []);
   const statsByProject = useLiveQuery(() => getProjectsStats(db), []);
   const day = useLocalDay();
@@ -91,6 +88,7 @@ function RouteComponent() {
 
   const now = new Date();
   const dateLine = formatLongDate(now);
+  const dayPart = getDayPart(now);
 
   if (projects === undefined) {
     return (
@@ -127,7 +125,11 @@ function RouteComponent() {
                   {dateLine}
                 </p>
                 <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                  {GREETINGS[getDayPart(now)]}
+                  {dayPart === "morning"
+                    ? t("greeting.morning")
+                    : dayPart === "afternoon"
+                      ? t("greeting.afternoon")
+                      : t("greeting.evening")}
                 </h1>
               </div>
             </header>
@@ -135,9 +137,9 @@ function RouteComponent() {
             <WeekStrip tasks={openTasks ?? []} day={day} />
 
             <section className="flex flex-col gap-3">
-              <SectionHeader title="Projects" />
+              <SectionHeader title={t("projects.title")} />
               {projects.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No projects yet</p>
+                <p className="text-sm text-muted-foreground">{t("projects.empty")}</p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-3">
                   {projects.map((project) => (

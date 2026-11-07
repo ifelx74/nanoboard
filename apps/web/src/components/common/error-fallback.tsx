@@ -1,6 +1,7 @@
 import { Link, type ErrorComponentProps } from "@tanstack/react-router";
 import { CopyIcon, TriangleAlert } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Tooltip,
   TooltipContent,
@@ -20,6 +21,7 @@ function getStatusCode(error: unknown): number | null {
 }
 
 export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
+  const { t } = useTranslation("common");
   const loggedError = useRef<unknown>(null);
 
   useEffect(() => {
@@ -33,26 +35,25 @@ export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
   const errorMessage =
     error instanceof Error && error.message
       ? error.message
-      : String(error) || "An unexpected error occurred.";
+      : String(error) || t("error.unexpectedOccurred");
   const errorStack = error instanceof Error ? error.stack : undefined;
   const componentStack = info?.componentStack;
 
-  let title = "Something went wrong";
-  let message =
-    "An unexpected error stopped this page from loading. You can try again, or head back home.";
+  let title = t("error.somethingWentWrong");
+  let message = t("error.unexpected");
 
   switch (code) {
     case 400:
-      title = "Bad request";
-      message = "The request could not be completed. Please try again.";
+      title = t("error.badRequestTitle");
+      message = t("error.badRequestMessage");
       break;
     case 404:
-      title = "Not found";
-      message = "The page or item you were looking for could not be found.";
+      title = t("error.notFoundTitle");
+      message = t("error.notFoundMessage");
       break;
     case 500:
-      title = "Internal server error";
-      message = "Something went wrong on our side. Please try again.";
+      title = t("error.serverErrorTitle");
+      message = t("error.serverErrorMessage");
       break;
   }
 
@@ -68,9 +69,9 @@ export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
         throw new Error("Clipboard is not available");
       }
       await navigator.clipboard.writeText(errorText);
-      toast.success("Error details copied to clipboard");
+      toast.success(t("error.copied"));
     } catch {
-      toast.error("Failed to copy error details");
+      toast.error(t("error.copyFailed"));
     }
   }
 
@@ -90,36 +91,36 @@ export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button onClick={() => reset()}>Try again</Button>
+        <Button onClick={() => reset()}>{t("error.tryAgain")}</Button>
         <Link to="/" className={buttonVariants({ variant: "secondary" })}>
-          Go to Home
+          {t("error.goHome")}
         </Link>
       </div>
 
       {import.meta.env.DEV && errorMessage && (
         <div className="max-h-100 w-full max-w-3xl overflow-auto rounded-lg border bg-muted/50 p-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-sm font-medium">Error details (development)</h2>
+            <h2 className="text-sm font-medium">{t("error.errorDetailsDev")}</h2>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Copy error details"
+                    aria-label={t("error.copyDetails")}
                     onClick={handleCopyError}
                   >
                     <CopyIcon />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Copy error details</TooltipContent>
+                <TooltipContent>{t("error.copyDetails")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
 
           <div className="mt-4 flex flex-col gap-4">
             <div>
-              <p className="mb-2 text-xs font-medium">Message</p>
+              <p className="mb-2 text-xs font-medium">{t("error.message")}</p>
               <p className="wrap-break-word rounded-md bg-background p-2 font-mono text-xs text-muted-foreground">
                 {errorMessage}
               </p>
@@ -127,7 +128,7 @@ export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
 
             {errorStack && (
               <div>
-                <p className="mb-2 text-xs font-medium">Stack trace</p>
+                <p className="mb-2 text-xs font-medium">{t("error.stackTrace")}</p>
                 <pre className="overflow-auto whitespace-pre-wrap wrap-break-word rounded-md bg-background p-2 font-mono text-xs text-muted-foreground">
                   {errorStack}
                 </pre>
@@ -136,7 +137,7 @@ export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
 
             {componentStack && (
               <div>
-                <p className="mb-2 text-xs font-medium">Component stack</p>
+                <p className="mb-2 text-xs font-medium">{t("error.componentStack")}</p>
                 <pre className="overflow-auto whitespace-pre-wrap wrap-break-word rounded-md bg-background p-2 font-mono text-xs text-muted-foreground">
                   {componentStack}
                 </pre>

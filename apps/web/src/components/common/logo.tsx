@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 export function Logo({ className = "" }: { className?: string }) {
   return (
@@ -13,14 +14,15 @@ export function Logo({ className = "" }: { className?: string }) {
 
 type LogoIconProps = React.SVGProps<SVGSVGElement>;
 
-export function LogoIcon(props: LogoIconProps) {
+export function LogoIcon({ "aria-label": ariaLabel, ...props }: LogoIconProps) {
+  const { t } = useTranslation("common");
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
       viewBox="0 0 24 24"
-      aria-label="nanoboard logo"
+      aria-label={ariaLabel ?? t("logo")}
       {...props}
     >
       <rect
@@ -49,14 +51,15 @@ export function LogoIcon(props: LogoIconProps) {
   );
 }
 
-export function BackgroundLogo(props: LogoIconProps) {
+export function BackgroundLogo({ "aria-label": ariaLabel, ...props }: LogoIconProps) {
+  const { t } = useTranslation("common");
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
       viewBox="0 0 24 24"
-      aria-label="nanoboard logo"
+      aria-label={ariaLabel ?? t("logo")}
       {...props}
     >
       <rect width="24" height="24" rx="5" fill="#3E77FD" />
