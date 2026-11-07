@@ -8,6 +8,8 @@ import { DayPicker } from "react-day-picker";
 
 import { formatMonthShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { getDateLocale } from "@/lib/i18n/date-locale";
+import { getResolvedLocale, useLocaleStore } from "@/store/locale";
 
 const buttonClassNames =
   "relative flex size-(--cell-size) text-base sm:text-sm items-center justify-center rounded-lg text-foreground not-in-data-selected:hover:bg-accent disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0";
@@ -17,8 +19,11 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   components: userComponents,
+  locale: localeProp,
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
+  const localePreference = useLocaleStore((state) => state.locale);
+  const locale = localeProp ?? getDateLocale(getResolvedLocale(localePreference));
   const defaultClassNames = {
     button_next: buttonClassNames,
     button_previous: buttonClassNames,
@@ -126,6 +131,7 @@ function Calendar({
         formatMonthDropdown: (date) => formatMonthShort(date),
       }}
       mode="single"
+      locale={locale}
       showOutsideDays={showOutsideDays}
       {...props}
     />

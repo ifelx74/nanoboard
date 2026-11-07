@@ -20,6 +20,7 @@ import {
 } from "@/lib/db/whiteboard-previews";
 import type { Whiteboard } from "@/lib/db/schema";
 import { useThemeStore } from "@/store/theme";
+import { getResolvedLocale, useLocaleStore } from "@/store/locale";
 import { buildScenePayload } from "./persistence";
 import { decideWhiteboardPreview } from "./preview";
 import {
@@ -54,6 +55,8 @@ type PendingScene = Pick<Whiteboard, "elements" | "appState" | "files">;
  */
 export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
   const theme = useThemeStore((state) => state.theme);
+  const localePreference = useLocaleStore((state) => state.locale);
+  const resolvedLocale = getResolvedLocale(localePreference);
   const [initialData, setInitialData] = useState<InitialData | null>(null);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -207,6 +210,7 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
     <div ref={canvasContainerRef} className="h-full w-full whiteboard">
       <Excalidraw
         theme={appTheme}
+        langCode={resolvedLocale}
         initialData={initialData}
         onChange={handleChange}
         renderTopRightUI={() => {
