@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Archive,
   CalendarDays,
   ChevronsUpDown,
   ClipboardClock,
@@ -27,7 +28,12 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 
-export type ProjectView = "board" | "calendar" | "list" | "whiteboard";
+export type ProjectView =
+  | "board"
+  | "calendar"
+  | "list"
+  | "whiteboard"
+  | "archives";
 export type ProjectLayoutView = "backlog" | "whiteboard";
 
 const views: { key: ProjectView; title: string; icon: typeof List }[] = [
@@ -40,17 +46,20 @@ type ProjectLayoutProps = {
   projectId: string;
   activeView: ProjectView;
   children: ReactNode;
+  archiveCount?: number;
 };
 
 export function ProjectLayout({
   projectId,
   activeView,
   children,
+  archiveCount = 0,
 }: ProjectLayoutProps) {
   const navigate = useNavigate();
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   // is backlog view if activeView is board, calendar, or list
   const isBacklogView = ["board", "calendar", "list"].includes(activeView);
+  const isArchivesView = activeView === "archives";
 
   return (
     <>
@@ -74,7 +83,19 @@ export function ProjectLayout({
                         size="sm"
                         className="px-1.5 py-0.5 text-sm"
                       >
-                        {isBacklogView ? "Backlog" : "Whiteboard"}
+                        {isBacklogView
+                          ? "Backlog"
+                          : isArchivesView
+                            ? "Archives"
+                            : "Whiteboard"}
+                        {isArchivesView && archiveCount > 0 && (
+                          <span
+                            aria-label={`${archiveCount} archived tasks`}
+                            className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-100 px-1.5 text-[11px] font-semibold tabular-nums text-brand-800 dark:bg-brand-900 dark:text-brand-100"
+                          >
+                            {archiveCount}
+                          </span>
+                        )}
                         <ChevronsUpDown className="size-3 text-foreground/70" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -107,6 +128,18 @@ export function ProjectLayout({
                         <PencilSparkles />
                         Whiteboard
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        key={"archives"}
+                        onClick={() =>
+                          navigate({
+                            to: `/project/$projectId/archives`,
+                            params: { projectId },
+                          })
+                        }
+                      >
+                        <Archive />
+                        Archives
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </BreadcrumbItem>
@@ -138,9 +171,12 @@ export function ProjectLayout({
                 </button>
               ))}
             </div>
+          ) : isArchivesView ? (
+            <div className="flex shrink-0 items-center" />
           ) : null}
         </div>
       </Layout.Header>
+
       <Layout.Content>{children}</Layout.Content>
     </>
   );

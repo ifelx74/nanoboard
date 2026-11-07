@@ -6,9 +6,11 @@ import TaskOptionPopover from "./task-option-popover";
 
 export default function TaskPriorityPopover({
   task,
+  disabled = false,
   children,
 }: {
   task: Task;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   async function handlePriorityChange(priority: string): Promise<boolean> {
@@ -22,6 +24,8 @@ export default function TaskPriorityPopover({
       return false;
     }
   }
+
+  if (disabled) return <>{children}</>;
 
   return (
     <TaskOptionPopover

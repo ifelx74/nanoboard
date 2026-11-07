@@ -29,9 +29,11 @@ function notifyError(error: unknown, fallback: string) {
 
 export default function TaskLabelsPopover({
   task,
+  disabled = false,
   children,
 }: {
   task: Task;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -278,6 +280,8 @@ export default function TaskLabelsPopover({
       </div>
     );
   }
+
+  if (disabled) return <>{children}</>;
 
   return (
     <>

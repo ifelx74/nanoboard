@@ -20,6 +20,7 @@ import {
   getProjectTaskLabels,
   getProjectTasks,
 } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
@@ -169,10 +170,13 @@ function RouteComponent() {
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
-  const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
-  const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+  const columns = useLiveQuery(
+    () => getProjectColumns(db, projectId),
+    [projectId],
+  );
+  const tasks = useLiveQuery(() => getProjectTasks(db, projectId), [projectId]);
   const labelsByTask = useLiveQuery(
-    () => getProjectTaskLabels(projectId),
+    () => getProjectTaskLabels(db, projectId),
     [projectId],
   );
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});

@@ -10,6 +10,7 @@ import { buildMonthWeeks } from "@/components/calendar/month-grid-model";
 import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import TaskDrawer from "@/components/task/task-drawer";
 import { getProject, getProjectTasks } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
 import { parseLocalDate } from "@/lib/due-date-status";
 import { taskKey } from "@/lib/task-key";
 
@@ -47,7 +48,7 @@ function RouteComponent() {
   const { projectId } = Route.useParams();
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
-  const tasks = useLiveQuery(() => getProjectTasks(projectId), [projectId]);
+  const tasks = useLiveQuery(() => getProjectTasks(db, projectId), [projectId]);
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   const slug = project?.slug ?? "";
   const maxLanes = useMaxLanes();

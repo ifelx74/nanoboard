@@ -6,9 +6,8 @@ import type {
   PlannedImportTask,
 } from "@/lib/task-transfer/types";
 import { LABEL_COLORS } from "../label-color";
-import { db } from "./db";
+import { type NanoboardDB } from "./db";
 import { getProjectTaskLabels } from "./labels";
-import { getProject } from "./projects";
 import type { Column, Label, Project, Task } from "./schema";
 import { TASK_PRIORITIES } from "./schema";
 import { getProjectColumns, getProjectTasks } from "./tasks";
@@ -20,14 +19,20 @@ export interface ProjectTransferSource {
   labelsByTask: Map<string, Label[]>;
 }
 
+/**
+ * The task-transfer source read. Deliberately INCLUSIVE of archived rows —
+ * the interchange format carries `archivedAt` (ISO timestamp; null when
+ * absent) so export → import round-trips archive state.
+ */
 export async function readProjectTransferSource(
+  database: NanoboardDB,
   projectId: string,
 ): Promise<ProjectTransferSource> {
   const [project, columns, tasks, labelsByTask] = await Promise.all([
-    getProject(projectId),
-    getProjectColumns(projectId),
-    getProjectTasks(projectId),
-    getProjectTaskLabels(projectId),
+    database.projects.get(projectId),
+    getProjectColumns(database, projectId),
+    getProjectTasks(database, projectId, { includeArchived: true }),
+    getProjectTaskLabels(database, projectId, { includeArchived: true }),
   ]);
   if (!project) {
     throw new Error("Project not found.");
@@ -36,10 +41,11 @@ export async function readProjectTransferSource(
 }
 
 async function nextColumnPosition(
+  database: NanoboardDB,
   projectId: string,
   columnId: string,
 ): Promise<number> {
-  const lastSibling = await db.tasks
+  const lastSibling = await database.tasks
     .where("[projectId+columnId+position]")
     .between(
       [projectId, columnId, Dexie.minKey],
@@ -67,6 +73,7 @@ function assertValidDateRange(
 }
 
 async function importPlannedTask(
+  database: NanoboardDB,
   projectId: string,
   task: PlannedImportTask,
 ): Promise<void> {
@@ -77,24 +84,24 @@ async function importPlannedTask(
   assertValidDateRange(task.startDate, task.dueDate);
   const description = await toStoredDescription(task.description);
 
-  await db.transaction(
+  await database.transaction(
     "rw",
-    db.tasks,
-    db.projects,
-    db.columns,
-    db.taskLabels,
-    db.labels,
+    database.tasks,
+    database.projects,
+    database.columns,
+    database.taskLabels,
+    database.labels,
     async () => {
-      const column = await db.columns.get(task.columnId);
+      const column = await database.columns.get(task.columnId);
       if (!column || column.projectId !== projectId) {
         throw new Error("Destination column not found in this project.");
       }
-      const project = await db.projects.get(projectId);
+      const project = await database.projects.get(projectId);
       if (!project) {
         throw new Error("Project not found.");
       }
 
-      const siblings = await db.labels
+      const siblings = await database.labels
         .where("projectId")
         .equals(projectId)
         .toArray();
@@ -126,17 +133,24 @@ async function importPlannedTask(
           createdAt: now,
           updatedAt: now,
         };
-        await db.labels.add(label);
+        await database.labels.add(label);
         byName.set(key, label);
         labelIds.push(id);
       }
 
-      const position = await nextColumnPosition(projectId, task.columnId);
+      const position = await nextColumnPosition(
+        database,
+        projectId,
+        task.columnId,
+      );
       const number = project.lastTaskNumber + 1;
       const id = createId();
       const now = Date.now();
 
-      await db.tasks.add({
+      // Archive state lands directly on the row — never via archiveTask,
+      // whose final-column eligibility check must not gate an interchange
+      // round-trip. Rows without a stamp stay active.
+      await database.tasks.add({
         id,
         projectId,
         columnId: task.columnId,
@@ -148,28 +162,32 @@ async function importPlannedTask(
         priority: task.priority,
         startDate: task.startDate,
         dueDate: task.dueDate,
+        ...(task.archivedAt !== undefined
+          ? { archivedAt: task.archivedAt }
+          : {}),
         createdAt: now,
         updatedAt: now,
       });
-      await db.projects.update(projectId, {
+      await database.projects.update(projectId, {
         lastTaskNumber: number,
         updatedAt: now,
       });
       for (const labelId of new Set(labelIds)) {
-        await db.taskLabels.put({ taskId: id, labelId });
+        await database.taskLabels.put({ taskId: id, labelId });
       }
     },
   );
 }
 
 export async function importProjectTasks(
+  database: NanoboardDB,
   projectId: string,
   tasks: PlannedImportTask[],
 ): Promise<ImportTaskOutcome[]> {
   const outcomes: ImportTaskOutcome[] = [];
   for (const task of tasks) {
     try {
-      await importPlannedTask(projectId, task);
+      await importPlannedTask(database, projectId, task);
       outcomes.push({
         index: task.index,
         title: task.title,

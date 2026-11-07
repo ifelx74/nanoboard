@@ -15,6 +15,7 @@ export type DescriptionSaveStatus = "idle" | "saving" | "saved" | "failed";
 
 type TaskDescriptionProps = {
   task: Task;
+  disabled?: boolean;
   onStatusChange?: (status: DescriptionSaveStatus) => void;
   retryRef?: { current: (() => void) | null };
 };
@@ -26,6 +27,7 @@ type TaskDescriptionProps = {
  */
 export default function TaskDescription({
   task,
+  disabled = false,
   onStatusChange,
   retryRef,
 }: TaskDescriptionProps) {
@@ -41,6 +43,7 @@ export default function TaskDescription({
         SlashCommands,
       ],
       content: "",
+      editable: !disabled,
       onUpdate: () => {
         if (timerRef.current) clearTimeout(timerRef.current);
         setStatus("saving");
@@ -52,6 +55,12 @@ export default function TaskDescription({
     },
     [],
   );
+
+  useEffect(() => {
+    if (!editor) return undefined;
+    editor.setEditable(!disabled);
+    return undefined;
+  }, [editor, disabled]);
 
   useEffect(() => {
     if (!editor) return undefined;
@@ -121,7 +130,7 @@ export default function TaskDescription({
       <div className="nb-description">
         <EditorContent editor={editor} aria-label="Task description" />
       </div>
-      {editor && <DescriptionBubbleMenu editor={editor} />}
+      {editor && !disabled && <DescriptionBubbleMenu editor={editor} />}
     </div>
   );
 }

@@ -35,7 +35,13 @@ import { sectionRowClass } from "./sections/section-row-class";
  * is manual). Section header with count, host-line rows with hover-revealed
  * remove, empty state, and add dialog match.
  */
-export default function TaskResources({ taskId }: { taskId: string }) {
+export default function TaskResources({
+  taskId,
+  disabled = false,
+}: {
+  taskId: string;
+  disabled?: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -123,12 +129,14 @@ export default function TaskResources({ taskId }: { taskId: string }) {
               )
             }
             action={
-              <SectionAddButton
-                data-task-action="addLink"
-                aria-label="Add resource"
-                title="Add resource"
-                onClick={() => setDialogOpen(true)}
-              />
+              !disabled && (
+                <SectionAddButton
+                  data-task-action="addLink"
+                  aria-label="Add resource"
+                  title="Add resource"
+                  onClick={() => setDialogOpen(true)}
+                />
+              )
             }
           />
 
@@ -154,15 +162,17 @@ export default function TaskResources({ taskId }: { taskId: string }) {
                         {linkHost(resource.url)}
                       </span>
                     </a>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${resource.title || resource.url}`}
-                      disabled={deleting}
-                      onClick={() => void handleDelete(resource.id)}
-                      className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 disabled:pointer-events-none"
-                    >
-                      <X aria-hidden="true" className="size-3.5" />
-                    </button>
+                    {!disabled && (
+                      <button
+                        type="button"
+                        aria-label={`Remove ${resource.title || resource.url}`}
+                        disabled={deleting}
+                        onClick={() => void handleDelete(resource.id)}
+                        className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 disabled:pointer-events-none"
+                      >
+                        <X aria-hidden="true" className="size-3.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

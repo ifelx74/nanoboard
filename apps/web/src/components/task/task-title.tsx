@@ -7,7 +7,13 @@ import {
 import type { Task } from "@/lib/db/schema";
 import { toast } from "@/lib/toast";
 
-export default function TaskTitle({ task }: { task: Task }) {
+export default function TaskTitle({
+  task,
+  disabled = false,
+}: {
+  task: Task;
+  disabled?: boolean;
+}) {
   const [value, setValue] = useState(task.title);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<string | null>(null);
@@ -60,8 +66,9 @@ export default function TaskTitle({ task }: { task: Task }) {
       maxLength={QUICK_ADD_TITLE_MAX}
       placeholder="Task title"
       aria-label="Task title"
+      disabled={disabled}
       onChange={(event) => handleChange(event.target.value)}
-      className="block h-auto w-full appearance-none border-0 bg-transparent p-0 font-heading text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground outline-none placeholder:text-foreground/45"
+      className="block h-auto w-full appearance-none border-0 bg-transparent p-0 font-heading text-[2rem] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground outline-none placeholder:text-foreground/45 disabled:cursor-default disabled:text-foreground/80"
     />
   );
 }

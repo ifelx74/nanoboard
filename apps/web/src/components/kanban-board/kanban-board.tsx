@@ -15,7 +15,11 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { reorderTasks } from "@/lib/db/queries";
+import { useLiveQuery } from "dexie-react-hooks";
+import { countArchivableTasksByFinalColumn } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
 import type { Column, Label, Task } from "@/lib/db/schema";
+import ArchiveCompletedTasksDialog from "@/components/task/archive-completed-tasks-dialog";
 import { toast } from "@/lib/toast";
 import { taskKey } from "@/lib/task-key";
 import BoardColumn, { TaskCardView } from "./column";
@@ -97,6 +101,11 @@ export default function KanbanBoard({
   const [preview, setPreview] = useState<Map<string, Task[]> | null>(null);
   const [writing, setWriting] = useState(false);
   const [createColumnId, setCreateColumnId] = useState<string | null>(null);
+  const [archiveColumn, setArchiveColumn] = useState<Column | null>(null);
+  const archiveCounts = useLiveQuery(
+    () => countArchivableTasksByFinalColumn(db, projectId),
+    [projectId],
+  );
   const justDraggedRef = useRef(false);
   const laneEls = useRef(new Map<string, HTMLElement | null>());
   const pointerRef = useRef<Pointer | null>(null);
@@ -300,6 +309,10 @@ export default function KanbanBoard({
 
   const createColumn =
     columns.find((column) => column.id === createColumnId) ?? null;
+  const archiveColumnTaskCount = archiveColumn
+    ? (archiveCounts?.find((target) => target.columnId === archiveColumn.id)
+        ?.count ?? 0)
+    : 0;
 
   const activeTask = activeId
     ? (tasks.find((task) => task.id === activeId) ?? null)
@@ -353,6 +366,7 @@ export default function KanbanBoard({
                   justDraggedRef={justDraggedRef}
                   onOpenTask={onOpenTask}
                   onCreateTask={setCreateColumnId}
+                  onArchiveColumn={setArchiveColumn}
                   registerLaneRef={registerLaneRef}
                   projectSlug={projectSlug}
                 />
@@ -368,6 +382,18 @@ export default function KanbanBoard({
           column={createColumn}
           open
           onClose={() => setCreateColumnId(null)}
+        />
+      )}
+      {archiveColumn && (
+        <ArchiveCompletedTasksDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setArchiveColumn(null);
+          }}
+          projectId={projectId}
+          eligibleCount={archiveColumnTaskCount}
+          columnName={archiveColumn.name}
+          columnId={archiveColumn.id}
         />
       )}
       <DragOverlay dropAnimation={dropAnimation}>

@@ -1,5 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import {
+  Archive,
+  ArchiveRestore,
   Calendar,
   CalendarClock,
   CalendarDays,
@@ -14,22 +16,33 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetPanel, SheetPopup } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipPopup,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   duplicateTask,
   getProject,
   getProjectColumns,
   getTask,
   getTaskLabels,
+  isTaskArchived,
+  restoreTask,
 } from "@/lib/db/queries";
 import { getColumnIcon } from "@/lib/column";
 import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
+import { db } from "@/lib/db/db";
 import { formatDateShort } from "@/lib/due-date-status";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
 import { taskKey } from "@/lib/task-key";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import TaskArchiveDialog from "./task-archive-dialog";
 import TaskColumnPopover from "./task-column-popover";
 import TaskDeleteDialog from "./task-delete-dialog";
 import TaskDescription, {
@@ -48,6 +61,35 @@ const DUE_ICON_CLASS: Record<string, string> = {
   "far-future": "text-muted-foreground",
   "no-due-date": "text-muted-foreground",
 };
+
+function DisabledHintButton({
+  label,
+  tooltip,
+  children,
+}: {
+  label: string;
+  tooltip: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <span
+            role="button"
+            aria-disabled="true"
+            tabIndex={0}
+            aria-label={label}
+            className="inline-flex cursor-not-allowed rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          />
+        }
+      >
+        <span aria-hidden="true">{children}</span>
+      </TooltipTrigger>
+      <TooltipPopup>{tooltip}</TooltipPopup>
+    </Tooltip>
+  );
+}
 
 function DescriptionSaveIndicator({
   status,
@@ -123,6 +165,8 @@ export default function TaskDrawer({
     taskId,
   );
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [descriptionStatus, setDescriptionStatus] =
     useState<DescriptionSaveStatus>("idle");
@@ -145,14 +189,23 @@ export default function TaskDrawer({
     () => (currentTaskId ? getTask(currentTaskId) : undefined),
     [currentTaskId],
   );
-  const columns = useLiveQuery(() => getProjectColumns(projectId), [projectId]);
+  const columns = useLiveQuery(
+    () => getProjectColumns(db, projectId),
+    [projectId],
+  );
   const taskLabels = useLiveQuery(
     () => (currentTaskId ? getTaskLabels(currentTaskId) : undefined),
     [currentTaskId],
   );
 
+  const archived = task !== undefined && isTaskArchived(task);
+
+  useEffect(() => {
+    if (archived) setArchiveOpen(false);
+  }, [archived]);
+
   async function handleDuplicate() {
-    if (!task || duplicating) return;
+    if (!task || duplicating || archived) return;
     setDuplicating(true);
     try {
       const id = await duplicateTask(task.id);
@@ -163,6 +216,21 @@ export default function TaskDrawer({
       );
     } finally {
       setDuplicating(false);
+    }
+  }
+
+  async function handleRestore() {
+    if (!task || restoring) return;
+    setRestoring(true);
+    try {
+      await restoreTask(db, task.id);
+      toast.success("Task restored");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to restore task",
+      );
+    } finally {
+      setRestoring(false);
     }
   }
 
@@ -211,55 +279,130 @@ export default function TaskDrawer({
         className="w-full p-0 sm:max-w-lg md:max-w-2xl lg:max-w-4xl"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border bg-background px-4 py-2.5">
-          <span className="text-sm font-medium text-muted-foreground">
-            {taskKeyText}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label="Copy link to task"
-              title="Copy link to task"
-              onClick={handleCopyLink}
-              className="text-foreground"
-            >
-              <Link2 className="size-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label="Duplicate task"
-              title="Duplicate task"
-              disabled={!task || duplicating}
-              onClick={() => void handleDuplicate()}
-              className="text-foreground"
-            >
-              <Copy className="size-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label="Delete task"
-              title="Delete task"
-              disabled={!task}
-              onClick={() => setDeleteOpen(true)}
-              className="text-foreground"
-            >
-              <Trash2 className="size-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label="Close"
-              title="Close"
-              onClick={onClose}
-              className="text-foreground"
-            >
-              <X className="size-4" aria-hidden="true" />
-            </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              {taskKeyText}
+            </span>
+            {archived && (
+              <Badge variant="secondary" className="gap-1">
+                <Archive className="size-3" aria-hidden="true" />
+                Archived
+              </Badge>
+            )}
           </div>
+          <TooltipProvider>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Copy link to task"
+                title="Copy link to task"
+                onClick={handleCopyLink}
+                className="text-foreground"
+              >
+                <Link2 className="size-4" aria-hidden="true" />
+              </Button>
+              {archived ? (
+                <DisabledHintButton
+                  label="Duplicate task"
+                  tooltip="Restore this task to duplicate it"
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled
+                    className="text-foreground"
+                  >
+                    <Copy className="size-4" aria-hidden="true" />
+                  </Button>
+                </DisabledHintButton>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Duplicate task"
+                  title="Duplicate task"
+                  disabled={!task || duplicating}
+                  onClick={() => void handleDuplicate()}
+                  className="text-foreground"
+                >
+                  <Copy className="size-4" aria-hidden="true" />
+                </Button>
+              )}
+              {archived ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Restore task"
+                  title="Restore task"
+                  disabled={!task || restoring}
+                  onClick={() => void handleRestore()}
+                  className="text-foreground"
+                >
+                  <ArchiveRestore className="size-4" aria-hidden="true" />
+                </Button>
+              ) : taskIsFinal ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Archive task"
+                  title="Archive task"
+                  disabled={!task}
+                  onClick={() => setArchiveOpen(true)}
+                  className="text-foreground"
+                >
+                  <Archive className="size-4" aria-hidden="true" />
+                </Button>
+              ) : (
+                <DisabledHintButton
+                  label="Archive task"
+                  tooltip="Only tasks in a completed column can be archived"
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled
+                    className="text-foreground"
+                  >
+                    <Archive className="size-4" aria-hidden="true" />
+                  </Button>
+                </DisabledHintButton>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Delete task"
+                title="Delete task"
+                disabled={!task}
+                onClick={() => setDeleteOpen(true)}
+                className="text-foreground"
+              >
+                <Trash2 className="size-4" aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Close"
+                title="Close"
+                onClick={onClose}
+                className="text-foreground"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </Button>
+            </div>
+          </TooltipProvider>
         </div>
 
+        {currentTaskId && (
+          <TaskArchiveDialog
+            key={currentTaskId}
+            open={archiveOpen}
+            onOpenChange={setArchiveOpen}
+            taskId={currentTaskId}
+            taskKeyText={taskKeyText}
+            taskTitle={task?.title ?? ""}
+          />
+        )}
         {currentTaskId && (
           <TaskDeleteDialog
             open={deleteOpen}
@@ -281,11 +424,16 @@ export default function TaskDrawer({
             <div key={task.id} className="flex min-h-0 flex-1 flex-col">
               <div className="flex w-full shrink-0 flex-col gap-0 border-b border-border bg-sidebar">
                 <div className="flex w-full flex-row flex-wrap items-center gap-1 p-2 border-b">
-                  <TaskColumnPopover task={task} columns={columns}>
+                  <TaskColumnPopover
+                    task={task}
+                    columns={columns}
+                    disabled={archived}
+                  >
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 justify-start gap-1.5 px-1.5"
+                      disabled={archived}
                     >
                       {getColumnIcon(task.status, taskIsFinal)}
                       <span className="truncate text-xs font-semibold">
@@ -293,11 +441,12 @@ export default function TaskDrawer({
                       </span>
                     </Button>
                   </TaskColumnPopover>
-                  <TaskPriorityPopover task={task}>
+                  <TaskPriorityPopover task={task} disabled={archived}>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 justify-start gap-1.5 px-1.5"
+                      disabled={archived}
                     >
                       {getPriorityIcon(task.priority)}
                       <span className="truncate text-xs font-semibold">
@@ -305,11 +454,12 @@ export default function TaskDrawer({
                       </span>
                     </Button>
                   </TaskPriorityPopover>
-                  <TaskStartDatePopover task={task}>
+                  <TaskStartDatePopover task={task} disabled={archived}>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 justify-start gap-1.5 px-1.5"
+                      disabled={archived}
                     >
                       <CalendarDays
                         className="h-3.5 w-3.5 text-muted-foreground"
@@ -327,11 +477,12 @@ export default function TaskDrawer({
                       </span>
                     </Button>
                   </TaskStartDatePopover>
-                  <TaskDueDatePopover task={task}>
+                  <TaskDueDatePopover task={task} disabled={archived}>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 justify-start gap-1.5 px-1.5"
+                      disabled={archived}
                     >
                       {task.dueDate && dueStatus ? (
                         <>
@@ -367,12 +518,20 @@ export default function TaskDrawer({
                       Labels
                     </span>
                     <div className="flex flex-wrap items-center gap-1.5 px-2">
-                      <TaskLabelsPopover task={task}>
-                        <span className="flex min-w-0 cursor-pointer flex-wrap items-center gap-1.5">
+                      <TaskLabelsPopover task={task} disabled={archived}>
+                        <span
+                          className={cn(
+                            "flex min-w-0 flex-wrap items-center gap-1.5",
+                            !archived && "cursor-pointer",
+                          )}
+                        >
                           {taskLabels.map((label) => (
                             <span
                               key={label.id}
-                              className="flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[10px] transition-colors hover:bg-accent/50"
+                              className={cn(
+                                "flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[10px] transition-colors",
+                                !archived && "hover:bg-accent/50",
+                              )}
                             >
                               <span
                                 aria-hidden="true"
@@ -393,12 +552,14 @@ export default function TaskDrawer({
                               No labels
                             </span>
                           )}
-                          <span
-                            aria-hidden="true"
-                            className="flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:bg-accent/50"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </span>
+                          {!archived && (
+                            <span
+                              aria-hidden="true"
+                              className="flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:bg-accent/50"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </span>
+                          )}
                         </span>
                       </TaskLabelsPopover>
                     </div>
@@ -418,13 +579,14 @@ export default function TaskDrawer({
                     />
                   </div>
                 )}
-                <TaskTitle task={task} />
+                <TaskTitle task={task} disabled={archived} />
                 <TaskDescription
                   task={task}
+                  disabled={archived}
                   onStatusChange={setDescriptionStatus}
                   retryRef={descriptionRetryRef}
                 />
-                <TaskResources taskId={task.id} />
+                <TaskResources taskId={task.id} disabled={archived} />
               </div>
             </div>
           )}

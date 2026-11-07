@@ -26,9 +26,11 @@ function parseStartDate(startDate: NonNullable<Task["startDate"]>): Date {
 
 export default function TaskDueDatePopover({
   task,
+  disabled = false,
   children,
 }: {
   task: Task;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -43,6 +45,8 @@ export default function TaskDueDatePopover({
       );
     }
   }
+
+  if (disabled) return <>{children}</>;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

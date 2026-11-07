@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
+  Archive,
   ArrowUpFromLine,
   ChevronRight,
   FileDown,
@@ -40,6 +41,7 @@ import {
   readProjectTransferSource,
 } from "@/lib/db/queries";
 import type { ProjectStats } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
 import type { Project } from "@/lib/db/schema";
 import { buildTaskTransferDocument } from "@/lib/task-transfer/export";
 import { getProjectIcon } from "@/lib/project-icons";
@@ -72,6 +74,13 @@ function ProjectRow({
     });
   }
 
+  function openArchives() {
+    void navigate({
+      to: "/project/$projectId/archives",
+      params: { projectId: project.id },
+    });
+  }
+
   function handleDeleteRequest() {
     setMenuOpen(false);
     setDeleteOpen(true);
@@ -81,7 +90,7 @@ function ProjectRow({
     if (exporting) return;
     setExporting(true);
     try {
-      const source = await readProjectTransferSource(project.id);
+      const source = await readProjectTransferSource(db, project.id);
       downloadTaskTransferDocument(await buildTaskTransferDocument(source));
       toast.success("Tasks exported.");
     } catch (error) {
@@ -155,6 +164,15 @@ function ProjectRow({
             <FileDown className="size-4 shrink-0" />
             <span>Import tasks</span>
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setMenuOpen(false);
+              openArchives();
+            }}
+          >
+            <Archive className="size-4 shrink-0" />
+            <span>Archives</span>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={handleDeleteRequest}>
             <Trash2 className="size-4 shrink-0" />
@@ -189,7 +207,7 @@ export function NavProjects() {
   const navigate = useNavigate();
   const { projectId: activeProjectId } = useParams({ strict: false });
   const projects = useLiveQuery(() => getProjects(), []);
-  const statsByProject = useLiveQuery(() => getProjectsStats(), []);
+  const statsByProject = useLiveQuery(() => getProjectsStats(db), []);
   const [groupOpen, setGroupOpen] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 

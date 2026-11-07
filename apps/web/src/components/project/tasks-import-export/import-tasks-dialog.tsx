@@ -28,6 +28,7 @@ import {
   getProjectLabels,
   importProjectTasks,
 } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
 import type { ImportColumn } from "@/lib/task-transfer/types";
 import type {
   ImportPlan,
@@ -50,7 +51,8 @@ const EXAMPLE_FORMAT = `{
       "priority": "low",
       "startDate": "2025-04-18T00:00:00.000Z",
       "dueDate": "2025-04-20T00:00:00.000Z",
-      "userId": null
+      "userId": null,
+      "archivedAt": null
     }
   ]
 }`;
@@ -105,7 +107,7 @@ export function ImportTasksDialog({
     try {
       const items = parseTaskImportFile(await file.text());
       const [projectColumns, projectLabels] = await Promise.all([
-        getProjectColumns(projectId),
+        getProjectColumns(db, projectId),
         getProjectLabels(projectId),
       ]);
       const nextPlan = planTaskImport(items, projectColumns, projectLabels);
@@ -144,7 +146,7 @@ export function ImportTasksDialog({
     if (!plan || plan.tasks.length === 0 || importing) return;
     setImporting(true);
     try {
-      const written = await importProjectTasks(projectId, plan.tasks);
+      const written = await importProjectTasks(db, projectId, plan.tasks);
       const outcomes: ImportTaskOutcome[] = [
         ...plan.failures.map((failure) => ({
           index: failure.index,
