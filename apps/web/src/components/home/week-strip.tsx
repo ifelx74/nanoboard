@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useLayoutEffect, useMemo, useRef } from "react";
+import { formatDayNumber, formatWeekdayShort } from "@/lib/format";
 import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
 import { buildWeek, type WeekStripTask } from "./build-week";
@@ -11,13 +12,6 @@ type WeekStripProps = {
 };
 
 const VISIBLE_TASKS_PER_DAY = 2;
-
-const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-});
-const dayNumberFormatter = new Intl.DateTimeFormat(undefined, {
-  day: "numeric",
-});
 
 export function WeekStrip({ tasks, day }: WeekStripProps) {
   const week = useMemo(() => buildWeek(tasks, new Date(day)), [tasks, day]);
@@ -63,10 +57,10 @@ export function WeekStrip({ tasks, day }: WeekStripProps) {
               ) : (
                 <>
                   <span className="font-medium text-muted-foreground">
-                    {weekdayFormatter.format(day.date)}
+                    {formatWeekdayShort(day.date)}
                   </span>
                   <span className="text-muted-foreground/80 tabular-nums">
-                    {dayNumberFormatter.format(day.date)}
+                    {formatDayNumber(day.date)}
                   </span>
                 </>
               )}

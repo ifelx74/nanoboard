@@ -23,6 +23,7 @@ import {
 } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
 import type { Task } from "@/lib/db/schema";
+import { formatMediumDate } from "@/lib/format";
 import { toast } from "@/lib/toast";
 import { taskKey } from "@/lib/task-key";
 
@@ -34,11 +35,7 @@ export const Route = createFileRoute("/_app/project/$projectId/archives")({
 });
 
 function formatArchivedDate(archivedAt: number): string {
-  return new Date(archivedAt).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatMediumDate(new Date(archivedAt));
 }
 
 function ArchivesSkeleton() {

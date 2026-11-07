@@ -1,11 +1,11 @@
 import { type JSX, useState } from "react";
-import { format } from "date-fns";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { formatDayRange } from "@/lib/due-date-status";
+import { formatLongDate } from "@/lib/format";
 import type { CalendarTask } from "./calendar-task-bar";
 
 type DayOverflowPopoverProps = {
@@ -24,7 +24,7 @@ export default function DayOverflowPopover({
 }: DayOverflowPopoverProps): JSX.Element {
   const [open, setOpen] = useState(false);
 
-  const dayLabel = format(day, "EEEE, MMMM d");
+  const dayLabel = formatLongDate(day);
 
   const handleSelectTask = (taskId: string) => {
     setOpen(false);

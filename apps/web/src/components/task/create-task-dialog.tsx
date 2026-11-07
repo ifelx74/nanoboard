@@ -43,6 +43,7 @@ import type { Column, DueDateString, TaskPriority } from "@/lib/db/schema";
 import { TASK_PRIORITIES, startDate as startDateString } from "@/lib/db/schema";
 import { getColumnIcon } from "@/lib/column";
 import { toDayString } from "@/lib/due-date-status";
+import { formatMediumDate } from "@/lib/format";
 import { LABEL_COLORS, resolveLabelColor } from "@/lib/label-color";
 import type { LabelColorValue } from "@/lib/label-color";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
@@ -52,14 +53,6 @@ import TaskDescriptionInput from "./task-description-input";
 
 function toISODate(date: Date): DueDateString {
   return toDayString(date) as DueDateString;
-}
-
-function formatMedium(date: Date): string {
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 type LabelsStep = "select" | "color";
@@ -328,7 +321,7 @@ export default function CreateTaskDialog({
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
                     <span>
-                      {startDate ? formatMedium(startDate) : "Start date"}
+                      {startDate ? formatMediumDate(startDate) : "Start date"}
                     </span>
                   </button>
                 </PopoverTrigger>
@@ -410,7 +403,7 @@ export default function CreateTaskDialog({
                     )}
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
-                    <span>{dueDate ? formatMedium(dueDate) : "Due date"}</span>
+                    <span>{dueDate ? formatMediumDate(dueDate) : "Due date"}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0" align="start">

@@ -6,6 +6,7 @@ import {
 import type * as React from "react";
 import { DayPicker } from "react-day-picker";
 
+import { formatMonthShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const buttonClassNames =
@@ -122,8 +123,7 @@ function Calendar({
       components={mergedComponents}
       data-slot="calendar"
       formatters={{
-        formatMonthDropdown: (date) =>
-          date.toLocaleString("default", { month: "short" }),
+        formatMonthDropdown: (date) => formatMonthShort(date),
       }}
       mode="single"
       showOutsideDays={showOutsideDays}

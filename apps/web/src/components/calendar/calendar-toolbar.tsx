@@ -1,7 +1,7 @@
-import { format } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { JSX } from "react";
 import { Button } from "@/components/ui/button";
+import { formatMonthYear } from "@/lib/format";
 
 type CalendarToolbarProps = {
   visibleMonth: Date;
@@ -27,7 +27,7 @@ export default function CalendarToolbar({
             className="truncate text-sm text-muted-foreground"
             data-testid="calendar-month-label"
           >
-            {format(visibleMonth, "MMMM yyyy")}
+            {formatMonthYear(visibleMonth)}
           </span>
         </div>
 

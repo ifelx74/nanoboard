@@ -1,14 +1,12 @@
 import { resolveLabelColor } from "@/lib/label-color";
 import type { Label } from "@/lib/db/schema";
+import { compareStrings } from "@/lib/format";
 
 export function TaskLabels({ labels }: { labels: Label[] }) {
   if (!labels.length) return null;
 
   const sortedLabels = [...labels].sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, {
-      sensitivity: "base",
-      numeric: true,
-    }),
+    compareStrings(a.name, b.name),
   );
 
   return (

@@ -1,5 +1,5 @@
-import { format } from "date-fns";
 import type { DueDateString, StartDateString } from "@/lib/db/schema";
+import { formatRelativeTime, formatShortDate } from "@/lib/format";
 
 export type DueDateStatus =
   "overdue" | "due-soon" | "far-future" | "no-due-date";
@@ -17,15 +17,12 @@ export function parseDayString(isoDate: string): Date {
 
 /** bar/overflow range label, even for single-day bars. */
 export function formatDayRange(start: Date, end: Date): string {
-  return `${format(start, "MMM d")} – ${format(end, "MMM d")}`;
+  return `${formatShortDate(start)} – ${formatShortDate(end)}`;
 }
 
 /** short drawer date: "Jan 5", no year. */
 export function formatDateShort(date: Date): string {
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
+  return formatShortDate(date);
 }
 
 /**
@@ -41,8 +38,8 @@ export function formatRelativeDueDate(due: Date, today = new Date()): string {
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
   if (diff === -1) return "Yesterday";
-  if (diff > 1 && diff <= 30) return `in ${diff} days`;
-  if (diff < -1) return `${Math.abs(diff)} days ago`;
+  if (diff > 1 && diff <= 30) return formatRelativeTime(diff, "day");
+  if (diff < -1) return formatRelativeTime(diff, "day");
   return formatDateShort(due);
 }
 

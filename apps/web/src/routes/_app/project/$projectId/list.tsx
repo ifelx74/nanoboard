@@ -25,6 +25,7 @@ import type { Column, Label, Task } from "@/lib/db/schema";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
 import { getChecklistStats } from "@/lib/task-checklist";
+import { formatMediumDate } from "@/lib/format";
 import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
 
@@ -34,14 +35,6 @@ export const Route = createFileRoute("/_app/project/$projectId/list")({
     task: typeof search.task === "string" ? search.task : undefined,
   }),
 });
-
-function formatMedium(date: Date): string {
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function ListSkeleton() {
   return (
@@ -148,7 +141,7 @@ function TaskRow({
         <TaskDueDatePopover task={task}>
           <button
             type="button"
-            title={formatMedium(parseLocalDate(task.dueDate))}
+            title={formatMediumDate(parseLocalDate(task.dueDate))}
             onClick={(event) => event.stopPropagation()}
             className={cn(
               "flex w-24 shrink-0 cursor-pointer items-center justify-end rounded-md text-xs outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",

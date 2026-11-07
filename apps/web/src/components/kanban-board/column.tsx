@@ -5,7 +5,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { format } from "date-fns";
 import {
   Archive,
   Calendar,
@@ -17,6 +16,7 @@ import type { Column, Label, Task } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { getColumnIcon } from "@/lib/column";
 import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
+import { formatShortDate } from "@/lib/format";
 import { getPriorityIcon, priorityLabel } from "@/lib/priority";
 import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
@@ -122,7 +122,7 @@ export function TaskCardView({
                 dueDateStatus === "no-due-date") && (
                 <Calendar className="h-3 w-3" aria-hidden="true" />
               )}
-              <span>{format(parseLocalDate(task.dueDate), "MMM d")}</span>
+              <span>{formatShortDate(parseLocalDate(task.dueDate))}</span>
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
-import { format, isSameMonth, isToday, isWeekend } from "date-fns";
+import { isSameMonth, isToday, isWeekend } from "date-fns";
 import { type JSX, useMemo } from "react";
+import { formatDayNumber, formatWeekdayShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import CalendarTaskBar, { type CalendarTask } from "./calendar-task-bar";
 import DayOverflowPopover from "./day-overflow-popover";
@@ -34,7 +35,7 @@ export default function MonthGrid({
             key={`weekday-${day.toISOString()}`}
             className="border-r border-border/60 px-1 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
           >
-            {format(day, "EEE")}
+            {formatWeekdayShort(day)}
           </div>
         ))}
       </div>
@@ -78,7 +79,7 @@ export default function MonthGrid({
                       isToday(day) && "bg-primary text-primary-foreground",
                     )}
                   >
-                    {format(day, "d")}
+                    {formatDayNumber(day)}
                   </span>
                 </div>
               ))}

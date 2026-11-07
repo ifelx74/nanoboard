@@ -11,6 +11,7 @@ import { db } from "@/lib/db/db";
 import type { ProjectStats } from "@/lib/db/queries";
 import type { Project } from "@/lib/db/schema";
 import { getDayPart } from "@/lib/day-part";
+import { formatLongDate } from "@/lib/format";
 import { getProjectIcon } from "@/lib/project-icons";
 import { SidebarTriggerHeader } from "@/components/common/sidebar-trigger-header";
 
@@ -89,11 +90,7 @@ function RouteComponent() {
   const openTasks = useLiveQuery(() => getOpenTasks(db, from, to), [from, to]);
 
   const now = new Date();
-  const dateLine = now.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  const dateLine = formatLongDate(now);
 
   if (projects === undefined) {
     return (
