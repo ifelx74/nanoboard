@@ -143,7 +143,114 @@
   },
   "stickies": {},
   "whiteboard": {},
-  "project": {},
+  "project": {
+    "archives": {
+      "archivedOn": "Archived on {{date}}",
+      "archiveCompleted": "Archive completed tasks",
+      "deleteTask": "Delete task",
+      "emptyDescription": "Tasks you archive — completed or cancelled — will show up here.",
+      "emptyTitle": "No archived tasks yet",
+      "errors": {
+        "restore": "Failed to restore task"
+      },
+      "restoreTask": "Restore task",
+      "restored": "Task restored"
+    },
+    "create": {
+      "appName": "NANOBOARD",
+      "cancel": "Cancel",
+      "creating": "Creating",
+      "description": "Create a new project",
+      "errors": {
+        "create": "Failed to create project"
+      },
+      "keyExampleFallback": "ABC",
+      "keyHint": "Tasks show as {{example}}-1, {{example}}-2, …",
+      "keyLabel": "Key",
+      "keyPlaceholder": "PRO",
+      "namePlaceholder": "Project name",
+      "submit": "Create",
+      "title": "New project"
+    },
+    "delete": {
+      "cancel": "Cancel",
+      "deleting": "Deleting",
+      "description": "“{{name}}” and all of its columns, tasks, and labels will be permanently deleted. This cannot be undone.",
+      "errors": {
+        "delete": "Failed to delete project"
+      },
+      "submit": "Delete",
+      "title": "Delete project?"
+    },
+    "edit": {
+      "cancel": "Cancel",
+      "description": "Rename {{name}}, change its slug, icon, or description",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What is this project about?",
+      "errors": {
+        "update": "Failed to update project"
+      },
+      "fallbackName": "project",
+      "nameLabel": "Name",
+      "saving": "Saving",
+      "slugLabel": "Slug (letters and numbers, max 5, starts with a letter)",
+      "submit": "Save",
+      "title": "Edit project"
+    },
+    "iconPicker": {
+      "pickTitle": "Pick an icon",
+      "searchPlaceholder": "Search icons"
+    },
+    "import": {
+      "back": "Back",
+      "cancel": "Cancel",
+      "changeFile": "Change file",
+      "chooseJsonError": "Choose a JSON file.",
+      "completeDescription": "Finished importing into “{{name}}”.",
+      "completeTitle": "Import complete",
+      "counts": {
+        "failed": "Failed",
+        "imported": "Imported",
+        "ready": "Ready",
+        "warnings": "Warnings"
+      },
+      "description": "Add tasks from a JSON file to “{{name}}”.",
+      "done": "Done",
+      "dragHint": "A full export, a tasks object, or a task array.",
+      "dragTitle": "Drag and drop a JSON file",
+      "errors": {
+        "import": "Could not import tasks."
+      },
+      "expectedFormat": "Expected format",
+      "importAnother": "Import another file",
+      "importButton_one": "Import {{count}} task",
+      "importButton_other": "Import {{count}} tasks",
+      "importFailed": "Import failed.",
+      "importing": "Importing",
+      "readFailed": "Could not read this file.",
+      "reading": "Reading",
+      "selectFile": "Select file",
+      "tasksHeading": "Tasks",
+      "title": "Import tasks",
+      "toasts": {
+        "failed_one": "{{count}} task could not be imported.",
+        "failed_other": "{{count}} tasks could not be imported.",
+        "imported_one": "{{count}} task imported.",
+        "imported_other": "{{count}} tasks imported."
+      }
+    },
+    "toolbar": {
+      "archivedTasks_one": "{{count}} archived task",
+      "archivedTasks_other": "{{count}} archived tasks",
+      "archives": "Archives",
+      "backlog": "Backlog",
+      "board": "Board",
+      "calendar": "Calendar",
+      "fallbackProject": "Project",
+      "list": "List",
+      "whiteboard": "Whiteboard"
+    }
+  },
   "task": {
     "drawer": {
       "archived": "Archived",

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ProjectLayout } from "@/components/common/project-layout";
 import ArchiveCompletedTasksDialog from "@/components/task/archive-completed-tasks-dialog";
 import TaskDeleteDialog from "@/components/task/task-delete-dialog";
@@ -24,6 +25,7 @@ import {
 import { db } from "@/lib/db/db";
 import type { Task } from "@/lib/db/schema";
 import { formatMediumDate } from "@/lib/format";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { taskKey } from "@/lib/task-key";
 
@@ -68,6 +70,7 @@ function ArchiveRow({
   onRestore: (taskId: string) => void;
   onDelete: (task: Task) => void;
 }) {
+  const { t } = useTranslation("project");
   const archivedAt = task.archivedAt ?? 0;
   return (
     <div
@@ -89,7 +92,9 @@ function ArchiveRow({
         {task.title}
       </span>
       <span
-        title={`Archived on ${formatArchivedDate(archivedAt)}`}
+        title={t("archives.archivedOn", {
+          date: formatArchivedDate(archivedAt),
+        })}
         className="hidden w-32 shrink-0 text-right text-xs text-muted-foreground sm:block"
       >
         {formatArchivedDate(archivedAt)}
@@ -97,8 +102,8 @@ function ArchiveRow({
       <div className="flex shrink-0 items-center gap-0.5">
         <button
           type="button"
-          aria-label="Restore task"
-          title="Restore task"
+          aria-label={t("archives.restoreTask")}
+          title={t("archives.restoreTask")}
           onClick={(event) => {
             event.stopPropagation();
             onRestore(task.id);
@@ -109,8 +114,8 @@ function ArchiveRow({
         </button>
         <button
           type="button"
-          aria-label="Delete task"
-          title="Delete task"
+          aria-label={t("archives.deleteTask")}
+          title={t("archives.deleteTask")}
           onClick={(event) => {
             event.stopPropagation();
             onDelete(task);
@@ -137,6 +142,7 @@ function RouteComponent() {
     () => countArchivableTasks(db, projectId),
     [projectId],
   );
+  const { t } = useTranslation("project");
   const [sweepOpen, setSweepOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
 
@@ -159,10 +165,13 @@ function RouteComponent() {
   async function handleRestore(taskId: string) {
     try {
       await restoreTask(db, taskId);
-      toast.success("Task restored");
+      const message = i18n.t("project:archives.restored");
+      toast.success(message);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to restore task",
+        error instanceof Error
+          ? error.message
+          : i18n.t("project:archives.errors.restore"),
       );
     }
   }
@@ -196,16 +205,16 @@ function RouteComponent() {
               <EmptyMedia variant="icon" className="size-12">
                 <Archive className="size-6" aria-hidden="true" />
               </EmptyMedia>
-              <EmptyTitle>No archived tasks yet</EmptyTitle>
+              <EmptyTitle>{t("archives.emptyTitle")}</EmptyTitle>
               <EmptyDescription>
-                Tasks you archive — completed or cancelled — will show up here.
+                {t("archives.emptyDescription")}
               </EmptyDescription>
             </EmptyHeader>
             {(eligibleCount ?? 0) > 0 && (
               <EmptyContent>
                 <Button size="sm" onClick={() => setSweepOpen(true)}>
                   <Archive />
-                  Archive completed tasks
+                  {t("archives.archiveCompleted")}
                 </Button>
               </EmptyContent>
             )}

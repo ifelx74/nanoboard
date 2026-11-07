@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { getProject, updateProject } from "@/lib/db/queries";
 import type { Project } from "@/lib/db/schema";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { useLiveQuery } from "dexie-react-hooks";
 import ProjectIconPicker from "./project-icon-picker";
@@ -29,14 +31,16 @@ export default function EditProjectDialog({
   onClose: () => void;
 }) {
   const project = useLiveQuery(() => getProject(projectId), [projectId, open]);
+  const { t } = useTranslation("project");
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-w-md" showCloseButton={false}>
         <DialogHeader className="gap-1.5 px-3 pt-4 pb-1">
-          <DialogTitle>Edit project</DialogTitle>
+          <DialogTitle>{t("edit.title")}</DialogTitle>
           <DialogDescription className="sr-only">
-            Rename {project?.name ?? "project"}, change its slug, icon, or
-            description
+            {t("edit.description", {
+              name: project?.name ?? t("edit.fallbackName"),
+            })}
           </DialogDescription>
         </DialogHeader>
         {project && (
@@ -58,6 +62,7 @@ function EditProjectForm({
   project: Project;
   onDone: () => void;
 }) {
+  const { t } = useTranslation("project");
   const [name, setName] = useState(project.name);
   const [slug, setSlug] = useState(project.slug);
   const [icon, setIcon] = useState(project.icon);
@@ -84,7 +89,9 @@ function EditProjectForm({
       onDone();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update project",
+        error instanceof Error
+          ? error.message
+          : i18n.t("project:edit.errors.update"),
       );
     } finally {
       setSaving(false);
@@ -100,7 +107,7 @@ function EditProjectForm({
             htmlFor="edit-project-name"
             className="text-xs font-medium text-muted-foreground"
           >
-            Name
+            {t("edit.nameLabel")}
           </label>
           <Input
             id="edit-project-name"
@@ -117,7 +124,7 @@ function EditProjectForm({
             htmlFor="edit-project-slug"
             className="text-xs font-medium text-muted-foreground"
           >
-            Slug (letters and numbers, max 5, starts with a letter)
+            {t("edit.slugLabel")}
           </label>
           <Input
             id="edit-project-slug"
@@ -133,14 +140,14 @@ function EditProjectForm({
             htmlFor="edit-project-description"
             className="text-xs font-medium text-muted-foreground"
           >
-            Description
+            {t("edit.descriptionLabel")}
           </label>
           <textarea
             id="edit-project-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder="What is this project about?"
+            placeholder={t("edit.descriptionPlaceholder")}
             className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-ring"
           />
         </div>
@@ -154,10 +161,10 @@ function EditProjectForm({
           size="sm"
           className="border-border text-foreground hover:bg-accent"
         >
-          Cancel
+          {t("edit.cancel")}
         </Button>
         <Button type="submit" disabled={!dirty || saving} size="sm">
-          {saving ? "Saving" : "Save"}
+          {saving ? t("edit.saving") : t("edit.submit")}
         </Button>
       </DialogFooter>
     </form>

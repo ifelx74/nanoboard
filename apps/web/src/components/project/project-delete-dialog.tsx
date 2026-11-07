@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db/db";
 import { deleteProject } from "@/lib/db/queries";
+import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
 export default function ProjectDeleteDialog({
@@ -26,6 +28,7 @@ export default function ProjectDeleteDialog({
   projectName: string;
   onDeleted: () => void;
 }) {
+  const { t } = useTranslation("project");
   const [pending, setPending] = useState(false);
 
   async function handleDelete() {
@@ -37,7 +40,9 @@ export default function ProjectDeleteDialog({
       onDeleted();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete project",
+        error instanceof Error
+          ? error.message
+          : i18n.t("project:delete.errors.delete"),
       );
     } finally {
       setPending(false);
@@ -48,17 +53,16 @@ export default function ProjectDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete project?</AlertDialogTitle>
+          <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            “{projectName}” and all of its columns, tasks, and labels will be
-            permanently deleted. This cannot be undone.
+            {t("delete.description", { name: projectName })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose
             render={<Button variant="outline" size="sm" disabled={pending} />}
           >
-            Cancel
+            {t("delete.cancel")}
           </AlertDialogClose>
           <Button
             variant="destructive"
@@ -66,7 +70,7 @@ export default function ProjectDeleteDialog({
             disabled={pending}
             onClick={() => void handleDelete()}
           >
-            {pending ? "Deleting" : "Delete"}
+            {pending ? t("delete.deleting") : t("delete.submit")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

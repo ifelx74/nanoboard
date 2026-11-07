@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { createProject } from "@/lib/db/queries";
+import { i18n } from "@/lib/i18n";
 import { suggestProjectKey } from "@/lib/task-key";
 import { toast } from "@/lib/toast";
 import ProjectIconPicker from "./project-icon-picker";
@@ -29,6 +31,7 @@ export default function CreateProjectDialog({
   onClose: () => void;
 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation("project");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
@@ -71,7 +74,9 @@ export default function CreateProjectDialog({
       });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create project",
+        error instanceof Error
+          ? error.message
+          : i18n.t("project:create.errors.create"),
       );
     } finally {
       setSubmitting(false);
@@ -82,20 +87,20 @@ export default function CreateProjectDialog({
     <Dialog open={open} onOpenChange={(next) => !next && handleClose()}>
       <DialogContent className="max-w-md" showCloseButton={false}>
         <DialogHeader className="gap-1.5 px-3 pt-4 pb-1">
-          <DialogTitle className="sr-only">New project</DialogTitle>
+          <DialogTitle className="sr-only">{t("create.title")}</DialogTitle>
           <Breadcrumb>
             <BreadcrumbList className="gap-1 text-xs">
               <BreadcrumbItem className="font-medium tracking-wide text-muted-foreground">
-                NANOBOARD
+                {t("create.appName")}
               </BreadcrumbItem>
               <BreadcrumbSeparator className="[&>svg]:size-3.5" />
               <BreadcrumbItem className="font-medium text-foreground">
-                New project
+                {t("create.title")}
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
           <DialogDescription className="sr-only">
-            Create a new project
+            {t("create.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -114,7 +119,7 @@ export default function CreateProjectDialog({
               value={name}
               onChange={handleNameChange}
               autoFocus
-              placeholder="Project name"
+              placeholder={t("create.namePlaceholder")}
               className="w-full [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:py-2 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:leading-tight [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:tracking-tight [&_[data-slot=input]]:text-foreground [&_[data-slot=input]]:placeholder:text-muted-foreground [&_[data-slot=input]]:outline-none"
               required
             />
@@ -124,7 +129,7 @@ export default function CreateProjectDialog({
             <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="shrink-0 text-sm font-medium text-muted-foreground">
-                  Key
+                  {t("create.keyLabel")}
                 </span>
                 <Input
                   id="project-slug"
@@ -133,14 +138,16 @@ export default function CreateProjectDialog({
                     setSlug(e.target.value);
                     setSlugTouched(true);
                   }}
-                  placeholder="PRO"
+                  placeholder={t("create.keyPlaceholder")}
                   maxLength={5}
                   className="h-8 w-22 rounded-lg border-border bg-background text-center text-sm font-semibold transition-colors duration-150"
                   required
                 />
               </div>
               <div className="hidden flex-1 text-xs text-muted-foreground opacity-80 sm:block">
-                Tasks show as {slug || "ABC"}-1, {slug || "ABC"}-2, …
+                {t("create.keyHint", {
+                  example: slug || t("create.keyExampleFallback"),
+                })}
               </div>
             </div>
           </div>
@@ -153,7 +160,7 @@ export default function CreateProjectDialog({
               size="sm"
               className="border-border text-foreground hover:bg-accent"
             >
-              Cancel
+              {t("create.cancel")}
             </Button>
             <Button
               type="submit"
@@ -161,7 +168,7 @@ export default function CreateProjectDialog({
               size="sm"
               className="bg-primary hover:bg-primary/90 disabled:opacity-50"
             >
-              {submitting ? "Creating" : "Create"}
+              {submitting ? t("create.creating") : t("create.submit")}
             </Button>
           </DialogFooter>
         </form>
