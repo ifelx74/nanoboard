@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { House, PencilRuler } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -17,6 +18,7 @@ import {
  */
 export function GalleryEmptyState() {
   const navigate = useNavigate();
+  const { t } = useTranslation("whiteboard");
 
   return (
     <Empty>
@@ -24,16 +26,13 @@ export function GalleryEmptyState() {
         <EmptyMedia variant="icon" className="size-12">
           <PencilRuler className="size-7" />
         </EmptyMedia>
-        <EmptyTitle>Nothing on the whiteboard yet.</EmptyTitle>
-        <EmptyDescription>
-          Boards appear here once you draw something in a project&apos;s
-          Whiteboard view.
-        </EmptyDescription>
+        <EmptyTitle>{t("emptyState.title")}</EmptyTitle>
+        <EmptyDescription>{t("emptyState.description")}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent className="flex-row justify-center gap-2">
         <Button size="sm" onClick={() => navigate({ to: "/" })}>
           <House className="size-3.5" />
-          <span>Back to Home</span>
+          <span>{t("emptyState.backToHome")}</span>
         </Button>
       </EmptyContent>
     </Empty>

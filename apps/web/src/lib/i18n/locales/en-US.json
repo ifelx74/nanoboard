@@ -142,7 +142,24 @@
     "overflowMore_other": "+{{count}} more"
   },
   "stickies": {},
-  "whiteboard": {},
+  "whiteboard": {
+    "header": {
+      "title": "Whiteboard"
+    },
+    "gallery": {
+      "recentlyModified": "Recently modified"
+    },
+    "emptyState": {
+      "title": "Nothing on the whiteboard yet.",
+      "description": "Boards appear here once you draw something in a project's Whiteboard view.",
+      "backToHome": "Back to Home"
+    },
+    "canvas": {
+      "welcome": "Welcome to the Whiteboard",
+      "enterFullscreen": "Enter fullscreen",
+      "exitFullscreen": "Exit fullscreen"
+    }
+  },
   "project": {},
   "task": {
     "drawer": {
