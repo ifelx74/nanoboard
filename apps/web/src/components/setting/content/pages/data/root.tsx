@@ -14,7 +14,10 @@ import { downloadBackupDocument } from "./download";
 import { RestoreBackupDialog } from "./restore-backup-dialog";
 
 /** Translated export summary: every table's row count, for the export toast. */
-function exportSummary(document: BackupDocument, t: TFunction<"settings">): string {
+function exportSummary(
+  document: BackupDocument,
+  t: TFunction<"settings">,
+): string {
   const tables = document.tables;
   return [
     t("data.export.summary.projects", { count: tables.projects.length }),

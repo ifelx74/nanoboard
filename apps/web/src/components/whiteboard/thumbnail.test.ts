@@ -23,9 +23,9 @@ describe("resolveThumbnailDataUrl", () => {
   const PRIOR = "data:image/jpeg;base64,OLD";
 
   it("stores the freshly rendered thumbnail", () => {
-    expect(
-      resolveThumbnailDataUrl("data:image/jpeg;base64,NEW", PRIOR),
-    ).toBe("data:image/jpeg;base64,NEW");
+    expect(resolveThumbnailDataUrl("data:image/jpeg;base64,NEW", PRIOR)).toBe(
+      "data:image/jpeg;base64,NEW",
+    );
   });
 
   it("keeps the prior thumbnail when the render failed", () => {

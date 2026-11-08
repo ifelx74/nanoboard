@@ -5,7 +5,12 @@ import { planTaskImport } from "./import";
 
 const COLUMNS: ImportColumn[] = [
   { id: "column-1", slug: columnSlug("backlog"), name: "Backlog", position: 0 },
-  { id: "column-2", slug: columnSlug("in-progress"), name: "In Progress", position: 1 },
+  {
+    id: "column-2",
+    slug: columnSlug("in-progress"),
+    name: "In Progress",
+    position: 1,
+  },
   { id: "column-3", slug: columnSlug("done"), name: "Completed", position: 2 },
 ];
 
@@ -53,7 +58,11 @@ describe("planTaskImport archivedAt", () => {
       [
         { title: "Bad text", status: "done", archivedAt: "not-a-date" },
         { title: "Bad type", status: "done", archivedAt: 1750000000000 },
-        { title: "Bad day", status: "done", archivedAt: "2026-13-99T00:00:00.000Z" },
+        {
+          title: "Bad day",
+          status: "done",
+          archivedAt: "2026-13-99T00:00:00.000Z",
+        },
       ],
       COLUMNS,
       [],

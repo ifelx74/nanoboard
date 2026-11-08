@@ -181,7 +181,9 @@ export default function WhiteboardCanvas({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     const onFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement === canvasContainerRef.current);
+      setIsFullscreen(
+        document.fullscreenElement === canvasContainerRef.current,
+      );
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
     return () =>

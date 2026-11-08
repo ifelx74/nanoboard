@@ -100,7 +100,9 @@ export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
       {import.meta.env.DEV && errorMessage && (
         <div className="max-h-100 w-full max-w-3xl overflow-auto rounded-lg border bg-muted/50 p-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-sm font-medium">{t("error.errorDetailsDev")}</h2>
+            <h2 className="text-sm font-medium">
+              {t("error.errorDetailsDev")}
+            </h2>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -128,7 +130,9 @@ export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
 
             {errorStack && (
               <div>
-                <p className="mb-2 text-xs font-medium">{t("error.stackTrace")}</p>
+                <p className="mb-2 text-xs font-medium">
+                  {t("error.stackTrace")}
+                </p>
                 <pre className="overflow-auto whitespace-pre-wrap wrap-break-word rounded-md bg-background p-2 font-mono text-xs text-muted-foreground">
                   {errorStack}
                 </pre>
@@ -137,7 +141,9 @@ export function ErrorFallback({ error, info, reset }: ErrorComponentProps) {
 
             {componentStack && (
               <div>
-                <p className="mb-2 text-xs font-medium">{t("error.componentStack")}</p>
+                <p className="mb-2 text-xs font-medium">
+                  {t("error.componentStack")}
+                </p>
                 <pre className="overflow-auto whitespace-pre-wrap wrap-break-word rounded-md bg-background p-2 font-mono text-xs text-muted-foreground">
                   {componentStack}
                 </pre>

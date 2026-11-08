@@ -16,7 +16,17 @@ describe("parseLocalePreference", () => {
   });
 
   it("fails closed to system on anything that is not a known value", () => {
-    for (const value of ["de-DE", "fr", "fr-CA", "", null, undefined, 42, {}, ["en-US"]]) {
+    for (const value of [
+      "de-DE",
+      "fr",
+      "fr-CA",
+      "",
+      null,
+      undefined,
+      42,
+      {},
+      ["en-US"],
+    ]) {
       expect(parseLocalePreference(value)).toBe("system");
     }
   });
@@ -49,8 +59,6 @@ describe("resolveLocale", () => {
 
   it("fails closed to the default locale on a corrupt preference", () => {
     expect(resolveLocale("de-DE" as never, "es-ES")).toBe(DEFAULT_LOCALE);
-    expect(
-      resolveLocale("" as never, undefined),
-    ).toBe(DEFAULT_LOCALE);
+    expect(resolveLocale("" as never, undefined)).toBe(DEFAULT_LOCALE);
   });
 });

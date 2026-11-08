@@ -11,8 +11,7 @@
  *   - Empty values: a leaf that is not a non-empty string.
  * Exits non-zero on any drift. Plain Node, no dependencies.
  *
- * Adapted from the Kaneo example's `scripts/i18n/check.mjs`, deliberately
- * simplified: Kaneo also validates per-language CLDR plural categories
+ * Validates per-language CLDR plural categories
  * (demanding e.g. `_many` for French's million-form). Our resource design
  * keeps `_one`/`_other` families only and relies on the engine's fallback to
  * `_other` for categories we don't declare, so identical key sets — not

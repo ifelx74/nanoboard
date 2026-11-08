@@ -19,7 +19,13 @@ type NavButtonProps = {
   label: string;
 };
 
-function NavButton({ tooltip, isActive, onClick, icon, label }: NavButtonProps) {
+function NavButton({
+  tooltip,
+  isActive,
+  onClick,
+  icon,
+  label,
+}: NavButtonProps) {
   return (
     <SidebarMenuButton
       tooltip={tooltip}

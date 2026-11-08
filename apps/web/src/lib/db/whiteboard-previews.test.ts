@@ -300,7 +300,10 @@ describe("the gallery listing query on fake-indexeddb", () => {
       ],
       whiteboards: [],
       whiteboardPreviews: [
-        makeWhiteboardPreview({ projectId: "project-beta", updatedAt: TEST_NOW }),
+        makeWhiteboardPreview({
+          projectId: "project-beta",
+          updatedAt: TEST_NOW,
+        }),
         makeWhiteboardPreview({
           projectId: "project-zulu",
           updatedAt: TEST_NOW + 5_000,
@@ -315,9 +318,7 @@ describe("the gallery listing query on fake-indexeddb", () => {
     // Zulu was edited last; Alpha and Beta tie on freshness and fall back
     // to project-name order, which differs from both seeding order and id.
     expect(
-      (await listWhiteboardGallery(database)).map(
-        (entry) => entry.projectName,
-      ),
+      (await listWhiteboardGallery(database)).map((entry) => entry.projectName),
     ).toEqual(["Zulu", "Alpha", "Beta"]);
 
     await database.close();
@@ -355,9 +356,7 @@ describe("the gallery listing query on fake-indexeddb", () => {
     // The join reads the project row on every call — the property the live
     // query relies on to surface renames without navigation.
     expect(
-      (await listWhiteboardGallery(database)).map(
-        (entry) => entry.projectName,
-      ),
+      (await listWhiteboardGallery(database)).map((entry) => entry.projectName),
     ).toEqual(["Renamed"]);
 
     await database.close();

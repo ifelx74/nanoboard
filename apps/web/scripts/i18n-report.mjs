@@ -12,9 +12,7 @@
  * rename, resource keys nothing references anymore, and dynamic calls that
  * bypass the typed surface — and is the extraction gate for agents.
  *
- * Adapted from the Kaneo example's `scripts/i18n/report.mjs`: only the
- * missing/unused/dynamic report shape is ported. The Kaneo parity-check
- * (`check`) and schema-generation (`schema`) scripts are deliberately not
+ * Parity-check (`check`) and schema-generation (`schema`) scripts are deliberately not
  * ported — parity is meaningless with a single locale, and typed keys
  * already cover missing keys at compile time. `--fix` pruning is not
  * ported either: this tool only reports.

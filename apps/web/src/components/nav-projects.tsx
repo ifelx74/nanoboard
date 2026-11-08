@@ -96,7 +96,9 @@ function ProjectRow({
       downloadTaskTransferDocument(await buildTaskTransferDocument(source));
       toast.success(t("projects.exported"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("projects.exportFailed"));
+      toast.error(
+        error instanceof Error ? error.message : t("projects.exportFailed"),
+      );
     } finally {
       setExporting(false);
     }

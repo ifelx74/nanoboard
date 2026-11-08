@@ -139,7 +139,9 @@ function RouteComponent() {
             <section className="flex flex-col gap-3">
               <SectionHeader title={t("projects.title")} />
               {projects.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("projects.empty")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("projects.empty")}
+                </p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-3">
                   {projects.map((project) => (

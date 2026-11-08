@@ -86,7 +86,6 @@ nanoboard is a pnpm + Turborepo monorepo:
 - [dnd-kit](https://dndkit.com) for drag and drop
 - [vite-plugin-pwa](https://vite-pwa-org.netlify.app) for PWA/offline support
 
-
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for local setup, development commands, project guidelines, and how to submit a pull request. For bugs and feature requests, [open an issue](https://github.com/ifelx74/nanoboard/issues).

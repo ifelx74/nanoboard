@@ -224,20 +224,20 @@ export function createSlashCommands(items: SlashItem[]) {
               onUpdate: (props: SuggestionProps) => {
                 renderer?.updateProps(props as unknown as SlashListProps);
               },
-            onKeyDown: (props: SuggestionKeyDownProps) =>
-              (
-                renderer?.ref as unknown as {
-                  onKeyDown: (event: KeyboardEvent) => boolean;
-                } | null
-              )?.onKeyDown(props.event) ?? false,
-            onExit: () => {
-              renderer?.destroy();
-              renderer = null;
-            },
-          };
-        },
-      }),
-    ];
-  },
+              onKeyDown: (props: SuggestionKeyDownProps) =>
+                (
+                  renderer?.ref as unknown as {
+                    onKeyDown: (event: KeyboardEvent) => boolean;
+                  } | null
+                )?.onKeyDown(props.event) ?? false,
+              onExit: () => {
+                renderer?.destroy();
+                renderer = null;
+              },
+            };
+          },
+        }),
+      ];
+    },
   });
 }

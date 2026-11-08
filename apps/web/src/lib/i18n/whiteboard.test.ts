@@ -16,9 +16,7 @@ describe("whiteboard extraction (ticket 12)", () => {
       string,
       Record<string, unknown>
     >;
-    expect(whiteboard.emptyState?.title).toBe(
-      "Nothing on the whiteboard yet.",
-    );
+    expect(whiteboard.emptyState?.title).toBe("Nothing on the whiteboard yet.");
     expect(whiteboard.emptyState?.description).toBe(
       "Boards appear here once you draw something in a project's Whiteboard view.",
     );

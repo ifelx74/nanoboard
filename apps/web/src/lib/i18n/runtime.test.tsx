@@ -26,9 +26,7 @@ function Probe() {
 function deBundle(tree: unknown): unknown {
   if (typeof tree === "string") return tree;
   const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(
-    tree as Record<string, unknown>,
-  )) {
+  for (const [key, value] of Object.entries(tree as Record<string, unknown>)) {
     out[key] = deBundle(value);
   }
   return out;
@@ -62,7 +60,11 @@ describe("translation runtime", () => {
       string,
       Record<string, unknown>
     >;
-    de.navigation = { home: "Start", stickies: "Notizen", whiteboard: "Weißbret" };
+    de.navigation = {
+      home: "Start",
+      stickies: "Notizen",
+      whiteboard: "Weißbret",
+    };
     for (const [namespace, resources] of Object.entries(de)) {
       i18n.addResourceBundle("de", namespace, resources, true, true);
     }

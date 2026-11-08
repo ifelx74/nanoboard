@@ -73,8 +73,7 @@ export default defineConfig(({ mode }) => {
         manifest: {
           name: "Nanoboard",
           short_name: "Nanoboard",
-          description:
-            "A minimalist, local-first space for your tasks.",
+          description: "A minimalist, local-first space for your tasks.",
           id: "/",
           start_url: "/",
           scope: "/",

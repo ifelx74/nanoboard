@@ -29,7 +29,12 @@ export function thumbnailAppState(
     exportBackground: true,
     exportWithDarkMode: false,
     exportScale: 1,
-    frameRendering: { enabled: false, clip: false, name: false, outline: false },
+    frameRendering: {
+      enabled: false,
+      clip: false,
+      name: false,
+      outline: false,
+    },
   };
 }
 

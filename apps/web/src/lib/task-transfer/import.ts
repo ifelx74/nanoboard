@@ -378,7 +378,11 @@ export function planTaskImport(
     const startPlan = planDay(item.startDate, "start date");
     const duePlan = planDay(item.dueDate, "due date");
     const archivedPlan = planArchivedAt(item.archivedAt);
-    warnings.push(...startPlan.warnings, ...duePlan.warnings, ...archivedPlan.warnings);
+    warnings.push(
+      ...startPlan.warnings,
+      ...duePlan.warnings,
+      ...archivedPlan.warnings,
+    );
 
     let start = startPlan.value;
     const due = duePlan.value;

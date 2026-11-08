@@ -51,7 +51,10 @@ export function LogoIcon({ "aria-label": ariaLabel, ...props }: LogoIconProps) {
   );
 }
 
-export function BackgroundLogo({ "aria-label": ariaLabel, ...props }: LogoIconProps) {
+export function BackgroundLogo({
+  "aria-label": ariaLabel,
+  ...props
+}: LogoIconProps) {
   const { t } = useTranslation("common");
   return (
     <svg

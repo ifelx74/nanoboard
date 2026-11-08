@@ -234,7 +234,9 @@ export function RestoreBackupDialog({
                   ) : (
                     <FileJson aria-hidden="true" />
                   )}
-                  {parsing ? t("data.restore.reading") : t("data.restore.selectFile")}
+                  {parsing
+                    ? t("data.restore.reading")
+                    : t("data.restore.selectFile")}
                 </Button>
               </div>
               {error && (
@@ -334,7 +336,9 @@ export function RestoreBackupDialog({
                 {restoring && (
                   <Loader2 className="animate-spin" aria-hidden="true" />
                 )}
-                {restoring ? t("data.restore.restoring") : t("data.restore.restoreEverything")}
+                {restoring
+                  ? t("data.restore.restoring")
+                  : t("data.restore.restoreEverything")}
               </Button>
             </>
           )}

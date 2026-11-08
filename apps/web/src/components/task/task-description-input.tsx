@@ -5,10 +5,7 @@ import { cn } from "@/lib/utils";
 import { createDescriptionExtensions } from "@/lib/editor/preset";
 import { formatMarkdown } from "@/lib/editor/markdown";
 import DescriptionBubbleMenu from "./description-bubble-menu";
-import {
-  createSlashCommands,
-  useSlashItems,
-} from "./description-slash-menu";
+import { createSlashCommands, useSlashItems } from "./description-slash-menu";
 import "./task-description.css";
 
 /**
@@ -50,10 +47,7 @@ export default function TaskDescriptionInput({
 
   return (
     <div className={cn("nb-description", className)}>
-      <EditorContent
-        editor={editor}
-        aria-label={t("description.ariaLabel")}
-      />
+      <EditorContent editor={editor} aria-label={t("description.ariaLabel")} />
       {editor && <DescriptionBubbleMenu editor={editor} />}
     </div>
   );

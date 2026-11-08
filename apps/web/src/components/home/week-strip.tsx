@@ -49,7 +49,9 @@ export function WeekStrip({ tasks, day }: WeekStripProps) {
             <div className="flex items-center gap-1.5 text-xs">
               {day.isToday ? (
                 <>
-                  <span className="font-semibold text-foreground">{t("weekStrip.today")}</span>
+                  <span className="font-semibold text-foreground">
+                    {t("weekStrip.today")}
+                  </span>
                   {day.tasks.length > 0 && (
                     <span className="flex size-4.5 items-center justify-center rounded-full bg-foreground font-semibold text-[11px] text-background tabular-nums">
                       {day.tasks.length}

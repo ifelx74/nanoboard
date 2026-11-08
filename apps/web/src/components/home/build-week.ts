@@ -23,7 +23,10 @@ const DAYS_BEFORE = 3;
 const DAYS_AFTER = 3;
 
 /** Inclusive due-date window the strip queries for, centred on `now`. */
-export function weekWindow(now = new Date()): { from: DueDateString; to: DueDateString } {
+export function weekWindow(now = new Date()): {
+  from: DueDateString;
+  to: DueDateString;
+} {
   const start = startOfDay(now);
   return {
     from: toDayString(addDays(start, -DAYS_BEFORE)) as DueDateString,

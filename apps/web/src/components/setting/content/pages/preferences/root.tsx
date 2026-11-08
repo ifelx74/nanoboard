@@ -17,7 +17,9 @@ export const PreferencesSettings = () => {
           <DefaultSettingPreferencesList />
         </section>
         <section className="flex flex-col gap-y-3">
-          <div className="font-medium text-primary">{t("preferences.languageTime")}</div>
+          <div className="font-medium text-primary">
+            {t("preferences.languageTime")}
+          </div>
           <LanguageAndTimezoneList />
         </section>
         {/* <section className="mt-auto border-t border-border">

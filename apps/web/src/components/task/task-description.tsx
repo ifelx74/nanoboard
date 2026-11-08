@@ -8,10 +8,7 @@ import { formatMarkdown } from "@/lib/editor/markdown";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import DescriptionBubbleMenu from "./description-bubble-menu";
-import {
-  createSlashCommands,
-  useSlashItems,
-} from "./description-slash-menu";
+import { createSlashCommands, useSlashItems } from "./description-slash-menu";
 import "./task-description.css";
 
 const AUTOSAVE_DELAY = 700;

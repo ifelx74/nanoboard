@@ -22,9 +22,14 @@ function RouteComponent() {
   // While the first query run is still pending (entries === undefined) render
   // nothing: falling through to the empty state here would flash "Nothing on
   // the whiteboard yet" on every gallery visit before real entries arrive.
-  const list = entries === undefined ? [] : [...entries].sort((a, b) =>
-    b.updatedAt - a.updatedAt || compareStrings(a.projectName, b.projectName),
-  );
+  const list =
+    entries === undefined
+      ? []
+      : [...entries].sort(
+          (a, b) =>
+            b.updatedAt - a.updatedAt ||
+            compareStrings(a.projectName, b.projectName),
+        );
   const { t } = useTranslation("whiteboard");
 
   return (

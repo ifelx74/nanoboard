@@ -23,7 +23,8 @@ function Calendar({
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
   const localePreference = useLocaleStore((state) => state.locale);
-  const locale = localeProp ?? getDateLocale(getResolvedLocale(localePreference));
+  const locale =
+    localeProp ?? getDateLocale(getResolvedLocale(localePreference));
   const defaultClassNames = {
     button_next: buttonClassNames,
     button_previous: buttonClassNames,
