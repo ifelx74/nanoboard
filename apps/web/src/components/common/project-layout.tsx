@@ -76,30 +76,32 @@ export function ProjectLayout({
                 <BreadcrumbSeparator className="hidden sm:inline-flex" />
                 <BreadcrumbItem>
                   <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="px-1.5 py-0.5 text-sm"
-                      >
-                        {isBacklogView
-                          ? t("toolbar.backlog")
-                          : isArchivesView
-                            ? t("toolbar.archives")
-                            : t("toolbar.whiteboard")}
-                        {isArchivesView && archiveCount > 0 && (
-                          <span
-                            aria-label={t("toolbar.archivedTasks", {
-                              count: archiveCount,
-                            })}
-                            className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-100 px-1.5 text-[11px] font-semibold tabular-nums text-brand-800 dark:bg-brand-900 dark:text-brand-100"
-                          >
-                            {archiveCount}
-                          </span>
-                        )}
-                        <ChevronsUpDown className="size-3 text-foreground/70" />
-                      </Button>
-                    </DropdownMenuTrigger>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="px-1.5 py-0.5 text-sm"
+                        >
+                          {isBacklogView
+                            ? t("toolbar.backlog")
+                            : isArchivesView
+                              ? t("toolbar.archives")
+                              : t("toolbar.whiteboard")}
+                          {isArchivesView && archiveCount > 0 && (
+                            <span
+                              aria-label={t("toolbar.archivedTasks", {
+                                count: archiveCount,
+                              })}
+                              className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-100 px-1.5 text-[11px] font-semibold tabular-nums text-brand-800 dark:bg-brand-900 dark:text-brand-100"
+                            >
+                              {archiveCount}
+                            </span>
+                          )}
+                          <ChevronsUpDown className="size-3 text-foreground/70" />
+                        </Button>
+                      }
+                    />
                     <DropdownMenuContent
                       className="w-48 rounded-sm"
                       align="start"
