@@ -13,7 +13,7 @@ import {
 import { NavSecondary } from "./nav-secondary";
 import { BackgroundLogo } from "./common/logo";
 import { Button } from "./ui/button";
-import Github from "@/icons/github";
+import Github from "@/icons/brand/github";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation("navigation");

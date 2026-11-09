@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronRight, Link, X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { linkHost } from "./link-host";
+import { getResourceIcon } from "./resource-icon";
 import { SectionAddButton } from "./sections/section-add-button";
 import { SectionHeader } from "./sections/section-header";
 import { sectionRowClass } from "./sections/section-row-class";
@@ -156,10 +157,15 @@ export default function TaskResources({
                       rel="noopener noreferrer"
                       className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch outline-none focus-visible:underline"
                     >
-                      <Link
-                        className="size-3.5 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
+                      {(() => {
+                        const ResourceIcon = getResourceIcon(resource.url);
+                        return (
+                          <ResourceIcon
+                            className="size-4 shrink-0 text-muted-foreground"
+                            aria-hidden="true"
+                          />
+                        );
+                      })()}
                       <span className="min-w-0 shrink truncate text-[13px] text-foreground/85 group-hover:text-foreground">
                         {resource.title || resource.url}
                       </span>

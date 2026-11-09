@@ -13,7 +13,7 @@ export default function PriorityFilled({ ...props }: PriorityFilledProps) {
       aria-hidden="true"
       {...props}
     >
-      <g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd">
+      <g fill="currentColor" fillRule="evenodd" clipRule="evenodd">
         <path d="M12 2c.368 0 .667.298.667.667v10.666a.667.667 0 1 1-1.333 0V2.667c0-.369.298-.667.666-.667M4 10c.368 0 .667.299.667.667v2.666a.667.667 0 1 1-1.333 0v-2.666c0-.368.298-.667.666-.667M8 6c.368 0 .667.298.667.667v6.666a.667.667 0 1 1-1.333 0V6.667C7.334 6.298 7.632 6 8 6"></path>
       </g>
     </svg>
