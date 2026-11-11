@@ -36,6 +36,11 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Guard the initial-load budget (see PERF.md): fail the deploy if the
+      # above build blew the JS/CSS gzip budgets in index.html's entry set.
+      - name: Bundle size check
+        run: pnpm --filter web check:bundle
+
       - name: Deploy to Cloudflare Pages
         run: pnpm exec wrangler pages deploy dist --project-name=nanoboard --branch=main
         working-directory: apps/web

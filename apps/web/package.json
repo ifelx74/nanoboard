@@ -11,7 +11,8 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "test": "vitest run",
     "i18n:report": "node scripts/i18n-report.mjs",
-    "i18n:check": "node scripts/i18n-check.mjs"
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "check:bundle": "node scripts/check-bundle-size.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

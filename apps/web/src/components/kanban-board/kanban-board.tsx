@@ -13,7 +13,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { reorderTasks } from "@/lib/db/queries";
 import { useLiveQuery } from "dexie-react-hooks";
 import { countArchivableTasksByFinalColumn } from "@/lib/db/queries";
@@ -185,10 +185,15 @@ export default function KanbanBoard({
     }
   }, [preview, writing, liveGrouping]);
 
-  function registerLaneRef(columnId: string, element: HTMLElement | null) {
-    if (element) laneEls.current.set(columnId, element);
-    else laneEls.current.delete(columnId);
-  }
+  // Stable identity: BoardColumn is memoized (element-wise tasks compare) and
+  // this callback is one of its props — an inline closure would defeat it.
+  const registerLaneRef = useCallback(
+    (columnId: string, element: HTMLElement | null) => {
+      if (element) laneEls.current.set(columnId, element);
+      else laneEls.current.delete(columnId);
+    },
+    [],
+  );
 
   function resolveTarget(
     event: DragOverEvent | DragEndEvent,
