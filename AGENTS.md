@@ -23,7 +23,7 @@ From the repo root:
 - `pnpm build` — includes the typecheck: `apps/web` runs `tsc` (noEmit) before `vite build`.
 - `pnpm lint`, `pnpm test`, `pnpm format`.
 
-Focused: `cd apps/web && pnpm test` runs Vitest over `src/**/*.test.{ts,tsx}`.
+Focused: `cd apps/web && pnpm test` runs Vitest over `src/**/*.test.{ts,tsx}`. `pnpm --filter web check:bundle` enforces the initial-load JS/CSS gzip budgets (see `PERF.md`) against `dist/` — run it after `pnpm build`.
 
 ## Guidelines
 
