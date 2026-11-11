@@ -33,16 +33,25 @@ Bump limits only in a PR that shows the trade-off is deliberate.
   fake-indexeddb. Fine under the autosave debounce; revisit only with a
   real-device INP regression.
 - `getProjectTasks`: 2.4 ms per call (one project, 200 tasks).
+- Kanban drag on a 200-task board (headless Firefox, drag from column 1 to
+  column 2, 40 pointer steps; fresh profile + synthetic tasks per run):
+  baseline worst rAF gap 203–214 ms (8–10 frames > 32 ms); after the
+  `TaskCardView`/`BoardColumn` memo change, worst gap 89–110 ms with one
+  152 ms outlier (4–9 frames > 32 ms), n=3 vs n=6. Card moved columns on
+  every run. Remaining gap is dnd-kit's drag-start `measureDroppableContainers`
+  sweep — not a React re-render cost.
 
-No browser was available during the audit, so LCP/INP/CLS were not measured;
-re-verify with a real Chrome profile before/after future changes.
+Measurement harness: no browser was initially available; timings come from
+headless Firefox 153 (system binary, WebDriver BiDi via puppeteer-core in a
+scratch dir — not a repo dependency). Re-measure in Chrome with a real
+Performance trace before treating these numbers as release-grade.
 
 ## Ledger
 
-| Idea                                          | Measured result                 | Verdict  | Why                                                              |
-| --------------------------------------------- | ------------------------------- | -------- | ---------------------------------------------------------------- |
-| Denormalize/optimize `getProjectsStats`       | 12.5 ms @ scale                 | rejected | Within budget; needs schema v5, no measured win                  |
-| Memoize `SortableTaskCard`/`BoardColumn`      | unmeasurable without a profiler | rejected | dnd-kit re-renders transforms anyway; blanket memo is a red flag |
-| Lazy-load TipTap out of the board route chunk | ~130 kB gz deferred             | rejected | Punishes the primary interaction (opening a task)                |
-| Exclude locale chunks from the precache       | 5.6 → ~4.4 MB install           | declined | Offline-first is a stated goal; kept deliberately                |
-| Add `check:bundle` budget + CI guard          | 213.5 kB vs 240 kB budget       | kept     | Prevents silent initial-load regressions                         |
+| Idea                                                                                           | Measured result                                                  | Verdict  | Why                                                                                                |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| Denormalize/optimize `getProjectsStats`                                                        | 12.5 ms @ scale                                                  | rejected | Within budget; needs schema v5, no measured win                                                    |
+| Memoize `TaskCardView` + `BoardColumn` (element-wise tasks compare) + stable `registerLaneRef` | worst frame gap 203–214 ms → 89–110 ms; >32 ms frames 8–10 → 4–5 | kept     | dnd-kit re-renders transforms regardless; the win is skipping the card subtree in unaffected lanes |
+| Lazy-load TipTap out of the board route chunk                                                  | ~130 kB gz deferred                                              | rejected | Punishes the primary interaction (opening a task)                                                  |
+| Exclude locale chunks from the precache                                                        | 5.6 → ~4.4 MB install                                            | declined | Offline-first is a stated goal; kept deliberately                                                  |
+| Add `check:bundle` budget + CI guard                                                           | 213.5 kB vs 240 kB budget                                        | kept     | Prevents silent initial-load regressions                                                           |

@@ -12,6 +12,7 @@ import {
   CalendarX,
   Plus,
 } from "lucide-react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,11 @@ const dueDateTextColors = {
  * displayed in a separate row below the title and labels.
  *
  */
-export function TaskCardView({
+// Memoized: during a drag the board re-renders on every drop-slot change,
+// and this card is the expensive leaf (badge, icons, dates). Props are
+// shallow-stable there — task/labels refs ride the live query; only the
+// card changing columns or dragging state re-renders.
+export const TaskCardView = memo(function TaskCardView({
   task,
   labels,
   isFinal = false,
@@ -139,7 +144,7 @@ export function TaskCardView({
       )}
     </article>
   );
-}
+});
 
 function SortableTaskCard({
   task,
@@ -194,19 +199,39 @@ function SortableTaskCard({
   );
 }
 
-export default function BoardColumn({
-  column,
-  tasks,
-  labelsByTask,
-  filterActive,
-  disabled,
-  justDraggedRef,
-  onOpenTask,
-  onCreateTask,
-  onArchiveColumn,
-  registerLaneRef,
-  projectSlug,
-}: {
+// Element-wise compare for the lane's tasks: the preview/live pipeline hands
+// each render a fresh `tasks` array, so default shallow compare would never
+// hold — but during a drag only the source/target lanes change their
+// element order, and every other lane's array is element-identical.
+function sameTaskList(a: Task[], b: Task[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function boardColumnPropsEqual(
+  prev: BoardColumnProps,
+  next: BoardColumnProps,
+): boolean {
+  return (
+    prev.column === next.column &&
+    sameTaskList(prev.tasks, next.tasks) &&
+    prev.labelsByTask === next.labelsByTask &&
+    prev.filterActive === next.filterActive &&
+    prev.disabled === next.disabled &&
+    prev.justDraggedRef === next.justDraggedRef &&
+    prev.onOpenTask === next.onOpenTask &&
+    prev.onCreateTask === next.onCreateTask &&
+    prev.onArchiveColumn === next.onArchiveColumn &&
+    prev.registerLaneRef === next.registerLaneRef &&
+    prev.projectSlug === next.projectSlug
+  );
+}
+
+interface BoardColumnProps {
   column: Column;
   tasks: Task[];
   labelsByTask: Map<string, Label[]>;
@@ -218,7 +243,23 @@ export default function BoardColumn({
   onArchiveColumn: (column: Column) => void;
   registerLaneRef: (columnId: string, element: HTMLElement | null) => void;
   projectSlug: string;
-}) {
+}
+
+// Memoized with an element-wise tasks comparison: unaffected lanes skip
+// re-rendering entirely on each drag preview tick.
+const BoardColumn = memo(function BoardColumn({
+  column,
+  tasks,
+  labelsByTask,
+  filterActive,
+  disabled,
+  justDraggedRef,
+  onOpenTask,
+  onCreateTask,
+  onArchiveColumn,
+  registerLaneRef,
+  projectSlug,
+}: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
     data: { type: "column", taskIds: tasks.map((task) => task.id) },
@@ -302,4 +343,6 @@ export default function BoardColumn({
       </div>
     </section>
   );
-}
+}, boardColumnPropsEqual);
+
+export default BoardColumn;
