@@ -62,7 +62,7 @@ export default function TaskDescription({
 
   useEffect(() => {
     if (!editor) return undefined;
-    editor.setEditable(!disabled);
+    editor.setEditable(!disabled, false);
     return undefined;
   }, [editor, disabled]);
 
