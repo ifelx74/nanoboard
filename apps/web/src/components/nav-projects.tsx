@@ -117,14 +117,14 @@ function ProjectRow({
         {/* Gives way to the row menu, which sits here on hover. */}
         <ProjectProgress
           percentage={stats?.completionPercentage ?? 0}
-          className="text-muted-foreground max-md:hidden group-focus-within/menu-item:opacity-0 group-hover/menu-item:opacity-0 group-has-data-[popup-open]/menu-item:opacity-0"
+          className="text-muted-foreground max-md:hidden group-focus-within/menu-item:opacity-0 group-hover/menu-item:opacity-0 group-has-data-popup-open/menu-item:opacity-0"
         />
       </SidebarMenuButton>
 
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger
           aria-label={t("projects.moreActions", { name: project.name })}
-          className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground ring-sidebar-ring transition-transform outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-popup-open:opacity-100 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 md:opacity-0"
+          className="absolute top-1.5 right-1 cursor-pointer flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring transition-transform outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-popup-open:opacity-100 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 md:opacity-0"
         >
           <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>
@@ -222,7 +222,7 @@ export function NavProjects() {
 
   return (
     <>
-      <SidebarGroup className="min-h-0 flex-1 gap-1 p-2 pt-1">
+      <SidebarGroup className="min-h-0 flex-1 gap-1 p-3 pt-0">
         <div className="relative shrink-0">
           <SidebarGroupLabel
             className={cn(

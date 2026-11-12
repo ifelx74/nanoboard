@@ -103,7 +103,7 @@ export function ProjectLayout({
                       }
                     />
                     <DropdownMenuContent
-                      className="w-48 rounded-sm"
+                      className="w-52 rounded-sm"
                       align="start"
                       side="bottom"
                     >

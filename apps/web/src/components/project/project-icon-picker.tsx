@@ -44,7 +44,7 @@ export default function ProjectIconPicker({
           <SelectedIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-2" align="start">
+      <PopoverContent className="w-68 pt-0.5" align="start">
         <div className="space-y-2">
           <Input
             value={search}
@@ -52,7 +52,7 @@ export default function ProjectIconPicker({
             placeholder={t("iconPicker.searchPlaceholder")}
             className="h-8 text-xs"
           />
-          <div className="max-h-[280px] overflow-y-auto pr-1">
+          <div className="max-h-70 overflow-y-auto pr-1">
             <div className="grid grid-cols-6 gap-1.5">
               {filteredIcons.map(([iconName, Icon]) => {
                 const isSelected = selected === iconName;
@@ -68,7 +68,7 @@ export default function ProjectIconPicker({
                       setSearch("");
                     }}
                     className={cn(
-                      "h-10 items-center justify-center rounded-md p-0",
+                      "h-8 items-center justify-center rounded-md p-0 aspect-square",
                       isSelected &&
                         "bg-sidebar-accent text-sidebar-accent-foreground",
                     )}

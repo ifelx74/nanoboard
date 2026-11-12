@@ -31,7 +31,7 @@ function NavButton({
       tooltip={tooltip}
       isActive={isActive}
       size="default"
-      className="h-8 text-sm text-primary"
+      className="h-8 text-[15px] text-primary"
       onClick={onClick}
     >
       {icon}
@@ -48,7 +48,7 @@ export function NavMain() {
   const { t } = useTranslation("navigation");
 
   return (
-    <SidebarGroup className="shrink-0 gap-1 p-2">
+    <SidebarGroup className="shrink-0 gap-1 px-3">
       <SidebarGroupContent>
         <SidebarMenu className="gap-0.5">
           <SidebarMenuItem>
