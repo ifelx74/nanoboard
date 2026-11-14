@@ -4,6 +4,7 @@ import {
   parseEnvelope,
   sealBackupEnvelope,
   sealTaskTransferEnvelope,
+  TASK_TRANSFER_ENVELOPE_FORMAT,
 } from "./envelope";
 
 const PASSPHRASE = "correct horse battery staple";
@@ -115,6 +116,22 @@ describe("openEnvelope", () => {
     await expect(openEnvelope(tampered, PASSPHRASE)).rejects.toThrow(
       /passphrase|damaged|incomplete/i,
     );
+  });
+
+  it("fails the same way when the plaintext header metadata is tampered with", async () => {
+    const envelope = parseEnvelope(
+      await sealBackupEnvelope(PAYLOAD, PASSPHRASE, HEADER),
+    );
+
+    for (const tampered of [
+      { ...envelope, appVersion: "9.9.9" },
+      { ...envelope, exportedAt: "1999-01-01T00:00:00.000Z" },
+      { ...envelope, format: TASK_TRANSFER_ENVELOPE_FORMAT },
+    ]) {
+      await expect(
+        openEnvelope(JSON.stringify(tampered), PASSPHRASE),
+      ).rejects.toThrow(/passphrase|damaged|incomplete/i);
+    }
   });
 
   it("fails the same way on a truncated ciphertext", async () => {

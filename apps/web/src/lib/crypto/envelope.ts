@@ -5,7 +5,9 @@
  * PBKDF2-HMAC-SHA-256 key derived per file. The header — format, version,
  * backup-only appVersion/exportedAt, and the encryption block — stays
  * plaintext so the UI can validate and identify the file before the user
- * enters the passphrase; only the payload is sealed. PBKDF2 parameters are
+ * enters the passphrase; the payload is sealed and the header is bound
+ * to the ciphertext as AES-GCM's additional authenticated data, so the
+ * header can be displayed but not rewritten. PBKDF2 parameters are
  * recorded in the envelope so future parameter bumps don't lock out old
  * files. No passphrase verifier: GCM authentication alone distinguishes
  * right from wrong keys.
@@ -64,6 +66,52 @@ export interface TaskTransferEnvelope {
 
 export type Envelope = BackupEnvelope | TaskTransferEnvelope;
 
+/**
+ * The plaintext header — format, version, and the backup-only metadata —
+ * is bound to the ciphertext as AES-GCM's additional authenticated data.
+ * Without it, an attacker with write access to the file could rewrite the
+ * metadata the unlock step displays (or the version the gate uses) and the
+ * GCM tag would still verify. Key order in the AAD is fixed by construction;
+ * both the seal and open paths build it through this one function.
+ *
+ * Note: envelopes sealed before AAD was introduced can no longer be opened
+ * — they fail GCM verification and surface as the ambiguous error.
+ */
+function headerAdditionalData(
+  fields: Record<string, string | number>,
+): Uint8Array {
+  return new TextEncoder().encode(JSON.stringify(fields));
+}
+
+function backupHeaderFields(
+  format: string,
+  version: number,
+  appVersion?: string,
+  exportedAt?: string,
+): Record<string, string | number> {
+  const fields: Record<string, string | number> = { format, version };
+  if (appVersion !== undefined) fields.appVersion = appVersion;
+  if (exportedAt !== undefined) fields.exportedAt = exportedAt;
+  return fields;
+}
+
+function envelopeAdditionalData(envelope: Envelope): Uint8Array {
+  if (envelope.format === BACKUP_ENVELOPE_FORMAT) {
+    return headerAdditionalData(
+      backupHeaderFields(
+        envelope.format,
+        envelope.version,
+        envelope.appVersion,
+        envelope.exportedAt,
+      ),
+    );
+  }
+  return headerAdditionalData({
+    format: envelope.format,
+    version: envelope.version,
+  });
+}
+
 export interface BackupEnvelopeHeader {
   appVersion: string;
   exportedAt: string;
@@ -79,7 +127,19 @@ export async function sealBackupEnvelope(
   passphrase: string,
   header: BackupEnvelopeHeader,
 ): Promise<string> {
-  const { encryption, ciphertext } = await sealPayload(payload, passphrase);
+  const additionalData = headerAdditionalData(
+    backupHeaderFields(
+      BACKUP_ENVELOPE_FORMAT,
+      BACKUP_ENVELOPE_VERSION,
+      header.appVersion,
+      header.exportedAt,
+    ),
+  );
+  const { encryption, ciphertext } = await sealPayload(
+    payload,
+    passphrase,
+    additionalData,
+  );
   const envelope: BackupEnvelope = {
     format: BACKUP_ENVELOPE_FORMAT,
     version: BACKUP_ENVELOPE_VERSION,
@@ -99,7 +159,14 @@ export async function sealTaskTransferEnvelope(
   payload: unknown,
   passphrase: string,
 ): Promise<string> {
-  const { encryption, ciphertext } = await sealPayload(payload, passphrase);
+  const { encryption, ciphertext } = await sealPayload(
+    payload,
+    passphrase,
+    headerAdditionalData({
+      format: TASK_TRANSFER_ENVELOPE_FORMAT,
+      version: TASK_TRANSFER_ENVELOPE_VERSION,
+    }),
+  );
   const envelope: TaskTransferEnvelope = {
     format: TASK_TRANSFER_ENVELOPE_FORMAT,
     version: TASK_TRANSFER_ENVELOPE_VERSION,
@@ -223,8 +290,8 @@ export async function openEnvelope(
  * half of {@link openEnvelope}, split out so a caller that already
  * validated the envelope (e.g. {@link parseEnvelope} for the pre-passphrase
  * header check) doesn't pay a second JSON.parse and shape validation.
- * GCM covers everything but the plaintext header. Any failure — bad payload
- * encoding, GCM
+ * The plaintext header is bound as the GCM additional authenticated
+ * data. Any failure — bad payload encoding, GCM
  * authentication, or non-JSON plaintext — surfaces as one ambiguous error;
  * callers should not try to tell the causes apart.
  */
@@ -238,11 +305,16 @@ export async function decryptEnvelope(
   const salt = base64ToBytes(kdf.salt);
   const iv = base64ToBytes(envelope.encryption.iv);
   const key = await deriveKey(passphrase, salt, kdf.iterations);
+  const additionalData = envelopeAdditionalData(envelope);
 
   let plaintext: ArrayBuffer;
   try {
     plaintext = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: toBufferSource(iv) },
+      {
+        name: "AES-GCM",
+        iv: toBufferSource(iv),
+        additionalData: toBufferSource(additionalData),
+      },
       key,
       toBufferSource(payload),
     );
@@ -260,6 +332,7 @@ export async function decryptEnvelope(
 async function sealPayload(
   payload: unknown,
   passphrase: string,
+  additionalData: Uint8Array,
 ): Promise<{ encryption: EncryptionBlock; ciphertext: string }> {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
@@ -267,7 +340,11 @@ async function sealPayload(
 
   const plaintext = new TextEncoder().encode(JSON.stringify(payload));
   const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: toBufferSource(iv) },
+    {
+      name: "AES-GCM",
+      iv: toBufferSource(iv),
+      additionalData: toBufferSource(additionalData),
+    },
     key,
     toBufferSource(plaintext),
   );
