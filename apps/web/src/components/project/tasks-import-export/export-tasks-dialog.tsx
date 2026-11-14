@@ -186,14 +186,6 @@ export function ExportTasksDialog({
                     {t("export.cryptoUnavailable")}
                   </p>
                 )}
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:pointer-events-none disabled:opacity-50"
-                  disabled={exporting}
-                  onClick={() => setProtection("plain")}
-                >
-                  {t("export.saveUnencryptedInstead")}
-                </button>
               </>
             )}
 
@@ -210,21 +202,38 @@ export function ExportTasksDialog({
                     {t("export.cryptoUnavailable")}
                   </p>
                 )}
-                {cryptoAvailable && (
-                  <button
-                    type="button"
-                    className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:pointer-events-none disabled:opacity-50"
-                    disabled={exporting}
-                    onClick={() => setProtection("encrypted")}
-                  >
-                    {t("export.protectWithPassphrase")}
-                  </button>
-                )}
               </>
             )}
           </DialogPanel>
 
           <DialogFooter>
+            <div className="mr-auto flex items-center">
+              {encrypted ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  disabled={exporting}
+                  onClick={() => setProtection("plain")}
+                >
+                  {t("export.saveUnencryptedInstead")}
+                </Button>
+              ) : (
+                cryptoAvailable && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-muted-foreground"
+                    disabled={exporting}
+                    onClick={() => setProtection("encrypted")}
+                  >
+                    {t("export.protectWithPassphrase")}
+                  </Button>
+                )
+              )}
+            </div>
             <DialogClose
               render={<Button variant="outline" size="sm" />}
               disabled={exporting}
