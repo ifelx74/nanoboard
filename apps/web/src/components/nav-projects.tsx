@@ -11,7 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -34,20 +34,25 @@ import CreateProjectDialog from "@/components/project/create-project-dialog";
 import EditProjectDialog from "@/components/project/edit-project-dialog";
 import ProjectDeleteDialog from "@/components/project/project-delete-dialog";
 import { ProjectProgress } from "@/components/project/project-progress";
-import { ImportTasksDialog } from "@/components/project/tasks-import-export/import-tasks-dialog";
-import { downloadTaskTransferDocument } from "@/components/project/tasks-import-export/download";
-import {
-  getProjects,
-  getProjectsStats,
-  readProjectTransferSource,
-} from "@/lib/db/queries";
+import { getProjects, getProjectsStats } from "@/lib/db/queries";
 import type { ProjectStats } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
 import type { Project } from "@/lib/db/schema";
-import { buildTaskTransferDocument } from "@/lib/task-transfer/export";
 import { getProjectIcon } from "@/lib/project-icons";
-import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+
+// The transfer dialogs (which pull the crypto envelope module into their
+// chunks) load on first open instead of shipping with the app shell.
+const ExportTasksDialog = lazy(() =>
+  import("@/components/project/tasks-import-export/export-tasks-dialog").then(
+    (m) => ({ default: m.ExportTasksDialog }),
+  ),
+);
+const ImportTasksDialog = lazy(() =>
+  import("@/components/project/tasks-import-export/import-tasks-dialog").then(
+    (m) => ({ default: m.ImportTasksDialog }),
+  ),
+);
 
 function ProjectRow({
   project,
@@ -66,7 +71,11 @@ function ProjectRow({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  // Latched on first open so the lazy dialog chunks load on demand but stay
+  // mounted afterwards (keeping open/close animations).
+  const [hasOpenedImport, setHasOpenedImport] = useState(false);
+  const [hasOpenedExport, setHasOpenedExport] = useState(false);
   const ProjectIcon = getProjectIcon(project.icon);
 
   function openBoard() {
@@ -86,22 +95,6 @@ function ProjectRow({
   function handleDeleteRequest() {
     setMenuOpen(false);
     setDeleteOpen(true);
-  }
-
-  async function handleExport() {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      const source = await readProjectTransferSource(db, project.id);
-      downloadTaskTransferDocument(await buildTaskTransferDocument(source));
-      toast.success(t("projects.exported"));
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("projects.exportFailed"),
-      );
-    } finally {
-      setExporting(false);
-    }
   }
 
   return (
@@ -148,10 +141,10 @@ function ProjectRow({
             <span>{t("projects.edit")}</span>
           </DropdownMenuItem>
           <DropdownMenuItem
-            disabled={exporting}
             onClick={() => {
               setMenuOpen(false);
-              void handleExport();
+              setHasOpenedExport(true);
+              setExportOpen(true);
             }}
           >
             <ArrowUpFromLine className="size-4 shrink-0" />
@@ -160,6 +153,7 @@ function ProjectRow({
           <DropdownMenuItem
             onClick={() => {
               setMenuOpen(false);
+              setHasOpenedImport(true);
               setImportOpen(true);
             }}
           >
@@ -195,12 +189,26 @@ function ProjectRow({
         open={editOpen}
         onClose={() => setEditOpen(false)}
       />
-      <ImportTasksDialog
-        projectId={project.id}
-        projectName={project.name}
-        open={importOpen}
-        onOpenChange={setImportOpen}
-      />
+      {hasOpenedImport && (
+        <Suspense fallback={null}>
+          <ImportTasksDialog
+            projectId={project.id}
+            projectName={project.name}
+            open={importOpen}
+            onOpenChange={setImportOpen}
+          />
+        </Suspense>
+      )}
+      {hasOpenedExport && (
+        <Suspense fallback={null}>
+          <ExportTasksDialog
+            projectId={project.id}
+            projectName={project.name}
+            open={exportOpen}
+            onOpenChange={setExportOpen}
+          />
+        </Suspense>
+      )}
     </SidebarMenuItem>
   );
 }

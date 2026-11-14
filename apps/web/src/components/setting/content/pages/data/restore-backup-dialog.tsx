@@ -1,6 +1,8 @@
 import {
   AlertCircle,
   CheckCircle2,
+  Eye,
+  EyeOff,
   FileJson,
   HardDriveDownload,
   Loader2,
@@ -9,12 +11,19 @@ import {
 import {
   type ChangeEvent,
   type DragEvent,
+  type FormEvent,
   useEffect,
   useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  UnlockPassphraseFooter,
+  UnlockPassphraseForm,
+} from "@/components/passphrase/unlock-passphrase-form";
 import {
   Dialog,
   DialogClose,
@@ -31,6 +40,13 @@ import {
   parseBackupDocument,
   readWorkspaceCounts,
 } from "@/lib/backup/apply";
+import {
+  BackupDecryptError,
+  isBackupEnvelope,
+  openBackupDocument,
+  readBackupEnvelope,
+  sealBackupDocument,
+} from "@/lib/backup/encrypt";
 import { createBackupDocument } from "@/lib/backup/create";
 import {
   BACKUP_TABLES,
@@ -38,11 +54,18 @@ import {
   type BackupTableName,
 } from "@/lib/backup/types";
 import { db } from "@/lib/db/db";
+import { MAX_IMPORT_FILE_BYTES } from "@/lib/file";
+import { i18n } from "@/lib/i18n";
+import { getDateLocale } from "@/lib/i18n/date-locale";
+import {
+  cryptoAvailable,
+  MIN_PASSPHRASE_LENGTH,
+} from "@/hooks/use-passphrase-protection";
 import { toast } from "@/lib/toast";
 import { cn, errorMessage } from "@/lib/utils";
-import { downloadBackupDocument } from "./download";
+import { downloadBackupDocument, downloadBackupText } from "./download";
 
-type Mode = "pick" | "summary";
+type Mode = "pick" | "unlock" | "summary";
 
 export function RestoreBackupDialog({
   open,
@@ -65,6 +88,36 @@ export function RestoreBackupDialog({
   const [parsing, setParsing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [downloadingEscape, setDownloadingEscape] = useState(false);
+  // Encrypted file held at the unlock step: the file text, its plaintext
+  // header metadata for display, and the passphrase (memory only, wiped on
+  // close/cancel).
+  const [pendingEnvelopeText, setPendingEnvelopeText] = useState<string | null>(
+    null,
+  );
+  const [envelopeMeta, setEnvelopeMeta] = useState<{
+    exportedAt?: string;
+    appVersion?: string;
+  } | null>(null);
+  const [passphrase, setPassphrase] = useState("");
+  const [showPassphrase, setShowPassphrase] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  // Pre-restore escape hatch: the inline passphrase step for the encrypted
+  // copy of the current data, shown instead of a silent plain download.
+  const [escapeOpen, setEscapeOpen] = useState(false);
+  const [escapePassphrase, setEscapePassphrase] = useState("");
+  const [escapeConfirm, setEscapeConfirm] = useState("");
+  const [escapeShow, setEscapeShow] = useState(false);
+  const canUnlock = cryptoAvailable && passphrase.length > 0;
+  const escapeMismatch =
+    escapeConfirm.length > 0 && escapePassphrase !== escapeConfirm;
+  const escapeTooShort =
+    escapePassphrase.length > 0 &&
+    escapePassphrase.length < MIN_PASSPHRASE_LENGTH;
+  const canDownloadEscape =
+    cryptoAvailable &&
+    escapePassphrase.length >= MIN_PASSPHRASE_LENGTH &&
+    escapeConfirm === escapePassphrase;
 
   useEffect(() => {
     if (open) return;
@@ -77,6 +130,16 @@ export function RestoreBackupDialog({
     setParsing(false);
     setRestoring(false);
     setDownloadingEscape(false);
+    setPendingEnvelopeText(null);
+    setEnvelopeMeta(null);
+    setPassphrase("");
+    setShowPassphrase(false);
+    setUnlocking(false);
+    setUnlockError(null);
+    setEscapeOpen(false);
+    setEscapePassphrase("");
+    setEscapeConfirm("");
+    setEscapeShow(false);
   }, [open]);
 
   async function handleFile(file: File) {
@@ -85,16 +148,55 @@ export function RestoreBackupDialog({
       setError(t("data.restore.chooseJsonError"));
       return;
     }
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      setError(t("data.restore.fileTooLarge"));
+      return;
+    }
 
     setParsing(true);
     setError(null);
     try {
-      const parsed = parseBackupDocument(await file.text());
+      const text = await file.text();
+      // An encrypted backup routes to the unlock step; the plaintext header
+      // is validated before the passphrase is ever asked for.
+      if (isBackupEnvelope(text)) {
+        try {
+          const envelope = readBackupEnvelope(text);
+          setPendingEnvelopeText(text);
+          setEnvelopeMeta({
+            exportedAt: envelope.exportedAt,
+            appVersion: envelope.appVersion,
+          });
+          setFileName(file.name);
+          setDocument(null);
+          setCurrentCounts(null);
+          setPassphrase("");
+          setShowPassphrase(false);
+          setUnlockError(null);
+          setMode("unlock");
+        } catch (cause) {
+          setPendingEnvelopeText(null);
+          setEnvelopeMeta(null);
+          setPassphrase("");
+          setShowPassphrase(false);
+          setDocument(null);
+          setCurrentCounts(null);
+          setFileName(null);
+          setMode("pick");
+          setError(errorMessage(cause, t("data.restore.readFailed")));
+        }
+        return;
+      }
+      const parsed = parseBackupDocument(text);
       setDocument(parsed);
       setCurrentCounts(await readWorkspaceCounts(db));
       setFileName(file.name);
       setMode("summary");
     } catch (cause) {
+      setPendingEnvelopeText(null);
+      setEnvelopeMeta(null);
+      setPassphrase("");
+      setShowPassphrase(false);
       setDocument(null);
       setCurrentCounts(null);
       setFileName(null);
@@ -103,6 +205,48 @@ export function RestoreBackupDialog({
     } finally {
       setParsing(false);
     }
+  }
+
+  async function handleUnlock(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    if (!pendingEnvelopeText || unlocking || !canUnlock) {
+      return;
+    }
+    setUnlocking(true);
+    setUnlockError(null);
+    let restored: BackupDocument;
+    try {
+      // Decryption and structural validation happen before anything is
+      // written. Any GCM authentication failure surfaces as one ambiguous
+      // error; the file stays loaded for unlimited in-place retry.
+      restored = await openBackupDocument(pendingEnvelopeText, passphrase);
+    } catch (cause) {
+      if (cause instanceof BackupDecryptError) {
+        setUnlockError(t("data.restore.unlockFailed"));
+        setUnlocking(false);
+        return;
+      }
+      // Decrypted fine but failed structural validation: nothing was
+      // written, and retrying the passphrase can't help — back to pick.
+      setPendingEnvelopeText(null);
+      setEnvelopeMeta(null);
+      setDocument(null);
+      setCurrentCounts(null);
+      setFileName(null);
+      setPassphrase("");
+      setShowPassphrase(false);
+      setMode("pick");
+      setError(errorMessage(cause, t("data.restore.readFailed")));
+      setUnlocking(false);
+      return;
+    }
+    setCurrentCounts(await readWorkspaceCounts(db));
+    setDocument(restored);
+    setPassphrase("");
+    setPendingEnvelopeText(null);
+    setShowPassphrase(false);
+    setMode("summary");
+    setUnlocking(false);
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -118,17 +262,47 @@ export function RestoreBackupDialog({
     if (file) void handleFile(file);
   }
 
-  async function handleDownloadCurrent() {
+  function resetEscape() {
+    setEscapeOpen(false);
+    setEscapePassphrase("");
+    setEscapeConfirm("");
+    setEscapeShow(false);
+  }
+
+  function handleEscapeClick() {
     if (downloadingEscape) return;
+    if (!cryptoAvailable) {
+      // Plain HTTP without WebCrypto: keep the old unencrypted escape copy
+      // rather than leaving the user with no safety copy before a wipe.
+      void performEscapeDownload();
+      return;
+    }
+    setEscapeOpen(true);
+  }
+
+  async function performEscapeDownload() {
     setDownloadingEscape(true);
     try {
-      downloadBackupDocument(await createBackupDocument(db));
-      toast.success(t("data.restore.downloaded"));
+      const document = await createBackupDocument(db);
+      if (cryptoAvailable) {
+        const text = await sealBackupDocument(document, escapePassphrase);
+        downloadBackupText(text, document.exportedAt);
+        toast.success(t("data.restore.downloadedEncrypted"));
+        resetEscape();
+      } else {
+        downloadBackupDocument(document);
+        toast.success(t("data.restore.downloaded"));
+      }
     } catch (cause) {
       toast.error(errorMessage(cause, t("data.restore.downloadFailed")));
     } finally {
       setDownloadingEscape(false);
     }
+  }
+
+  async function handleEscapeDownload() {
+    if (!canDownloadEscape || downloadingEscape) return;
+    await performEscapeDownload();
   }
 
   async function handleRestore() {
@@ -154,6 +328,13 @@ export function RestoreBackupDialog({
     setDocument(null);
     setCurrentCounts(null);
     setError(null);
+    setPendingEnvelopeText(null);
+    setEnvelopeMeta(null);
+    setPassphrase("");
+    setShowPassphrase(false);
+    setUnlocking(false);
+    setUnlockError(null);
+    resetEscape();
   }
 
   const contains = document ? backupTableCounts(document) : null;
@@ -174,17 +355,26 @@ export function RestoreBackupDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (restoring && !next) return;
+        if ((restoring || unlocking) && !next) return;
         onOpenChange(next);
       }}
     >
-      <DialogPopup className="max-w-lg" showCloseButton={!restoring}>
+      <DialogPopup
+        className="max-w-lg"
+        showCloseButton={!restoring && !unlocking}
+      >
         <DialogHeader>
-          <DialogTitle>{t("data.restore.title")}</DialogTitle>
+          <DialogTitle>
+            {mode === "unlock"
+              ? t("data.restore.unlockTitle")
+              : t("data.restore.title")}
+          </DialogTitle>
           <DialogDescription>
             {mode === "summary"
               ? t("data.restore.descriptionSummary")
-              : t("data.restore.descriptionPick")}
+              : mode === "unlock"
+                ? t("data.restore.unlockDescription")
+                : t("data.restore.descriptionPick")}
           </DialogDescription>
         </DialogHeader>
 
@@ -239,6 +429,9 @@ export function RestoreBackupDialog({
                     : t("data.restore.selectFile")}
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t("data.restore.encryptedNote")}
+              </p>
               {error && (
                 <p
                   role="alert"
@@ -248,6 +441,56 @@ export function RestoreBackupDialog({
                 </p>
               )}
             </>
+          )}
+
+          {mode === "unlock" && (
+            <UnlockPassphraseForm
+              formId="backup-unlock-form"
+              inputId="backup-unlock-passphrase"
+              fileName={fileName ?? ""}
+              passphrase={passphrase}
+              showPassphrase={showPassphrase}
+              busy={unlocking}
+              error={unlockError}
+              fileInputRef={fileInputRef}
+              onSubmit={(event) => void handleUnlock(event)}
+              onPassphraseChange={setPassphrase}
+              onTogglePassphraseVisibility={() =>
+                setShowPassphrase((value) => !value)
+              }
+              onFileChange={handleFileChange}
+              changeFileLabel={t("data.restore.changeFile")}
+              passphraseLabel={t("data.export.passphrase")}
+              showPassphraseLabel={t("data.export.showPassphrase")}
+              hidePassphraseLabel={t("data.export.hidePassphrase")}
+              forgottenPassphraseNote={t("data.export.forgottenPassphrase")}
+              cryptoUnavailableLabel={t("data.export.cryptoUnavailable")}
+            >
+              {(envelopeMeta?.exportedAt || envelopeMeta?.appVersion) && (
+                <dl className="space-y-1 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+                  {envelopeMeta.exportedAt && (
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-xs text-muted-foreground">
+                        {t("data.restore.unlockExported")}
+                      </dt>
+                      <dd className="tabular-nums">
+                        {formatExportedAt(envelopeMeta.exportedAt)}
+                      </dd>
+                    </div>
+                  )}
+                  {envelopeMeta.appVersion && (
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-xs text-muted-foreground">
+                        {t("data.restore.unlockAppVersion")}
+                      </dt>
+                      <dd className="tabular-nums">
+                        {envelopeMeta.appVersion}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+            </UnlockPassphraseForm>
           )}
 
           {mode === "summary" && contains && currentCounts && (
@@ -284,21 +527,121 @@ export function RestoreBackupDialog({
                   tableLabels={tableLabels}
                 />
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full"
-                disabled={restoring || downloadingEscape}
-                onClick={() => void handleDownloadCurrent()}
-              >
-                {downloadingEscape ? (
-                  <Loader2 className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <HardDriveDownload aria-hidden="true" />
-                )}
-                {t("data.restore.downloadCurrent")}
-              </Button>
+              {!escapeOpen && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={restoring || downloadingEscape}
+                  onClick={handleEscapeClick}
+                >
+                  {downloadingEscape ? (
+                    <Loader2 className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <HardDriveDownload aria-hidden="true" />
+                  )}
+                  {t("data.restore.downloadCurrent")}
+                </Button>
+              )}
+              {escapeOpen && (
+                <div className="space-y-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  <p className="text-xs text-muted-foreground">
+                    {t("data.restore.downloadEscapeHint")}
+                  </p>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="escape-passphrase"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      {t("data.export.passphrase")}
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="escape-passphrase"
+                        type={escapeShow ? "text" : "password"}
+                        autoComplete="new-password"
+                        className="h-9 pr-9 text-sm"
+                        value={escapePassphrase}
+                        disabled={downloadingEscape}
+                        onChange={(event) =>
+                          setEscapePassphrase(event.target.value)
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                        disabled={downloadingEscape}
+                        aria-label={
+                          escapeShow
+                            ? t("data.export.hidePassphrase")
+                            : t("data.export.showPassphrase")
+                        }
+                        onClick={() => setEscapeShow((value) => !value)}
+                      >
+                        {escapeShow ? (
+                          <EyeOff aria-hidden="true" className="size-4" />
+                        ) : (
+                          <Eye aria-hidden="true" className="size-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="escape-confirm-passphrase"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      {t("data.export.confirmPassphrase")}
+                    </label>
+                    <Input
+                      id="escape-confirm-passphrase"
+                      type={escapeShow ? "text" : "password"}
+                      autoComplete="new-password"
+                      className="h-9 text-sm"
+                      value={escapeConfirm}
+                      disabled={downloadingEscape}
+                      onChange={(event) => setEscapeConfirm(event.target.value)}
+                    />
+                  </div>
+                  {escapeMismatch && (
+                    <p role="alert" className="text-xs text-destructive">
+                      {t("data.export.passphraseMismatch")}
+                    </p>
+                  )}
+                  {escapeTooShort && (
+                    <p role="alert" className="text-xs text-destructive">
+                      {t("data.export.passphraseTooShort", {
+                        count: MIN_PASSPHRASE_LENGTH,
+                      })}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      disabled={downloadingEscape}
+                      onClick={resetEscape}
+                    >
+                      {t("data.restore.cancel")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="flex-1"
+                      disabled={!canDownloadEscape || downloadingEscape}
+                      onClick={() => void handleEscapeDownload()}
+                    >
+                      {downloadingEscape && (
+                        <Loader2 className="animate-spin" aria-hidden="true" />
+                      )}
+                      {t("data.restore.downloadEscapeButton")}
+                    </Button>
+                  </div>
+                </div>
+              )}
               {error && (
                 <p
                   role="alert"
@@ -316,6 +659,17 @@ export function RestoreBackupDialog({
             <DialogClose render={<Button variant="outline" size="sm" />}>
               {t("data.restore.cancel")}
             </DialogClose>
+          )}
+          {mode === "unlock" && (
+            <UnlockPassphraseFooter
+              formId="backup-unlock-form"
+              busy={unlocking}
+              canSubmit={canUnlock}
+              cancelLabel={t("data.restore.cancel")}
+              submitLabel={t("data.restore.unlock")}
+              submittingLabel={t("data.restore.unlocking")}
+              onCancel={resetToPick}
+            />
           )}
           {mode === "summary" && (
             <>
@@ -346,6 +700,12 @@ export function RestoreBackupDialog({
       </DialogPopup>
     </Dialog>
   );
+}
+
+function formatExportedAt(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  return format(parsed, "PPp", { locale: getDateLocale(i18n.language) });
 }
 
 function isJsonFile(file: File): boolean {

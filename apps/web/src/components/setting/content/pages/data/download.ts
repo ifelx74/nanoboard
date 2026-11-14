@@ -1,3 +1,4 @@
+import { triggerDownload } from "@/lib/download";
 import { serializeBackupDocument } from "@/lib/backup/serialize";
 import type { BackupDocument } from "@/lib/backup/types";
 
@@ -17,16 +18,17 @@ export function backupFileName(exportedAt: string): string {
 }
 
 export function downloadBackupDocument(document: BackupDocument): void {
-  const blob = new Blob([serializeBackupDocument(document)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = globalThis.document.createElement("a");
-  anchor.href = url;
-  anchor.download = backupFileName(document.exportedAt);
-  anchor.style.display = "none";
-  globalThis.document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  triggerDownload(
+    serializeBackupDocument(document),
+    backupFileName(document.exportedAt),
+  );
+}
+
+/**
+ * Download an already-serialized backup as the same kind of file the v1
+ * export produced — extension and naming unchanged. Used by the encrypted
+ * path, whose file text comes from the seal step, not the serializer.
+ */
+export function downloadBackupText(text: string, exportedAt: string): void {
+  triggerDownload(text, backupFileName(exportedAt));
 }

@@ -49,8 +49,6 @@
       "delete": "Supprimer le projet",
       "edit": "Modifier le projet",
       "export": "Exporter les tâches",
-      "exportFailed": "Impossible d'exporter les tâches.",
-      "exported": "Tâches exportées.",
       "import": "Importer des tâches",
       "label": "Projets",
       "moreActions": "Plus d'actions pour {{name}}",
@@ -277,6 +275,28 @@
       "submit": "Enregistrer",
       "title": "Modifier le projet"
     },
+    "export": {
+      "title": "Exporter les tâches",
+      "description": "Télécharger les tâches de « {{name}} » dans un seul fichier JSON.",
+      "button": "Exporter les tâches",
+      "exported": "Tâches exportées.",
+      "exportedEncrypted": "Tâches chiffrées exportées.",
+      "exportFailed": "Impossible d'exporter les tâches.",
+      "exporting": "Exportation",
+      "cancel": "Annuler",
+      "passphrase": "Phrase secrète",
+      "confirmPassphrase": "Confirmez la phrase secrète",
+      "showPassphrase": "Afficher la phrase secrète",
+      "hidePassphrase": "Masquer la phrase secrète",
+      "passphraseMismatch": "Les phrases secrètes ne correspondent pas.",
+      "passphraseTooShort": "La phrase secrète doit contenir au moins {{count}} caractères.",
+      "forgottenPassphrase": "Si vous oubliez cette phrase secrète, il n'y a aucun moyen de récupérer le fichier — il est illisible pour quiconque, y compris vous.",
+      "cryptoUnavailable": "Ce navigateur ne peut pas chiffrer les fichiers — WebCrypto est indisponible dans ce contexte (par exemple via HTTP simple sur un réseau local). Seul un export non chiffré est disponible ici.",
+      "plainWarning": "Le fichier ne sera pas chiffré — quiconque le récupère peut tout lire.",
+      "protectWithPassphrase": "Protéger avec une phrase secrète à la place",
+      "saveUnencrypted": "Enregistrer sans chiffrement",
+      "saveUnencryptedInstead": "Enregistrer sans chiffrement à la place"
+    },
     "iconPicker": {
       "pickTitle": "Choisir une icône",
       "searchPlaceholder": "Rechercher des icônes"
@@ -286,6 +306,7 @@
       "cancel": "Annuler",
       "changeFile": "Changer de fichier",
       "chooseJsonError": "Choisissez un fichier JSON.",
+      "fileTooLarge": "Ce fichier est trop volumineux (plus de 50 Mo) — un export de tâches n'est jamais aussi grand.",
       "completeDescription": "Import terminé dans « {{name}} ».",
       "completeTitle": "Import terminé",
       "counts": {
@@ -302,6 +323,7 @@
         "import": "Impossible d'importer les tâches."
       },
       "expectedFormat": "Format attendu",
+      "encryptedNote": "Les exports chiffrés sont détectés automatiquement — la phrase secrète vous sera demandée.",
       "importAnother": "Importer un autre fichier",
       "importButton_one": "Importer {{count}} tâche",
       "importButton_other": "Importer {{count}} tâches",
@@ -317,7 +339,12 @@
         "failed_other": "{{count}} tâches n'ont pas pu être importées.",
         "imported_one": "{{count}} tâche importée.",
         "imported_other": "{{count}} tâches importées."
-      }
+      },
+      "unlockTitle": "Déverrouiller le fichier chiffré",
+      "unlockDescription": "Ce fichier est protégé par une phrase secrète. Saisissez-la pour continuer.",
+      "unlock": "Déverrouiller",
+      "unlocking": "Déverrouillage",
+      "unlockFailed": "Phrase secrète incorrecte, ou le fichier est endommagé ou incomplet."
     },
     "toolbar": {
       "archivedTasks_one": "{{count}} tâche archivée",
@@ -528,7 +555,7 @@
         "button": "Exporter la sauvegarde",
         "description": "Téléchargez tout — projets, tâches, tableaux blancs et post-it — en un seul fichier JSON.",
         "exportFailed": "Impossible d'exporter la sauvegarde.",
-        "exported": "Sauvegarde exportée.",
+        "exported": "Sauvegarde non chiffrée exportée.",
         "summary": {
           "columns_one": "{{count}} colonne",
           "columns_other": "{{count}} colonnes",
@@ -547,7 +574,22 @@
           "whiteboards_one": "{{count}} tableau blanc",
           "whiteboards_other": "{{count}} tableaux blancs"
         },
-        "title": "Exporter la sauvegarde"
+        "title": "Exporter la sauvegarde",
+        "cancel": "Annuler",
+        "confirmPassphrase": "Confirmez la phrase secrète",
+        "cryptoUnavailable": "Ce navigateur ne peut pas chiffrer les fichiers — WebCrypto est indisponible dans ce contexte (par exemple via HTTP simple sur un réseau local). Seul un export non chiffré est disponible ici.",
+        "exporting": "Exportation",
+        "exportedEncrypted": "Sauvegarde chiffrée exportée.",
+        "forgottenPassphrase": "Si vous oubliez cette phrase secrète, il n'y a aucun moyen de récupérer le fichier — il est illisible pour quiconque, y compris vous.",
+        "hidePassphrase": "Masquer la phrase secrète",
+        "passphrase": "Phrase secrète",
+        "passphraseMismatch": "Les phrases secrètes ne correspondent pas.",
+        "passphraseTooShort": "La phrase secrète doit contenir au moins {{count}} caractères.",
+        "plainWarning": "Le fichier ne sera pas chiffré — quiconque le récupère peut tout lire.",
+        "protectWithPassphrase": "Protéger avec une phrase secrète à la place",
+        "saveUnencrypted": "Enregistrer sans chiffrement",
+        "saveUnencryptedInstead": "Enregistrer sans chiffrement à la place",
+        "showPassphrase": "Afficher la phrase secrète"
       },
       "restore": {
         "back": "Retour",
@@ -555,13 +597,18 @@
         "cancel": "Annuler",
         "changeFile": "Changer de fichier",
         "chooseJsonError": "Choisissez un fichier JSON.",
+        "fileTooLarge": "Ce fichier est trop volumineux (plus de 50 Mo) — une sauvegarde nanoboard n'est jamais aussi grande.",
         "descriptionPick": "Remplacez tout dans l'application par un fichier de sauvegarde complet.",
         "descriptionSummary": "La restauration remplace tout le contenu actuel de l'application par celui de la sauvegarde.",
         "downloadCurrent": "Télécharger d'abord les données actuelles",
+        "downloadEscapeButton": "Télécharger la copie chiffrée",
+        "downloadEscapeHint": "La copie est chiffrée avec cette phrase secrète — vous en aurez besoin pour restaurer cette sauvegarde plus tard. Aucun moyen de la récupérer si vous l'oubliez.",
+        "downloadedEncrypted": "Données actuelles téléchargées en sauvegarde chiffrée.",
         "downloadFailed": "Impossible d'exporter les données actuelles.",
         "downloaded": "Données actuelles téléchargées en sauvegarde.",
         "dragHint": "Un fichier exporté par « Exporter la sauvegarde » de nanoboard.",
         "dragTitle": "Glissez-déposez un fichier JSON de sauvegarde",
+        "encryptedNote": "Les sauvegardes chiffrées sont détectées automatiquement — la phrase secrète vous sera demandée.",
         "readFailed": "Impossible de lire ce fichier.",
         "reading": "Lecture",
         "restoreEverything": "Tout restaurer",
@@ -581,6 +628,13 @@
           "whiteboards": "Tableaux blancs"
         },
         "title": "Restaurer depuis une sauvegarde",
+        "unlock": "Déverrouiller",
+        "unlockAppVersion": "Version de l'application",
+        "unlockDescription": "Cette sauvegarde est chiffrée. Entrez la phrase secrète pour continuer.",
+        "unlockExported": "Exportée",
+        "unlockFailed": "Phrase secrète incorrecte, ou le fichier est endommagé ou incomplet.",
+        "unlockTitle": "Déverrouiller la sauvegarde chiffrée",
+        "unlocking": "Déverrouillage",
         "willBeDestroyed": "Sera détruit"
       },
       "title": "Données"

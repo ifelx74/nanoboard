@@ -15,6 +15,7 @@ import {
 } from "react";
 import type { Sticky, StickyColorKey } from "@/lib/db/schema";
 import { deleteSticky, isStickyEmpty, updateSticky } from "@/lib/db/stickies";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -147,7 +148,7 @@ export const StickyCard = memo(function StickyCard({
               dangerouslySetInnerHTML={{
                 __html: isStickyEmpty(sticky.contentHtml)
                   ? `<p class="is-editor-empty" data-placeholder="${t("card.placeholder")}"></p>`
-                  : sticky.contentHtml,
+                  : sanitizeHtml(sticky.contentHtml),
               }}
             />
           )}
