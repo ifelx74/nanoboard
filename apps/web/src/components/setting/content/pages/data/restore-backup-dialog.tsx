@@ -1,8 +1,6 @@
 import {
   AlertCircle,
   CheckCircle2,
-  Eye,
-  EyeOff,
   FileJson,
   HardDriveDownload,
   Loader2,
@@ -19,7 +17,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  UnlockPassphraseFooter,
+  UnlockPassphraseForm,
+} from "@/components/passphrase/unlock-passphrase-form";
 import {
   Dialog,
   DialogClose,
@@ -85,8 +86,8 @@ export function RestoreBackupDialog({
     null,
   );
   const [envelopeMeta, setEnvelopeMeta] = useState<{
-    exportedAt: string;
-    appVersion: string;
+    exportedAt?: string;
+    appVersion?: string;
   } | null>(null);
   const [passphrase, setPassphrase] = useState("");
   const [showPassphrase, setShowPassphrase] = useState(false);
@@ -383,31 +384,30 @@ export function RestoreBackupDialog({
           )}
 
           {mode === "unlock" && (
-            <form
-              id="backup-unlock-form"
+            <UnlockPassphraseForm
+              formId="backup-unlock-form"
+              inputId="backup-unlock-passphrase"
+              fileName={fileName ?? ""}
+              passphrase={passphrase}
+              showPassphrase={showPassphrase}
+              busy={unlocking}
+              error={unlockError}
+              fileInputRef={fileInputRef}
               onSubmit={(event) => void handleUnlock(event)}
+              onPassphraseChange={setPassphrase}
+              onTogglePassphraseVisibility={() =>
+                setShowPassphrase((value) => !value)
+              }
+              onFileChange={handleFileChange}
+              changeFileLabel={t("data.restore.changeFile")}
+              passphraseLabel={t("data.export.passphrase")}
+              showPassphraseLabel={t("data.export.showPassphrase")}
+              hidePassphraseLabel={t("data.export.hidePassphrase")}
+              forgottenPassphraseNote={t("data.export.forgottenPassphrase")}
             >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
-                  <span className="min-w-0 truncate">{fileName}</span>
-                  <button
-                    type="button"
-                    className="shrink-0 text-xs text-muted-foreground underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
-                    disabled={unlocking}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {t("data.restore.changeFile")}
-                  </button>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                />
-                {envelopeMeta && (
-                  <dl className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+              {(envelopeMeta?.exportedAt || envelopeMeta?.appVersion) && (
+                <dl className="space-y-1 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+                  {envelopeMeta.exportedAt && (
                     <div className="flex items-center justify-between gap-3">
                       <dt className="text-xs text-muted-foreground">
                         {t("data.restore.unlockExported")}
@@ -416,7 +416,9 @@ export function RestoreBackupDialog({
                         {formatExportedAt(envelopeMeta.exportedAt)}
                       </dd>
                     </div>
-                    <div className="mt-1 flex items-center justify-between gap-3">
+                  )}
+                  {envelopeMeta.appVersion && (
+                    <div className="flex items-center justify-between gap-3">
                       <dt className="text-xs text-muted-foreground">
                         {t("data.restore.unlockAppVersion")}
                       </dt>
@@ -424,57 +426,10 @@ export function RestoreBackupDialog({
                         {envelopeMeta.appVersion}
                       </dd>
                     </div>
-                  </dl>
-                )}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="backup-unlock-passphrase"
-                    className="text-xs font-medium text-muted-foreground"
-                  >
-                    {t("data.export.passphrase")}
-                  </label>
-                  <div className="relative">
-                    <Input
-                      id="backup-unlock-passphrase"
-                      type={showPassphrase ? "text" : "password"}
-                      autoComplete="off"
-                      className="h-9 pr-9 text-sm"
-                      value={passphrase}
-                      disabled={unlocking}
-                      onChange={(event) => setPassphrase(event.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-                      disabled={unlocking}
-                      aria-label={
-                        showPassphrase
-                          ? t("data.export.hidePassphrase")
-                          : t("data.export.showPassphrase")
-                      }
-                      onClick={() => setShowPassphrase((value) => !value)}
-                    >
-                      {showPassphrase ? (
-                        <EyeOff aria-hidden="true" className="size-4" />
-                      ) : (
-                        <Eye aria-hidden="true" className="size-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                {unlockError && (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  >
-                    {unlockError}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {t("data.export.forgottenPassphrase")}
-                </p>
-              </div>
-            </form>
+                  )}
+                </dl>
+              )}
+            </UnlockPassphraseForm>
           )}
 
           {mode === "summary" && contains && currentCounts && (
@@ -545,29 +500,15 @@ export function RestoreBackupDialog({
             </DialogClose>
           )}
           {mode === "unlock" && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={unlocking}
-                onClick={resetToPick}
-              >
-                {t("data.restore.cancel")}
-              </Button>
-              <Button
-                type="submit"
-                form="backup-unlock-form"
-                size="sm"
-                disabled={unlocking || trimmedPassphrase.length === 0}
-              >
-                {unlocking && (
-                  <Loader2 className="animate-spin" aria-hidden="true" />
-                )}
-                {unlocking
-                  ? t("data.restore.unlocking")
-                  : t("data.restore.unlock")}
-              </Button>
-            </>
+            <UnlockPassphraseFooter
+              formId="backup-unlock-form"
+              busy={unlocking}
+              canSubmit={trimmedPassphrase.length > 0}
+              cancelLabel={t("data.restore.cancel")}
+              submitLabel={t("data.restore.unlock")}
+              submittingLabel={t("data.restore.unlocking")}
+              onCancel={resetToPick}
+            />
           )}
           {mode === "summary" && (
             <>

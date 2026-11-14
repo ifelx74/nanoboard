@@ -1,3 +1,4 @@
+import { triggerDownload } from "@/lib/download";
 import { serializeBackupDocument } from "@/lib/backup/serialize";
 import type { BackupDocument } from "@/lib/backup/types";
 
@@ -14,19 +15,6 @@ export function backupFileName(exportedAt: string): string {
   return `nanoboard-backup-${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(
     at.getDate(),
   )}T${pad(at.getHours())}-${pad(at.getMinutes())}.json`;
-}
-
-function triggerDownload(text: string, fileName: string): void {
-  const blob = new Blob([text], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = globalThis.document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.style.display = "none";
-  globalThis.document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export function downloadBackupDocument(document: BackupDocument): void {

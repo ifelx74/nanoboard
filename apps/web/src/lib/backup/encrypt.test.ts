@@ -9,6 +9,7 @@ import {
 import { createBackupDocument } from "./create";
 import { sealBackupDocument } from "./encrypt";
 import { serializeBackupDocument } from "./serialize";
+import type { BackupDocument } from "./types";
 
 const PASSPHRASE = "correct horse battery staple";
 
@@ -93,16 +94,41 @@ describe("sealBackupDocument", () => {
 });
 
 describe("serializeBackupDocument (unencrypted opt-out)", () => {
-  it("is byte-identical to the minified v1 serializer output", async () => {
-    const db = createTestDb();
-    await seedTestDb(db);
+  it("pins the exact v1 bytes for a fixed document fixture", () => {
+    const fixture: BackupDocument = {
+      format: "nanoboard-backup",
+      version: 1,
+      appVersion: "1.2.3",
+      exportedAt: "2026-11-14T12:00:00.000Z",
+      tables: {
+        projects: [
+          {
+            id: "p1",
+            name: "Test project",
+            slug: "test-project",
+            icon: "folder",
+            position: 1024,
+            lastTaskNumber: 7,
+            createdAt: 1_700_000_000_000,
+            updatedAt: 1_700_000_001_000,
+          },
+        ],
+        columns: [],
+        tasks: [],
+        labels: [],
+        taskLabels: [],
+        taskResources: [],
+        stickies: [],
+        whiteboards: [],
+        whiteboardPreviews: [],
+      },
+    };
 
-    const document = await createBackupDocument(db);
-
-    // The "save unencrypted" path must keep emitting exactly what the v1
-    // export produced: JSON.stringify of the v1 document, nothing else.
-    expect(serializeBackupDocument(document)).toBe(JSON.stringify(document));
-
-    await db.close();
+    // Field order and minification are the format's compatibility contract;
+    // this literal is the contract, written out — not derived from the
+    // implementation's serializer.
+    expect(serializeBackupDocument(fixture)).toBe(
+      '{"format":"nanoboard-backup","version":1,"appVersion":"1.2.3","exportedAt":"2026-11-14T12:00:00.000Z","tables":{"projects":[{"id":"p1","name":"Test project","slug":"test-project","icon":"folder","position":1024,"lastTaskNumber":7,"createdAt":1700000000000,"updatedAt":1700000001000}],"columns":[],"tasks":[],"labels":[],"taskLabels":[],"taskResources":[],"stickies":[],"whiteboards":[],"whiteboardPreviews":[]}}',
+    );
   });
 });

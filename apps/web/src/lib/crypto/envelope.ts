@@ -31,11 +31,16 @@ export interface EncryptionBlock {
   iv: string;
 }
 
+/**
+ * The header metadata is optional: a hand-made or foreign-tool v2 file may
+ * omit either field, and restoring it must still work. Readers render what
+ * is present and omit what is not.
+ */
 export interface BackupEnvelope {
   format: typeof BACKUP_ENVELOPE_FORMAT;
   version: number;
-  appVersion: string;
-  exportedAt: string;
+  appVersion?: string;
+  exportedAt?: string;
   encryption: EncryptionBlock;
   payload: string;
 }
@@ -98,8 +103,23 @@ export async function sealTaskTransferEnvelope(
  * Parse envelope file text into its typed shape without decrypting. Used
  * before the passphrase is known: to detect an envelope at all, to validate
  * the plaintext header, and to read the metadata the unlock step displays.
+ * The payload's base64 is decoded exactly once (validating its charset and
+ * minimum length); the bytes are discarded here — see {@link openEnvelope},
+ * which decodes its own payload exactly once for decryption.
  */
 export function parseEnvelope(text: string): Envelope {
+  const envelope = parseEnvelopeParts(text);
+  decodePayloadChecked(envelope.payload);
+  return envelope;
+}
+
+/**
+ * Everything {@link parseEnvelope} validates except the payload's bytes —
+ * JSON, envelope shape, format/version, and the encryption block. Split out
+ * so {@link openEnvelope} can do its single payload decode on the decrypt
+ * path instead of once here and once there.
+ */
+function parseEnvelopeParts(text: string): Envelope {
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -142,29 +162,33 @@ export function parseEnvelope(text: string): Envelope {
       "This encrypted nanoboard file is corrupted — the payload is missing.",
     );
   }
-  // GCM ciphertext is at least the 16-byte tag, so anything shorter can
-  // never authenticate.
-  if (base64ToBytes(payload).length < 16) {
+
+  if (format === BACKUP_ENVELOPE_FORMAT) {
+    const envelope: BackupEnvelope = { format, version, encryption, payload };
+    if (typeof record.appVersion === "string") {
+      envelope.appVersion = record.appVersion;
+    }
+    if (typeof record.exportedAt === "string") {
+      envelope.exportedAt = record.exportedAt;
+    }
+    return envelope;
+  }
+  return { format, version, encryption, payload };
+}
+
+/**
+ * Decode a payload's base64 once, validating the charset (invalid base64
+ * throws) and the minimum length — GCM ciphertext is at least the 16-byte
+ * tag, so anything shorter can never authenticate.
+ */
+function decodePayloadChecked(payload: string): Uint8Array {
+  const bytes = base64ToBytes(payload);
+  if (bytes.length < 16) {
     throw new Error(
       "This encrypted nanoboard file is corrupted — the payload is truncated.",
     );
   }
-
-  if (format === BACKUP_ENVELOPE_FORMAT) {
-    return {
-      format,
-      version,
-      appVersion:
-        typeof record.appVersion === "string" ? record.appVersion : "unknown",
-      exportedAt:
-        typeof record.exportedAt === "string"
-          ? record.exportedAt
-          : new Date(0).toISOString(),
-      encryption,
-      payload,
-    };
-  }
-  return { format, version, encryption, payload };
+  return bytes;
 }
 
 /**
@@ -177,8 +201,11 @@ export async function openEnvelope(
   text: string,
   passphrase: string,
 ): Promise<unknown> {
-  const envelope = parseEnvelope(text);
+  const envelope = parseEnvelopeParts(text);
   const { kdf } = envelope.encryption;
+  // Decoded exactly once — charset and minimum-length validated here on the
+  // decrypt path, then fed straight to GCM.
+  const payload = decodePayloadChecked(envelope.payload);
 
   const salt = base64ToBytes(kdf.salt);
   const iv = base64ToBytes(envelope.encryption.iv);
@@ -189,7 +216,7 @@ export async function openEnvelope(
     plaintext = await crypto.subtle.decrypt(
       { name: "AES-GCM", iv: toBufferSource(iv) },
       key,
-      toBufferSource(base64ToBytes(envelope.payload)),
+      toBufferSource(payload),
     );
   } catch {
     throw new Error("Wrong passphrase, or the file is damaged or incomplete.");

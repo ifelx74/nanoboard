@@ -1,8 +1,6 @@
 import {
   AlertCircle,
   CheckCircle2,
-  Eye,
-  EyeOff,
   FileJson,
   Loader2,
   Upload,
@@ -18,6 +16,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
+  UnlockPassphraseFooter,
+  UnlockPassphraseForm,
+} from "@/components/passphrase/unlock-passphrase-form";
+import {
   Dialog,
   DialogClose,
   DialogDescription,
@@ -27,7 +29,6 @@ import {
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
   getProjectColumns,
   getProjectLabels,
@@ -48,6 +49,7 @@ import {
   isTaskTransferEnvelope,
   openTaskTransferDocument,
   readTaskTransferEnvelope,
+  TaskTransferDecryptError,
 } from "@/lib/task-transfer/encrypt";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
@@ -192,11 +194,20 @@ export function ImportTasksDialog({
         pendingEnvelopeText,
         trimmedPassphrase,
       );
-    } catch {
-      // Any authentication failure reads the same: wrong passphrase, or the
-      // file is damaged or incomplete. Unlimited in-place retry.
-      setUnlockError(t("import.unlockFailed"));
-      setUnlocking(false);
+    } catch (cause) {
+      if (cause instanceof TaskTransferDecryptError) {
+        // GCM authentication failed: wrong passphrase, or the file is
+        // damaged or incomplete. One ambiguous message, unlimited in-place
+        // retry — the file stays loaded.
+        setUnlockError(t("import.unlockFailed"));
+        setUnlocking(false);
+        return;
+      }
+      // Decrypted (or re-validated) fine but the file is unusable: retrying
+      // the passphrase can't help — back to the pick step with the
+      // invalid-file message.
+      resetToPick();
+      setError(errorMessage(cause, t("import.readFailed")));
       return;
     }
     setPassphrase("");
@@ -205,11 +216,9 @@ export function ImportTasksDialog({
       setPendingEnvelopeText(null);
       setShowPassphrase(false);
     } catch (cause) {
-      setPlan(null);
-      setReport(null);
-      setFileName(null);
-      setPendingEnvelopeText(null);
-      setMode("pick");
+      // A decrypt-ok file whose document doesn't plan is unfixable by
+      // passphrase — back to pick with the invalid-file message.
+      resetToPick();
       setError(errorMessage(cause, t("import.readFailed")));
     } finally {
       setUnlocking(false);
@@ -384,78 +393,27 @@ export function ImportTasksDialog({
           )}
 
           {mode === "unlock" && (
-            <form
-              id="unlock-form"
+            <UnlockPassphraseForm
+              formId="unlock-form"
+              inputId="transfer-unlock-passphrase"
+              fileName={fileName ?? ""}
+              passphrase={passphrase}
+              showPassphrase={showPassphrase}
+              busy={unlocking}
+              error={unlockError}
+              fileInputRef={fileInputRef}
               onSubmit={(event) => void handleUnlock(event)}
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
-                  <span className="min-w-0 truncate">{fileName}</span>
-                  <button
-                    type="button"
-                    className="shrink-0 text-xs text-muted-foreground underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
-                    disabled={unlocking}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {t("import.changeFile")}
-                  </button>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                />
-                <div className="space-y-2">
-                  <label
-                    htmlFor="transfer-unlock-passphrase"
-                    className="text-xs font-medium text-muted-foreground"
-                  >
-                    {t("export.passphrase")}
-                  </label>
-                  <div className="relative">
-                    <Input
-                      id="transfer-unlock-passphrase"
-                      type={showPassphrase ? "text" : "password"}
-                      autoComplete="off"
-                      className="h-9 pr-9 text-sm"
-                      value={passphrase}
-                      disabled={unlocking}
-                      onChange={(event) => setPassphrase(event.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-                      disabled={unlocking}
-                      aria-label={
-                        showPassphrase
-                          ? t("export.hidePassphrase")
-                          : t("export.showPassphrase")
-                      }
-                      onClick={() => setShowPassphrase((value) => !value)}
-                    >
-                      {showPassphrase ? (
-                        <EyeOff aria-hidden="true" className="size-4" />
-                      ) : (
-                        <Eye aria-hidden="true" className="size-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                {unlockError && (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  >
-                    {unlockError}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {t("export.forgottenPassphrase")}
-                </p>
-              </div>
-            </form>
+              onPassphraseChange={setPassphrase}
+              onTogglePassphraseVisibility={() =>
+                setShowPassphrase((value) => !value)
+              }
+              onFileChange={handleFileChange}
+              changeFileLabel={t("import.changeFile")}
+              passphraseLabel={t("export.passphrase")}
+              showPassphraseLabel={t("export.showPassphrase")}
+              hidePassphraseLabel={t("export.hidePassphrase")}
+              forgottenPassphraseNote={t("export.forgottenPassphrase")}
+            />
           )}
 
           {mode === "preview" && plan && (
@@ -583,27 +541,15 @@ export function ImportTasksDialog({
             </DialogClose>
           )}
           {mode === "unlock" && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={unlocking}
-                onClick={resetToPick}
-              >
-                {t("import.cancel")}
-              </Button>
-              <Button
-                type="submit"
-                form="unlock-form"
-                size="sm"
-                disabled={unlocking || trimmedPassphrase.length === 0}
-              >
-                {unlocking && (
-                  <Loader2 className="animate-spin" aria-hidden="true" />
-                )}
-                {unlocking ? t("import.unlocking") : t("import.unlock")}
-              </Button>
-            </>
+            <UnlockPassphraseFooter
+              formId="unlock-form"
+              busy={unlocking}
+              canSubmit={trimmedPassphrase.length > 0}
+              cancelLabel={t("import.cancel")}
+              submitLabel={t("import.unlock")}
+              submittingLabel={t("import.unlocking")}
+              onCancel={resetToPick}
+            />
           )}
           {mode === "preview" && (
             <>

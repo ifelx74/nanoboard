@@ -1,5 +1,5 @@
 import { Eye, EyeOff, HardDriveDownload, Loader2 } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,11 @@ import type { BackupDocument } from "@/lib/backup/types";
 import { db } from "@/lib/db/db";
 import { toast } from "@/lib/toast";
 import { errorMessage } from "@/lib/utils";
+import {
+  cryptoAvailable,
+  usePassphraseProtection,
+} from "@/hooks/use-passphrase-protection";
 import { downloadBackupDocument, downloadBackupText } from "./download";
-
-type Protection = "encrypted" | "plain";
-
-/** WebCrypto requires a secure context; plain HTTP on a LAN has none. */
-const cryptoAvailable =
-  typeof crypto !== "undefined" && typeof crypto.subtle !== "undefined";
 
 /** Translated export summary: every table's row count, for the export toast. */
 function exportSummary(
@@ -56,35 +54,24 @@ export function ExportBackupDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation("settings");
-  // Encrypted is always the default; when WebCrypto is unavailable the
-  // encrypted path renders disabled with the explanation inline, and only the
-  // plain opt-out can produce a file — never a silent downgrade.
-  const [protection, setProtection] = useState<Protection>("encrypted");
-  const [passphrase, setPassphrase] = useState("");
-  const [confirmPassphrase, setConfirmPassphrase] = useState("");
-  const [showPassphrase, setShowPassphrase] = useState(false);
-  const [exporting, setExporting] = useState(false);
-
-  // Closing the dialog discards the passphrase completely.
-  useEffect(() => {
-    if (open) return;
-    setProtection("encrypted");
-    setPassphrase("");
-    setConfirmPassphrase("");
-    setShowPassphrase(false);
-    setExporting(false);
-  }, [open]);
-
-  const trimmedPassphrase = passphrase.trim();
-  const trimmedConfirm = confirmPassphrase.trim();
-  const mismatch =
-    confirmPassphrase.length > 0 && trimmedPassphrase !== trimmedConfirm;
-  const canExport =
-    protection === "plain" ||
-    (cryptoAvailable && trimmedPassphrase.length > 0 && !mismatch);
+  const {
+    protection,
+    setProtection,
+    passphrase,
+    setPassphrase,
+    confirmPassphrase,
+    setConfirmPassphrase,
+    showPassphrase,
+    setShowPassphrase,
+    exporting,
+    setExporting,
+    trimmedPassphrase,
+    mismatch,
+    canSubmit,
+  } = usePassphraseProtection(open);
 
   async function handleExport() {
-    if (exporting || !canExport) return;
+    if (exporting || !canSubmit) return;
     setExporting(true);
     try {
       const document = await createBackupDocument(db);
@@ -100,7 +87,7 @@ export function ExportBackupDialog({
           description: `${exportSummary(document, t)}.`,
         });
       }
-      // The useEffect on close wipes the passphrase state.
+      // Closing the dialog wipes the passphrase state.
       onOpenChange(false);
     } catch (cause) {
       toast.error(errorMessage(cause, t("data.export.exportFailed")));
@@ -251,7 +238,7 @@ export function ExportBackupDialog({
             >
               {t("data.export.cancel")}
             </DialogClose>
-            <Button type="submit" size="sm" disabled={exporting || !canExport}>
+            <Button type="submit" size="sm" disabled={exporting || !canSubmit}>
               {exporting ? (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               ) : (

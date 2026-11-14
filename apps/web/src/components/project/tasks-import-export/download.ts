@@ -1,12 +1,15 @@
+import { triggerDownload } from "@/lib/download";
 import type { TaskTransferDocument } from "@/lib/task-transfer/types";
 
 export function downloadTaskTransferDocument(
   transfer: TaskTransferDocument,
 ): void {
-  const blob = new Blob([JSON.stringify(transfer, null, 2)], {
-    type: "application/json",
-  });
-  triggerDownload(blob, `${transfer.project.slug}-tasks-export.json`);
+  // Plain exports stay pretty-printed — the bare interchange document is
+  // untouched for existing consumers.
+  triggerDownload(
+    JSON.stringify(transfer, null, 2),
+    `${transfer.project.slug}-tasks-export.json`,
+  );
 }
 
 /**
@@ -18,18 +21,5 @@ export function downloadTaskTransferText(
   text: string,
   projectSlug: string,
 ): void {
-  const blob = new Blob([text], { type: "application/json" });
-  triggerDownload(blob, `${projectSlug}-tasks-export.json`);
-}
-
-function triggerDownload(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
-  const anchor = globalThis.document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.style.display = "none";
-  globalThis.document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  triggerDownload(text, `${projectSlug}-tasks-export.json`);
 }

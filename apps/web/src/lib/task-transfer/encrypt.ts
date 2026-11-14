@@ -64,18 +64,39 @@ export function readTaskTransferEnvelope(text: string): TaskTransferEnvelope {
 }
 
 /**
+ * Thrown when decryption of a transfer payload fails authentication — wrong
+ * passphrase, or a bit-flipped/truncated file. The UI must not tell the
+ * causes apart: it shows one ambiguous message and allows unlimited
+ * in-place retry. The message is an internal English diagnostic; the UI
+ * translates at the boundary.
+ */
+export class TaskTransferDecryptError extends Error {
+  constructor() {
+    super("Wrong passphrase, or the file is damaged or incomplete.");
+    this.name = "TaskTransferDecryptError";
+  }
+}
+
+/**
  * Open an encrypted wrapper with the passphrase and return the bare
  * document as file text, ready for the existing parse → plan → preview →
  * import pipeline. Any authentication failure — wrong passphrase, tampered
- * or truncated ciphertext — surfaces as one ambiguous error; callers should
- * not tell the causes apart. The returned text is freshly serialized and
- * carries nothing but the bare document.
+ * or truncated ciphertext — surfaces as {@link TaskTransferDecryptError}
+ * (one ambiguous error, never distinguishable); an envelope that fails
+ * re-validation throws the parser's diagnostic instead. Either way, no
+ * import has happened at that point. The returned text is freshly
+ * serialized and carries nothing but the bare document.
  */
 export async function openTaskTransferDocument(
   text: string,
   passphrase: string,
 ): Promise<string> {
   readTaskTransferEnvelope(text);
-  const payload = await openEnvelope(text, passphrase);
+  let payload: unknown;
+  try {
+    payload = await openEnvelope(text, passphrase);
+  } catch {
+    throw new TaskTransferDecryptError();
+  }
   return JSON.stringify(payload);
 }
