@@ -116,7 +116,7 @@ export function ExportBackupDialog({
           <DialogDescription>{t("data.export.description")}</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DialogPanel className="space-y-4">
             {encrypted && (
               <>
