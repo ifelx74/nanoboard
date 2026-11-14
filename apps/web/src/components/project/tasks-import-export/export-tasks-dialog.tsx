@@ -1,4 +1,4 @@
-import { ArrowUpFromLine, Eye, EyeOff, Loader2 } from "lucide-react";
+import { ArrowUpFromLine, Eye, EyeOff, Info, Loader2 } from "lucide-react";
 import { type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -125,7 +125,7 @@ export function ExportTasksDialog({
                     />
                     <button
                       type="button"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                      className="absolute right-1 cursor-pointer top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
                       disabled={!cryptoAvailable || exporting}
                       aria-label={
                         showPassphrase
@@ -174,7 +174,8 @@ export function ExportTasksDialog({
                   </p>
                 )}
                 {cryptoAvailable && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground flex items-start gap-1">
+                    <Info className="size-5" />
                     {t("export.forgottenPassphrase")}
                   </p>
                 )}
@@ -191,7 +192,8 @@ export function ExportTasksDialog({
 
             {!encrypted && (
               <>
-                <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+                <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm flex items-center gap-1 text-muted-foreground">
+                  <Info className="size-5" />
                   {t("export.plainWarning")}
                 </p>
                 {!cryptoAvailable && (

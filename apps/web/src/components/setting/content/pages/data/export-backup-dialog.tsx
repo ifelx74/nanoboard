@@ -1,4 +1,4 @@
-import { Eye, EyeOff, HardDriveDownload, Loader2 } from "lucide-react";
+import { Eye, EyeOff, HardDriveDownload, Info, Loader2 } from "lucide-react";
 import { type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -189,7 +189,8 @@ export function ExportBackupDialog({
                   </p>
                 )}
                 {cryptoAvailable && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground flex items-start gap-1">
+                    <Info className="size-5" />
                     {t("data.export.forgottenPassphrase")}
                   </p>
                 )}
@@ -206,7 +207,8 @@ export function ExportBackupDialog({
 
             {!encrypted && (
               <>
-                <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+                <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm flex items-center gap-1 text-muted-foreground">
+                  <Info className="size-5" />
                   {t("data.export.plainWarning")}
                 </p>
                 {!cryptoAvailable && (
