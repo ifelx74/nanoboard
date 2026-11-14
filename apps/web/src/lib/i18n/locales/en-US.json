@@ -528,7 +528,7 @@
         "button": "Export backup",
         "description": "Download everything — projects, tasks, whiteboards, and stickies — as one JSON file.",
         "exportFailed": "Could not export backup.",
-        "exported": "Backup exported.",
+        "exported": "Unencrypted backup exported.",
         "summary": {
           "columns_one": "{{count}} column",
           "columns_other": "{{count}} columns",
@@ -547,7 +547,21 @@
           "whiteboards_one": "{{count}} whiteboard",
           "whiteboards_other": "{{count}} whiteboards"
         },
-        "title": "Export backup"
+        "title": "Export backup",
+        "cancel": "Cancel",
+        "confirmPassphrase": "Confirm passphrase",
+        "cryptoUnavailable": "This browser can't encrypt files — WebCrypto is unavailable in this context (for example, over plain HTTP on a LAN). Only a plain export is available here.",
+        "exporting": "Exporting",
+        "exportedEncrypted": "Encrypted backup exported.",
+        "forgottenPassphrase": "If you forget this passphrase there is no way to recover the file — it is unreadable by anyone, including you.",
+        "hidePassphrase": "Hide passphrase",
+        "passphrase": "Passphrase",
+        "passphraseMismatch": "Passphrases do not match.",
+        "plainWarning": "The file will not be encrypted — anyone who gets it can read everything in it.",
+        "protectWithPassphrase": "Protect with a passphrase instead",
+        "saveUnencrypted": "Save unencrypted",
+        "saveUnencryptedInstead": "Save unencrypted instead",
+        "showPassphrase": "Show passphrase"
       },
       "restore": {
         "back": "Back",

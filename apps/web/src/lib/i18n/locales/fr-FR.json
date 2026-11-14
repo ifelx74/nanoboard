@@ -528,7 +528,7 @@
         "button": "Exporter la sauvegarde",
         "description": "Téléchargez tout — projets, tâches, tableaux blancs et post-it — en un seul fichier JSON.",
         "exportFailed": "Impossible d'exporter la sauvegarde.",
-        "exported": "Sauvegarde exportée.",
+        "exported": "Sauvegarde non chiffrée exportée.",
         "summary": {
           "columns_one": "{{count}} colonne",
           "columns_other": "{{count}} colonnes",
@@ -547,7 +547,21 @@
           "whiteboards_one": "{{count}} tableau blanc",
           "whiteboards_other": "{{count}} tableaux blancs"
         },
-        "title": "Exporter la sauvegarde"
+        "title": "Exporter la sauvegarde",
+        "cancel": "Annuler",
+        "confirmPassphrase": "Confirmez la phrase secrète",
+        "cryptoUnavailable": "Ce navigateur ne peut pas chiffrer les fichiers — WebCrypto est indisponible dans ce contexte (par exemple via HTTP simple sur un réseau local). Seul un export non chiffré est disponible ici.",
+        "exporting": "Exportation",
+        "exportedEncrypted": "Sauvegarde chiffrée exportée.",
+        "forgottenPassphrase": "Si vous oubliez cette phrase secrète, il n'y a aucun moyen de récupérer le fichier — il est illisible pour quiconque, y compris vous.",
+        "hidePassphrase": "Masquer la phrase secrète",
+        "passphrase": "Phrase secrète",
+        "passphraseMismatch": "Les phrases secrètes ne correspondent pas.",
+        "plainWarning": "Le fichier ne sera pas chiffré — quiconque le récupère peut tout lire.",
+        "protectWithPassphrase": "Protéger avec une phrase secrète à la place",
+        "saveUnencrypted": "Enregistrer sans chiffrement",
+        "saveUnencryptedInstead": "Enregistrer sans chiffrement à la place",
+        "showPassphrase": "Afficher la phrase secrète"
       },
       "restore": {
         "back": "Retour",
