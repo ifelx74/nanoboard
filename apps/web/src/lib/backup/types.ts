@@ -13,8 +13,18 @@ import type {
 /** Self-describing format identifier carried by every backup file. */
 export const BACKUP_FORMAT = "nanoboard-backup";
 
-/** Current backup format version; bumped only alongside a migration contract. */
+/** Current plain-file backup format version; bumped only alongside a migration contract. The "save unencrypted" export path writes this version, forever. */
 export const BACKUP_FORMAT_VERSION = 1;
+
+/**
+ * The newest backup format version this app can restore. v1 is the plain
+ * file above; v2 is the encrypted envelope (an always-sealed file whose
+ * payload is the same tables object — see src/lib/crypto/envelope.ts). The
+ * restore gate accepts every version at or below this one and rejects newer
+ * files with the update-the-app message. Bumped alongside every format
+ * bump; the plain writer stays at {@link BACKUP_FORMAT_VERSION}.
+ */
+export const BACKUP_MAX_RESTORABLE_VERSION = 2;
 
 /**
  * The exact table set a v1 backup carries: the envelope's `tables` map keys,
@@ -58,7 +68,9 @@ export interface BackupDocument {
   /**
    * The format version of the producing app. May be older than the current
    * version: the compatibility policy accepts every version at or below
-   * {@link BACKUP_FORMAT_VERSION} and rejects newer ones.
+   * {@link BACKUP_MAX_RESTORABLE_VERSION} and rejects newer ones. The plain
+   * writer always stamps {@link BACKUP_FORMAT_VERSION}; an encrypted restore
+   * carries the envelope's version (2), announced by the file itself.
    */
   version: number;
   /** The exporting app's own version (package.json), inlined at build time. */

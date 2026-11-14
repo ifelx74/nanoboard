@@ -601,6 +601,7 @@
         "downloaded": "Current data downloaded as a backup.",
         "dragHint": "A file exported by nanoboard's \"Export backup\".",
         "dragTitle": "Drag and drop a backup JSON file",
+        "encryptedNote": "Encrypted backups are detected automatically — you'll be asked for the passphrase.",
         "readFailed": "Could not read this file.",
         "reading": "Reading",
         "restoreEverything": "Restore everything",
@@ -620,6 +621,13 @@
           "whiteboards": "Whiteboards"
         },
         "title": "Restore from backup",
+        "unlock": "Unlock",
+        "unlockAppVersion": "App version",
+        "unlockDescription": "This backup is encrypted. Enter the passphrase to continue.",
+        "unlockExported": "Exported",
+        "unlockFailed": "Wrong passphrase, or the file is damaged or incomplete.",
+        "unlockTitle": "Unlock encrypted backup",
+        "unlocking": "Unlocking",
         "willBeDestroyed": "Will be destroyed"
       },
       "title": "Data"

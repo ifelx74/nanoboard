@@ -1,6 +1,8 @@
 import {
   AlertCircle,
   CheckCircle2,
+  Eye,
+  EyeOff,
   FileJson,
   HardDriveDownload,
   Loader2,
@@ -9,12 +11,15 @@ import {
 import {
   type ChangeEvent,
   type DragEvent,
+  type FormEvent,
   useEffect,
   useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogClose,
@@ -31,6 +36,12 @@ import {
   parseBackupDocument,
   readWorkspaceCounts,
 } from "@/lib/backup/apply";
+import {
+  BackupDecryptError,
+  isBackupEnvelope,
+  openBackupDocument,
+  readBackupEnvelope,
+} from "@/lib/backup/encrypt";
 import { createBackupDocument } from "@/lib/backup/create";
 import {
   BACKUP_TABLES,
@@ -38,11 +49,13 @@ import {
   type BackupTableName,
 } from "@/lib/backup/types";
 import { db } from "@/lib/db/db";
+import { i18n } from "@/lib/i18n";
+import { getDateLocale } from "@/lib/i18n/date-locale";
 import { toast } from "@/lib/toast";
 import { cn, errorMessage } from "@/lib/utils";
 import { downloadBackupDocument } from "./download";
 
-type Mode = "pick" | "summary";
+type Mode = "pick" | "unlock" | "summary";
 
 export function RestoreBackupDialog({
   open,
@@ -65,6 +78,21 @@ export function RestoreBackupDialog({
   const [parsing, setParsing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [downloadingEscape, setDownloadingEscape] = useState(false);
+  // Encrypted file held at the unlock step: the file text, its plaintext
+  // header metadata for display, and the passphrase (memory only, wiped on
+  // close/cancel).
+  const [pendingEnvelopeText, setPendingEnvelopeText] = useState<string | null>(
+    null,
+  );
+  const [envelopeMeta, setEnvelopeMeta] = useState<{
+    exportedAt: string;
+    appVersion: string;
+  } | null>(null);
+  const [passphrase, setPassphrase] = useState("");
+  const [showPassphrase, setShowPassphrase] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const trimmedPassphrase = passphrase.trim();
 
   useEffect(() => {
     if (open) return;
@@ -77,6 +105,12 @@ export function RestoreBackupDialog({
     setParsing(false);
     setRestoring(false);
     setDownloadingEscape(false);
+    setPendingEnvelopeText(null);
+    setEnvelopeMeta(null);
+    setPassphrase("");
+    setShowPassphrase(false);
+    setUnlocking(false);
+    setUnlockError(null);
   }, [open]);
 
   async function handleFile(file: File) {
@@ -89,12 +123,47 @@ export function RestoreBackupDialog({
     setParsing(true);
     setError(null);
     try {
-      const parsed = parseBackupDocument(await file.text());
+      const text = await file.text();
+      // An encrypted backup routes to the unlock step; the plaintext header
+      // is validated before the passphrase is ever asked for.
+      if (isBackupEnvelope(text)) {
+        try {
+          const envelope = readBackupEnvelope(text);
+          setPendingEnvelopeText(text);
+          setEnvelopeMeta({
+            exportedAt: envelope.exportedAt,
+            appVersion: envelope.appVersion,
+          });
+          setFileName(file.name);
+          setDocument(null);
+          setCurrentCounts(null);
+          setPassphrase("");
+          setShowPassphrase(false);
+          setUnlockError(null);
+          setMode("unlock");
+        } catch (cause) {
+          setPendingEnvelopeText(null);
+          setEnvelopeMeta(null);
+          setPassphrase("");
+          setShowPassphrase(false);
+          setDocument(null);
+          setCurrentCounts(null);
+          setFileName(null);
+          setMode("pick");
+          setError(errorMessage(cause, t("data.restore.readFailed")));
+        }
+        return;
+      }
+      const parsed = parseBackupDocument(text);
       setDocument(parsed);
       setCurrentCounts(await readWorkspaceCounts(db));
       setFileName(file.name);
       setMode("summary");
     } catch (cause) {
+      setPendingEnvelopeText(null);
+      setEnvelopeMeta(null);
+      setPassphrase("");
+      setShowPassphrase(false);
       setDocument(null);
       setCurrentCounts(null);
       setFileName(null);
@@ -103,6 +172,51 @@ export function RestoreBackupDialog({
     } finally {
       setParsing(false);
     }
+  }
+
+  async function handleUnlock(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    if (!pendingEnvelopeText || unlocking || trimmedPassphrase.length === 0) {
+      return;
+    }
+    setUnlocking(true);
+    setUnlockError(null);
+    let restored: BackupDocument;
+    try {
+      // Decryption and structural validation happen before anything is
+      // written. Any GCM authentication failure surfaces as one ambiguous
+      // error; the file stays loaded for unlimited in-place retry.
+      restored = await openBackupDocument(
+        pendingEnvelopeText,
+        trimmedPassphrase,
+      );
+    } catch (cause) {
+      if (cause instanceof BackupDecryptError) {
+        setUnlockError(t("data.restore.unlockFailed"));
+        setUnlocking(false);
+        return;
+      }
+      // Decrypted fine but failed structural validation: nothing was
+      // written, and retrying the passphrase can't help — back to pick.
+      setPendingEnvelopeText(null);
+      setEnvelopeMeta(null);
+      setDocument(null);
+      setCurrentCounts(null);
+      setFileName(null);
+      setPassphrase("");
+      setShowPassphrase(false);
+      setMode("pick");
+      setError(errorMessage(cause, t("data.restore.readFailed")));
+      setUnlocking(false);
+      return;
+    }
+    setCurrentCounts(await readWorkspaceCounts(db));
+    setDocument(restored);
+    setPassphrase("");
+    setPendingEnvelopeText(null);
+    setShowPassphrase(false);
+    setMode("summary");
+    setUnlocking(false);
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -154,6 +268,12 @@ export function RestoreBackupDialog({
     setDocument(null);
     setCurrentCounts(null);
     setError(null);
+    setPendingEnvelopeText(null);
+    setEnvelopeMeta(null);
+    setPassphrase("");
+    setShowPassphrase(false);
+    setUnlocking(false);
+    setUnlockError(null);
   }
 
   const contains = document ? backupTableCounts(document) : null;
@@ -174,17 +294,26 @@ export function RestoreBackupDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (restoring && !next) return;
+        if ((restoring || unlocking) && !next) return;
         onOpenChange(next);
       }}
     >
-      <DialogPopup className="max-w-lg" showCloseButton={!restoring}>
+      <DialogPopup
+        className="max-w-lg"
+        showCloseButton={!restoring && !unlocking}
+      >
         <DialogHeader>
-          <DialogTitle>{t("data.restore.title")}</DialogTitle>
+          <DialogTitle>
+            {mode === "unlock"
+              ? t("data.restore.unlockTitle")
+              : t("data.restore.title")}
+          </DialogTitle>
           <DialogDescription>
             {mode === "summary"
               ? t("data.restore.descriptionSummary")
-              : t("data.restore.descriptionPick")}
+              : mode === "unlock"
+                ? t("data.restore.unlockDescription")
+                : t("data.restore.descriptionPick")}
           </DialogDescription>
         </DialogHeader>
 
@@ -239,6 +368,9 @@ export function RestoreBackupDialog({
                     : t("data.restore.selectFile")}
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t("data.restore.encryptedNote")}
+              </p>
               {error && (
                 <p
                   role="alert"
@@ -248,6 +380,101 @@ export function RestoreBackupDialog({
                 </p>
               )}
             </>
+          )}
+
+          {mode === "unlock" && (
+            <form
+              id="backup-unlock-form"
+              onSubmit={(event) => void handleUnlock(event)}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+                  <span className="min-w-0 truncate">{fileName}</span>
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs text-muted-foreground underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
+                    disabled={unlocking}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {t("data.restore.changeFile")}
+                  </button>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  className="sr-only"
+                  onChange={handleFileChange}
+                />
+                {envelopeMeta && (
+                  <dl className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-xs text-muted-foreground">
+                        {t("data.restore.unlockExported")}
+                      </dt>
+                      <dd className="tabular-nums">
+                        {formatExportedAt(envelopeMeta.exportedAt)}
+                      </dd>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-3">
+                      <dt className="text-xs text-muted-foreground">
+                        {t("data.restore.unlockAppVersion")}
+                      </dt>
+                      <dd className="tabular-nums">
+                        {envelopeMeta.appVersion}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
+                <div className="space-y-2">
+                  <label
+                    htmlFor="backup-unlock-passphrase"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    {t("data.export.passphrase")}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="backup-unlock-passphrase"
+                      type={showPassphrase ? "text" : "password"}
+                      autoComplete="off"
+                      className="h-9 pr-9 text-sm"
+                      value={passphrase}
+                      disabled={unlocking}
+                      onChange={(event) => setPassphrase(event.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                      disabled={unlocking}
+                      aria-label={
+                        showPassphrase
+                          ? t("data.export.hidePassphrase")
+                          : t("data.export.showPassphrase")
+                      }
+                      onClick={() => setShowPassphrase((value) => !value)}
+                    >
+                      {showPassphrase ? (
+                        <EyeOff aria-hidden="true" className="size-4" />
+                      ) : (
+                        <Eye aria-hidden="true" className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                {unlockError && (
+                  <p
+                    role="alert"
+                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {unlockError}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {t("data.export.forgottenPassphrase")}
+                </p>
+              </div>
+            </form>
           )}
 
           {mode === "summary" && contains && currentCounts && (
@@ -317,6 +544,31 @@ export function RestoreBackupDialog({
               {t("data.restore.cancel")}
             </DialogClose>
           )}
+          {mode === "unlock" && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={unlocking}
+                onClick={resetToPick}
+              >
+                {t("data.restore.cancel")}
+              </Button>
+              <Button
+                type="submit"
+                form="backup-unlock-form"
+                size="sm"
+                disabled={unlocking || trimmedPassphrase.length === 0}
+              >
+                {unlocking && (
+                  <Loader2 className="animate-spin" aria-hidden="true" />
+                )}
+                {unlocking
+                  ? t("data.restore.unlocking")
+                  : t("data.restore.unlock")}
+              </Button>
+            </>
+          )}
           {mode === "summary" && (
             <>
               <Button
@@ -346,6 +598,12 @@ export function RestoreBackupDialog({
       </DialogPopup>
     </Dialog>
   );
+}
+
+function formatExportedAt(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  return format(parsed, "PPp", { locale: getDateLocale(i18n.language) });
 }
 
 function isJsonFile(file: File): boolean {

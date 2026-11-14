@@ -601,6 +601,7 @@
         "downloaded": "Données actuelles téléchargées en sauvegarde.",
         "dragHint": "Un fichier exporté par « Exporter la sauvegarde » de nanoboard.",
         "dragTitle": "Glissez-déposez un fichier JSON de sauvegarde",
+        "encryptedNote": "Les sauvegardes chiffrées sont détectées automatiquement — la phrase secrète vous sera demandée.",
         "readFailed": "Impossible de lire ce fichier.",
         "reading": "Lecture",
         "restoreEverything": "Tout restaurer",
@@ -620,6 +621,13 @@
           "whiteboards": "Tableaux blancs"
         },
         "title": "Restaurer depuis une sauvegarde",
+        "unlock": "Déverrouiller",
+        "unlockAppVersion": "Version de l'application",
+        "unlockDescription": "Cette sauvegarde est chiffrée. Entrez la phrase secrète pour continuer.",
+        "unlockExported": "Exportée",
+        "unlockFailed": "Phrase secrète incorrecte, ou le fichier est endommagé ou incomplet.",
+        "unlockTitle": "Déverrouiller la sauvegarde chiffrée",
+        "unlocking": "Déverrouillage",
         "willBeDestroyed": "Sera détruit"
       },
       "title": "Données"

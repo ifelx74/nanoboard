@@ -31,8 +31,12 @@ describe("assertSupportedBackupVersion", () => {
     expect(() => assertSupportedBackupVersion({ version: 0 })).not.toThrow();
   });
 
+  it("accepts the newest restorable version (a v2 encrypted envelope)", () => {
+    expect(() => assertSupportedBackupVersion({ version: 2 })).not.toThrow();
+  });
+
   it("rejects a newer version with an update-the-app-first message", () => {
-    expect(() => assertSupportedBackupVersion({ version: 2 })).toThrow(
+    expect(() => assertSupportedBackupVersion({ version: 3 })).toThrow(
       /newer version of nanoboard — update the app first/,
     );
   });
