@@ -49,8 +49,6 @@
       "delete": "Delete project",
       "edit": "Edit project",
       "export": "Export tasks",
-      "exportFailed": "Could not export tasks.",
-      "exported": "Tasks exported.",
       "import": "Import tasks",
       "label": "Projects",
       "moreActions": "More actions for {{name}}",
@@ -277,6 +275,27 @@
       "submit": "Save",
       "title": "Edit project"
     },
+    "export": {
+      "title": "Export tasks",
+      "description": "Download the tasks of “{{name}}” as one JSON file.",
+      "button": "Export tasks",
+      "exported": "Tasks exported.",
+      "exportedEncrypted": "Encrypted tasks exported.",
+      "exportFailed": "Could not export tasks.",
+      "exporting": "Exporting",
+      "cancel": "Cancel",
+      "passphrase": "Passphrase",
+      "confirmPassphrase": "Confirm passphrase",
+      "showPassphrase": "Show passphrase",
+      "hidePassphrase": "Hide passphrase",
+      "passphraseMismatch": "Passphrases do not match.",
+      "forgottenPassphrase": "If you forget this passphrase there is no way to recover the file — it is unreadable by anyone, including you.",
+      "cryptoUnavailable": "This browser can't encrypt files — WebCrypto is unavailable in this context (for example, over plain HTTP on a LAN). Only a plain export is available here.",
+      "plainWarning": "The file will not be encrypted — anyone who gets it can read everything in it.",
+      "protectWithPassphrase": "Protect with a passphrase instead",
+      "saveUnencrypted": "Save unencrypted",
+      "saveUnencryptedInstead": "Save unencrypted instead"
+    },
     "iconPicker": {
       "pickTitle": "Pick an icon",
       "searchPlaceholder": "Search icons"
@@ -302,6 +321,7 @@
         "import": "Could not import tasks."
       },
       "expectedFormat": "Expected format",
+      "encryptedNote": "Encrypted exports are detected automatically — you'll be asked for the passphrase.",
       "importAnother": "Import another file",
       "importButton_one": "Import {{count}} task",
       "importButton_other": "Import {{count}} tasks",
@@ -317,7 +337,12 @@
         "failed_other": "{{count}} tasks could not be imported.",
         "imported_one": "{{count}} task imported.",
         "imported_other": "{{count}} tasks imported."
-      }
+      },
+      "unlockTitle": "Unlock encrypted file",
+      "unlockDescription": "This file is protected with a passphrase. Enter it to continue.",
+      "unlock": "Unlock",
+      "unlocking": "Unlocking",
+      "unlockFailed": "Wrong passphrase, or the file is damaged or incomplete."
     },
     "toolbar": {
       "archivedTasks_one": "{{count}} archived task",

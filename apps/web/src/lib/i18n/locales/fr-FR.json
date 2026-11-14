@@ -49,8 +49,6 @@
       "delete": "Supprimer le projet",
       "edit": "Modifier le projet",
       "export": "Exporter les tâches",
-      "exportFailed": "Impossible d'exporter les tâches.",
-      "exported": "Tâches exportées.",
       "import": "Importer des tâches",
       "label": "Projets",
       "moreActions": "Plus d'actions pour {{name}}",
@@ -277,6 +275,27 @@
       "submit": "Enregistrer",
       "title": "Modifier le projet"
     },
+    "export": {
+      "title": "Exporter les tâches",
+      "description": "Télécharger les tâches de « {{name}} » dans un seul fichier JSON.",
+      "button": "Exporter les tâches",
+      "exported": "Tâches exportées.",
+      "exportedEncrypted": "Tâches chiffrées exportées.",
+      "exportFailed": "Impossible d'exporter les tâches.",
+      "exporting": "Exportation",
+      "cancel": "Annuler",
+      "passphrase": "Phrase secrète",
+      "confirmPassphrase": "Confirmez la phrase secrète",
+      "showPassphrase": "Afficher la phrase secrète",
+      "hidePassphrase": "Masquer la phrase secrète",
+      "passphraseMismatch": "Les phrases secrètes ne correspondent pas.",
+      "forgottenPassphrase": "Si vous oubliez cette phrase secrète, il n'y a aucun moyen de récupérer le fichier — il est illisible pour quiconque, y compris vous.",
+      "cryptoUnavailable": "Ce navigateur ne peut pas chiffrer les fichiers — WebCrypto est indisponible dans ce contexte (par exemple via HTTP simple sur un réseau local). Seul un export non chiffré est disponible ici.",
+      "plainWarning": "Le fichier ne sera pas chiffré — quiconque le récupère peut tout lire.",
+      "protectWithPassphrase": "Protéger avec une phrase secrète à la place",
+      "saveUnencrypted": "Enregistrer sans chiffrement",
+      "saveUnencryptedInstead": "Enregistrer sans chiffrement à la place"
+    },
     "iconPicker": {
       "pickTitle": "Choisir une icône",
       "searchPlaceholder": "Rechercher des icônes"
@@ -302,6 +321,7 @@
         "import": "Impossible d'importer les tâches."
       },
       "expectedFormat": "Format attendu",
+      "encryptedNote": "Les exports chiffrés sont détectés automatiquement — la phrase secrète vous sera demandée.",
       "importAnother": "Importer un autre fichier",
       "importButton_one": "Importer {{count}} tâche",
       "importButton_other": "Importer {{count}} tâches",
@@ -317,7 +337,12 @@
         "failed_other": "{{count}} tâches n'ont pas pu être importées.",
         "imported_one": "{{count}} tâche importée.",
         "imported_other": "{{count}} tâches importées."
-      }
+      },
+      "unlockTitle": "Déverrouiller le fichier chiffré",
+      "unlockDescription": "Ce fichier est protégé par une phrase secrète. Saisissez-la pour continuer.",
+      "unlock": "Déverrouiller",
+      "unlocking": "Déverrouillage",
+      "unlockFailed": "Phrase secrète incorrecte, ou le fichier est endommagé ou incomplet."
     },
     "toolbar": {
       "archivedTasks_one": "{{count}} tâche archivée",

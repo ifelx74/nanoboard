@@ -34,19 +34,13 @@ import CreateProjectDialog from "@/components/project/create-project-dialog";
 import EditProjectDialog from "@/components/project/edit-project-dialog";
 import ProjectDeleteDialog from "@/components/project/project-delete-dialog";
 import { ProjectProgress } from "@/components/project/project-progress";
+import { ExportTasksDialog } from "@/components/project/tasks-import-export/export-tasks-dialog";
 import { ImportTasksDialog } from "@/components/project/tasks-import-export/import-tasks-dialog";
-import { downloadTaskTransferDocument } from "@/components/project/tasks-import-export/download";
-import {
-  getProjects,
-  getProjectsStats,
-  readProjectTransferSource,
-} from "@/lib/db/queries";
+import { getProjects, getProjectsStats } from "@/lib/db/queries";
 import type { ProjectStats } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
 import type { Project } from "@/lib/db/schema";
-import { buildTaskTransferDocument } from "@/lib/task-transfer/export";
 import { getProjectIcon } from "@/lib/project-icons";
-import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 function ProjectRow({
@@ -66,7 +60,7 @@ function ProjectRow({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const ProjectIcon = getProjectIcon(project.icon);
 
   function openBoard() {
@@ -86,22 +80,6 @@ function ProjectRow({
   function handleDeleteRequest() {
     setMenuOpen(false);
     setDeleteOpen(true);
-  }
-
-  async function handleExport() {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      const source = await readProjectTransferSource(db, project.id);
-      downloadTaskTransferDocument(await buildTaskTransferDocument(source));
-      toast.success(t("projects.exported"));
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("projects.exportFailed"),
-      );
-    } finally {
-      setExporting(false);
-    }
   }
 
   return (
@@ -148,10 +126,9 @@ function ProjectRow({
             <span>{t("projects.edit")}</span>
           </DropdownMenuItem>
           <DropdownMenuItem
-            disabled={exporting}
             onClick={() => {
               setMenuOpen(false);
-              void handleExport();
+              setExportOpen(true);
             }}
           >
             <ArrowUpFromLine className="size-4 shrink-0" />
@@ -200,6 +177,12 @@ function ProjectRow({
         projectName={project.name}
         open={importOpen}
         onOpenChange={setImportOpen}
+      />
+      <ExportTasksDialog
+        projectId={project.id}
+        projectName={project.name}
+        open={exportOpen}
+        onOpenChange={setExportOpen}
       />
     </SidebarMenuItem>
   );
