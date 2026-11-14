@@ -18,6 +18,7 @@ import { useClickOutside } from "@/hooks/use-click-outside";
 import { useCreateSticky } from "@/hooks/use-create-sticky";
 import Stickies from "@/icons/stickies";
 import { getStickies } from "@/lib/db/stickies";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { cn } from "@/lib/utils";
 import { stickyBackgroundColor } from "./color-palette";
 
@@ -186,9 +187,9 @@ export function StickyActionBar() {
                       <div
                         className="font-medium line-clamp-4"
                         dangerouslySetInnerHTML={{
-                          __html:
-                            recentSticky.contentHtml ||
-                            `<p class='italic text-muted-foreground'>${t("emptyNote")}</p>`,
+                          __html: recentSticky.contentHtml
+                            ? sanitizeHtml(recentSticky.contentHtml)
+                            : `<p class='italic text-muted-foreground'>${t("emptyNote")}</p>`,
                         }}
                       />
                       <div className="absolute inset-0 bg-linear-to-t from-background/90 via-transparent to-transparent pointer-events-none" />
