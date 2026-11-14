@@ -21,6 +21,7 @@ import { toast } from "@/lib/toast";
 import { errorMessage } from "@/lib/utils";
 import {
   cryptoAvailable,
+  MIN_PASSPHRASE_LENGTH,
   usePassphraseProtection,
 } from "@/hooks/use-passphrase-protection";
 import {
@@ -51,7 +52,7 @@ export function ExportTasksDialog({
     setShowPassphrase,
     exporting,
     setExporting,
-    trimmedPassphrase,
+    passphraseTooShort,
     mismatch,
     canSubmit,
   } = usePassphraseProtection(open);
@@ -63,10 +64,7 @@ export function ExportTasksDialog({
       const source = await readProjectTransferSource(db, projectId);
       const document = await buildTaskTransferDocument(source);
       if (protection === "encrypted") {
-        const text = await sealTaskTransferDocument(
-          document,
-          trimmedPassphrase,
-        );
+        const text = await sealTaskTransferDocument(document, passphrase);
         downloadTaskTransferText(text, document.project.slug);
         toast.success(t("export.exportedEncrypted"));
       } else {
@@ -166,6 +164,13 @@ export function ExportTasksDialog({
                 {mismatch && (
                   <p role="alert" className="text-xs text-destructive">
                     {t("export.passphraseMismatch")}
+                  </p>
+                )}
+                {passphraseTooShort && (
+                  <p role="alert" className="text-xs text-destructive">
+                    {t("export.passphraseTooShort", {
+                      count: MIN_PASSPHRASE_LENGTH,
+                    })}
                   </p>
                 )}
                 {cryptoAvailable && (

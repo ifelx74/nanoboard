@@ -7,11 +7,19 @@ export const cryptoAvailable =
   typeof crypto !== "undefined" && typeof crypto.subtle !== "undefined";
 
 /**
+ * Minimum passphrase length for encryption. PBKDF2 slows offline attacks,
+ * but a short passphrase against a leaked backup is still brute-forceable;
+ * this is the floor, not a strength guarantee.
+ */
+export const MIN_PASSPHRASE_LENGTH = 12;
+
+/**
  * Shared state bundle for the two encrypted-export dialogs: the passphrase
  * pair, visibility toggle, protection choice, in-flight flag, and the
- * derived trimmed/match state that gates the primary button. Closing the
- * dialog (open → false) wipes every value — the passphrase never outlives
- * the operation.
+ * derived match/length state that gates the primary button. The passphrase
+ * is used exactly as typed — leading/trailing whitespace is significant.
+ * Closing the dialog (open → false) wipes every value — the passphrase
+ * never outlives the operation.
  */
 export function usePassphraseProtection(open: boolean) {
   // Encrypted is always the default; when WebCrypto is unavailable the
@@ -33,16 +41,15 @@ export function usePassphraseProtection(open: boolean) {
     setExporting(false);
   }, [open]);
 
-  const trimmedPassphrase = passphrase.trim();
-  const trimmedConfirm = confirmPassphrase.trim();
   const mismatch =
-    trimmedConfirm.length > 0 && trimmedPassphrase !== trimmedConfirm;
+    confirmPassphrase.length > 0 && passphrase !== confirmPassphrase;
+  const passphraseTooShort =
+    passphrase.length > 0 && passphrase.length < MIN_PASSPHRASE_LENGTH;
   const canSubmit =
     protection === "plain" ||
     (cryptoAvailable &&
-      trimmedPassphrase.length > 0 &&
-      trimmedConfirm.length > 0 &&
-      !mismatch);
+      passphrase.length >= MIN_PASSPHRASE_LENGTH &&
+      confirmPassphrase === passphrase);
 
   return {
     protection,
@@ -55,8 +62,8 @@ export function usePassphraseProtection(open: boolean) {
     setShowPassphrase,
     exporting,
     setExporting,
-    trimmedPassphrase,
     mismatch,
+    passphraseTooShort,
     canSubmit,
   };
 }

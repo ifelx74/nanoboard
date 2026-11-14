@@ -22,6 +22,7 @@ import { toast } from "@/lib/toast";
 import { errorMessage } from "@/lib/utils";
 import {
   cryptoAvailable,
+  MIN_PASSPHRASE_LENGTH,
   usePassphraseProtection,
 } from "@/hooks/use-passphrase-protection";
 import { downloadBackupDocument, downloadBackupText } from "./download";
@@ -65,7 +66,7 @@ export function ExportBackupDialog({
     setShowPassphrase,
     exporting,
     setExporting,
-    trimmedPassphrase,
+    passphraseTooShort,
     mismatch,
     canSubmit,
   } = usePassphraseProtection(open);
@@ -76,7 +77,7 @@ export function ExportBackupDialog({
     try {
       const document = await createBackupDocument(db);
       if (protection === "encrypted") {
-        const text = await sealBackupDocument(document, trimmedPassphrase);
+        const text = await sealBackupDocument(document, passphrase);
         downloadBackupText(text, document.exportedAt);
         toast.success(t("data.export.exportedEncrypted"), {
           description: `${exportSummary(document, t)}.`,
@@ -178,6 +179,13 @@ export function ExportBackupDialog({
                 {mismatch && (
                   <p role="alert" className="text-xs text-destructive">
                     {t("data.export.passphraseMismatch")}
+                  </p>
+                )}
+                {passphraseTooShort && (
+                  <p role="alert" className="text-xs text-destructive">
+                    {t("data.export.passphraseTooShort", {
+                      count: MIN_PASSPHRASE_LENGTH,
+                    })}
                   </p>
                 )}
                 {cryptoAvailable && (

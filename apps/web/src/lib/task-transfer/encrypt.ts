@@ -1,5 +1,5 @@
 import {
-  openEnvelope,
+  decryptEnvelope,
   parseEnvelope,
   sealTaskTransferEnvelope,
   TASK_TRANSFER_ENVELOPE_FORMAT,
@@ -60,6 +60,13 @@ export function readTaskTransferEnvelope(text: string): TaskTransferEnvelope {
       "This task transfer was created by a newer version of nanoboard — update the app first.",
     );
   }
+  if (envelope.version !== TASK_TRANSFER_ENVELOPE_VERSION) {
+    // No older encrypted wrapper ever shipped — a lower number is not an
+    // "old format", it's a corrupt or hand-made file.
+    throw new Error(
+      "This encrypted task transfer uses an unsupported format version.",
+    );
+  }
   return envelope;
 }
 
@@ -81,20 +88,20 @@ export class TaskTransferDecryptError extends Error {
  * Open an encrypted wrapper with the passphrase and return the bare
  * document as file text, ready for the existing parse → plan → preview →
  * import pipeline. Any authentication failure — wrong passphrase, tampered
- * or truncated ciphertext — surfaces as {@link TaskTransferDecryptError}
- * (one ambiguous error, never distinguishable); an envelope that fails
- * re-validation throws the parser's diagnostic instead. Either way, no
- * import has happened at that point. The returned text is freshly
- * serialized and carries nothing but the bare document.
+ * or truncated ciphertext, a corrupt payload encoding — surfaces as
+ * {@link TaskTransferDecryptError} (one ambiguous error, never
+ * distinguishable). Either way, no import has happened at that point. The
+ * returned text is freshly serialized and carries nothing but the bare
+ * document.
  */
 export async function openTaskTransferDocument(
   text: string,
   passphrase: string,
 ): Promise<string> {
-  readTaskTransferEnvelope(text);
+  const envelope = readTaskTransferEnvelope(text);
   let payload: unknown;
   try {
-    payload = await openEnvelope(text, passphrase);
+    payload = await decryptEnvelope(envelope, passphrase);
   } catch {
     throw new TaskTransferDecryptError();
   }

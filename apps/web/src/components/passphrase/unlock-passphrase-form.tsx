@@ -2,6 +2,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import type { ChangeEvent, FormEvent, ReactNode, RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cryptoAvailable } from "@/hooks/use-passphrase-protection";
 
 /**
  * Shared unlock step for the encrypted file dialogs (backup restore and
@@ -31,6 +32,7 @@ export function UnlockPassphraseForm({
   showPassphraseLabel,
   hidePassphraseLabel,
   forgottenPassphraseNote,
+  cryptoUnavailableLabel,
   children,
 }: {
   formId: string;
@@ -52,6 +54,8 @@ export function UnlockPassphraseForm({
   showPassphraseLabel: string;
   hidePassphraseLabel: string;
   forgottenPassphraseNote: string;
+  /** Shown instead of the passphrase field when WebCrypto is missing. */
+  cryptoUnavailableLabel: string;
   /** Slot shown between the file row and the passphrase field (metadata). */
   children?: ReactNode;
 }) {
@@ -63,7 +67,7 @@ export function UnlockPassphraseForm({
           <button
             type="button"
             className="shrink-0 text-xs text-muted-foreground underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-50"
-            disabled={busy}
+            disabled={busy || !cryptoAvailable}
             onClick={() => fileInputRef.current?.click()}
           >
             {changeFileLabel}
@@ -77,6 +81,14 @@ export function UnlockPassphraseForm({
           onChange={onFileChange}
         />
         {children}
+        {!cryptoAvailable && (
+          <p
+            role="alert"
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {cryptoUnavailableLabel}
+          </p>
+        )}
         <div className="space-y-2">
           <label
             htmlFor={inputId}
@@ -91,13 +103,13 @@ export function UnlockPassphraseForm({
               autoComplete="off"
               className="h-9 pr-9 text-sm"
               value={passphrase}
-              disabled={busy}
+              disabled={busy || !cryptoAvailable}
               onChange={(event) => onPassphraseChange(event.target.value)}
             />
             <button
               type="button"
               className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-              disabled={busy}
+              disabled={busy || !cryptoAvailable}
               aria-label={
                 showPassphrase ? hidePassphraseLabel : showPassphraseLabel
               }

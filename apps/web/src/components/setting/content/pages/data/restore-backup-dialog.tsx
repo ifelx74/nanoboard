@@ -50,8 +50,10 @@ import {
   type BackupTableName,
 } from "@/lib/backup/types";
 import { db } from "@/lib/db/db";
+import { MAX_IMPORT_FILE_BYTES } from "@/lib/file";
 import { i18n } from "@/lib/i18n";
 import { getDateLocale } from "@/lib/i18n/date-locale";
+import { cryptoAvailable } from "@/hooks/use-passphrase-protection";
 import { toast } from "@/lib/toast";
 import { cn, errorMessage } from "@/lib/utils";
 import { downloadBackupDocument } from "./download";
@@ -93,7 +95,7 @@ export function RestoreBackupDialog({
   const [showPassphrase, setShowPassphrase] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
-  const trimmedPassphrase = passphrase.trim();
+  const canUnlock = cryptoAvailable && passphrase.length > 0;
 
   useEffect(() => {
     if (open) return;
@@ -118,6 +120,10 @@ export function RestoreBackupDialog({
     if (parsing) return;
     if (!isJsonFile(file)) {
       setError(t("data.restore.chooseJsonError"));
+      return;
+    }
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      setError(t("data.restore.fileTooLarge"));
       return;
     }
 
@@ -177,7 +183,7 @@ export function RestoreBackupDialog({
 
   async function handleUnlock(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
-    if (!pendingEnvelopeText || unlocking || trimmedPassphrase.length === 0) {
+    if (!pendingEnvelopeText || unlocking || !canUnlock) {
       return;
     }
     setUnlocking(true);
@@ -187,10 +193,7 @@ export function RestoreBackupDialog({
       // Decryption and structural validation happen before anything is
       // written. Any GCM authentication failure surfaces as one ambiguous
       // error; the file stays loaded for unlimited in-place retry.
-      restored = await openBackupDocument(
-        pendingEnvelopeText,
-        trimmedPassphrase,
-      );
+      restored = await openBackupDocument(pendingEnvelopeText, passphrase);
     } catch (cause) {
       if (cause instanceof BackupDecryptError) {
         setUnlockError(t("data.restore.unlockFailed"));
@@ -404,6 +407,7 @@ export function RestoreBackupDialog({
               showPassphraseLabel={t("data.export.showPassphrase")}
               hidePassphraseLabel={t("data.export.hidePassphrase")}
               forgottenPassphraseNote={t("data.export.forgottenPassphrase")}
+              cryptoUnavailableLabel={t("data.export.cryptoUnavailable")}
             >
               {(envelopeMeta?.exportedAt || envelopeMeta?.appVersion) && (
                 <dl className="space-y-1 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
@@ -503,7 +507,7 @@ export function RestoreBackupDialog({
             <UnlockPassphraseFooter
               formId="backup-unlock-form"
               busy={unlocking}
-              canSubmit={trimmedPassphrase.length > 0}
+              canSubmit={canUnlock}
               cancelLabel={t("data.restore.cancel")}
               submitLabel={t("data.restore.unlock")}
               submittingLabel={t("data.restore.unlocking")}

@@ -1,7 +1,7 @@
 import {
   BACKUP_ENVELOPE_FORMAT,
   BACKUP_ENVELOPE_VERSION,
-  openEnvelope,
+  decryptEnvelope,
   parseEnvelope,
   sealBackupEnvelope,
   type BackupEnvelope,
@@ -84,6 +84,13 @@ export function readBackupEnvelope(text: string): BackupEnvelope {
       "This backup was made by a newer version of nanoboard — update the app first, then restore.",
     );
   }
+  if (envelope.version !== BACKUP_ENVELOPE_VERSION) {
+    // No older encrypted envelope ever shipped — a lower number is not an
+    // "old format", it's a corrupt or hand-made file.
+    throw new Error(
+      "This encrypted backup uses an unsupported format version.",
+    );
+  }
   return envelope;
 }
 
@@ -107,7 +114,7 @@ export async function openBackupDocument(
 
   let tables: unknown;
   try {
-    tables = await openEnvelope(text, passphrase);
+    tables = await decryptEnvelope(envelope, passphrase);
   } catch {
     throw new BackupDecryptError();
   }

@@ -52,6 +52,8 @@ import {
   TaskTransferDecryptError,
 } from "@/lib/task-transfer/encrypt";
 import { i18n } from "@/lib/i18n";
+import { MAX_IMPORT_FILE_BYTES } from "@/lib/file";
+import { cryptoAvailable } from "@/hooks/use-passphrase-protection";
 import { toast } from "@/lib/toast";
 import { cn, errorMessage } from "@/lib/utils";
 
@@ -102,7 +104,7 @@ export function ImportTasksDialog({
   const [unlocking, setUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const pendingCount = plan?.tasks.length ?? 0;
-  const trimmedPassphrase = passphrase.trim();
+  const canUnlock = cryptoAvailable && passphrase.length > 0;
 
   useEffect(() => {
     if (open) return;
@@ -140,6 +142,10 @@ export function ImportTasksDialog({
     if (parsing) return;
     if (!isJsonFile(file)) {
       setError(t("import.chooseJsonError"));
+      return;
+    }
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      setError(t("import.fileTooLarge"));
       return;
     }
 
@@ -183,7 +189,7 @@ export function ImportTasksDialog({
 
   async function handleUnlock(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
-    if (!pendingEnvelopeText || unlocking || trimmedPassphrase.length === 0) {
+    if (!pendingEnvelopeText || unlocking || !canUnlock) {
       return;
     }
     setUnlocking(true);
@@ -192,7 +198,7 @@ export function ImportTasksDialog({
     try {
       decrypted = await openTaskTransferDocument(
         pendingEnvelopeText,
-        trimmedPassphrase,
+        passphrase,
       );
     } catch (cause) {
       if (cause instanceof TaskTransferDecryptError) {
@@ -413,6 +419,7 @@ export function ImportTasksDialog({
               showPassphraseLabel={t("export.showPassphrase")}
               hidePassphraseLabel={t("export.hidePassphrase")}
               forgottenPassphraseNote={t("export.forgottenPassphrase")}
+              cryptoUnavailableLabel={t("export.cryptoUnavailable")}
             />
           )}
 
@@ -544,7 +551,7 @@ export function ImportTasksDialog({
             <UnlockPassphraseFooter
               formId="unlock-form"
               busy={unlocking}
-              canSubmit={trimmedPassphrase.length > 0}
+              canSubmit={canUnlock}
               cancelLabel={t("import.cancel")}
               submitLabel={t("import.unlock")}
               submittingLabel={t("import.unlocking")}

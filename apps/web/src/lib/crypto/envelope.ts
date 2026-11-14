@@ -17,6 +17,16 @@ export const TASK_TRANSFER_ENVELOPE_FORMAT = "nanoboard-task-transfer";
 export const TASK_TRANSFER_ENVELOPE_VERSION = 1;
 
 const PBKDF2_ITERATIONS = 600_000;
+/**
+ * Accepted range for the KDF iteration count recorded in an envelope. The
+ * floor blocks a crafted file from smuggling a near-zero-cost KDF past the
+ * "corrupted file" gate; the ceiling blocks a file that pins the CPU for an
+ * absurd stretch before the first GCM check. Ten times the seal value leaves
+ * headroom for future parameter bumps. Files nanoboard writes always land
+ * inside this band.
+ */
+const MIN_KDF_ITERATIONS = 100_000;
+const MAX_KDF_ITERATIONS = PBKDF2_ITERATIONS * 10;
 const SALT_BYTES = 16;
 const IV_BYTES = 12;
 
@@ -103,9 +113,9 @@ export async function sealTaskTransferEnvelope(
  * Parse envelope file text into its typed shape without decrypting. Used
  * before the passphrase is known: to detect an envelope at all, to validate
  * the plaintext header, and to read the metadata the unlock step displays.
- * The payload's base64 is decoded exactly once (validating its charset and
- * minimum length); the bytes are discarded here — see {@link openEnvelope},
- * which decodes its own payload exactly once for decryption.
+ * The payload's base64 is decoded once (validating its charset and minimum
+ * length); the bytes are discarded — decrypting callers should pass this
+ * envelope to {@link decryptEnvelope} rather than re-parsing the text.
  */
 export function parseEnvelope(text: string): Envelope {
   const envelope = parseEnvelopeParts(text);
@@ -116,8 +126,8 @@ export function parseEnvelope(text: string): Envelope {
 /**
  * Everything {@link parseEnvelope} validates except the payload's bytes —
  * JSON, envelope shape, format/version, and the encryption block. Split out
- * so {@link openEnvelope} can do its single payload decode on the decrypt
- * path instead of once here and once there.
+ * so callers that already hold a validated envelope can decrypt it with
+ * {@link decryptEnvelope} without re-parsing the file text.
  */
 function parseEnvelopeParts(text: string): Envelope {
   let value: unknown;
@@ -148,7 +158,11 @@ function parseEnvelopeParts(text: string): Envelope {
   }
 
   const version = record.version;
-  if (typeof version !== "number" || !Number.isInteger(version)) {
+  if (
+    typeof version !== "number" ||
+    !Number.isInteger(version) ||
+    version < 1
+  ) {
     throw new Error(
       "This doesn't look like a valid encrypted nanoboard file — no format version.",
     );
@@ -192,19 +206,33 @@ function decodePayloadChecked(payload: string): Uint8Array {
 }
 
 /**
- * Open an envelope with the passphrase and return the decrypted payload
- * object. Any authentication failure — wrong passphrase, bit-flipped or
- * truncated ciphertext — surfaces as one ambiguous error; callers should
- * not try to tell the causes apart.
+ * Open an envelope file with the passphrase and return the decrypted
+ * payload object. Any authentication failure — wrong passphrase,
+ * bit-flipped or truncated ciphertext — surfaces as one ambiguous error;
+ * callers should not try to tell the causes apart.
  */
 export async function openEnvelope(
   text: string,
   passphrase: string,
 ): Promise<unknown> {
-  const envelope = parseEnvelopeParts(text);
+  return decryptEnvelope(parseEnvelopeParts(text), passphrase);
+}
+
+/**
+ * Decrypt an already-parsed envelope with the passphrase — the decrypt
+ * half of {@link openEnvelope}, split out so a caller that already
+ * validated the envelope (e.g. {@link parseEnvelope} for the pre-passphrase
+ * header check) doesn't pay a second JSON.parse and shape validation.
+ * GCM covers everything but the plaintext header. Any failure — bad payload
+ * encoding, GCM
+ * authentication, or non-JSON plaintext — surfaces as one ambiguous error;
+ * callers should not try to tell the causes apart.
+ */
+export async function decryptEnvelope(
+  envelope: Envelope,
+  passphrase: string,
+): Promise<unknown> {
   const { kdf } = envelope.encryption;
-  // Decoded exactly once — charset and minimum-length validated here on the
-  // decrypt path, then fed straight to GCM.
   const payload = decodePayloadChecked(envelope.payload);
 
   const salt = base64ToBytes(kdf.salt);
@@ -301,7 +329,8 @@ function parseEncryptionBlock(value: unknown): EncryptionBlock {
     kdf.hash !== "SHA-256" ||
     typeof kdf.iterations !== "number" ||
     !Number.isInteger(kdf.iterations) ||
-    kdf.iterations < 1 ||
+    kdf.iterations < MIN_KDF_ITERATIONS ||
+    kdf.iterations > MAX_KDF_ITERATIONS ||
     typeof kdf.salt !== "string"
   ) {
     throw new Error(
