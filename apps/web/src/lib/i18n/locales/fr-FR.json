@@ -632,7 +632,7 @@
     "boardTitle": "Kanban — {{project}} · Nanoboard",
     "calendarDescription": "Calendrier des tâches planifiées de {{project}} — stocké localement dans votre navigateur.",
     "calendarTitle": "Calendrier — {{project}} · Nanoboard",
-    "defaultDescription": "Nanoboard est un espace open-source et minimaliste pour vos tâches : kanban, tableau blanc, calendrier et post-it. Rapide, privé et 100 % stocké dans votre navigateur.",
+    "defaultDescription": "Nanoboard est un espace open-source et minimaliste pour vos tâches : kanban, tableau blanc, calendrier et post-it. Rapide, privé et local.",
     "defaultTitle": "Nanoboard — Espace minimaliste et local pour vos tâches",
     "fallbackTitle": "Nanoboard",
     "listDescription": "Liste des tâches de {{project}} — regroupées par colonne, 100 % en local.",

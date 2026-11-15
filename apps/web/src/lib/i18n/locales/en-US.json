@@ -632,7 +632,7 @@
     "boardTitle": "Board — {{project}} · Nanoboard",
     "calendarDescription": "Calendar of scheduled tasks for {{project}} — stored locally in your browser.",
     "calendarTitle": "Calendar — {{project}} · Nanoboard",
-    "defaultDescription": "Nanoboard is a minimalist, open-source space for your tasks with a Kanban board, whiteboard, calendar, and sticky notes. Fast, private, and 100% stored in your browser.",
+    "defaultDescription": "Minimalist, open-source space for your tasks: Kanban board, whiteboard, calendar, and sticky notes — fast, private, stored in your browser.",
     "defaultTitle": "Nanoboard — Minimalist, Local-First Space for Your Tasks",
     "fallbackTitle": "Nanoboard",
     "listDescription": "Task list for {{project}} — grouped by column, all local-first.",

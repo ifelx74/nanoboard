@@ -8,3 +8,16 @@
 # the app shell wants.
 /sw.js
   Cache-Control: no-cache
+
+# App routes are browser-local workspaces — unique per visitor, empty for
+# crawlers, and never meant to rank. Only / is indexable. X-Robots-Tag is
+# honored by crawlers that run no JavaScript, unlike a client-side meta tag.
+/project/*
+  X-Robots-Tag: noindex
+/whiteboard
+  X-Robots-Tag: noindex
+/stickies
+  X-Robots-Tag: noindex
+
+/*
+  Strict-Transport-Security: max-age=15552000; includeSubDomains
