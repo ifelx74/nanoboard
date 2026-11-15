@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { buttonVariants } from "@/components/ui/button";
 import notFoundIllustration from "@/icons/not-found-illustration.svg";
@@ -9,6 +10,18 @@ import notFoundIllustrationDark from "@/icons/not-found-illustration-dark.svg";
 // baked-in fills, so dark mode swaps to a recolored copy instead of CSS.
 export function NotFound() {
   const { t } = useTranslation("common");
+  const { t: tSeo } = useTranslation("seo");
+
+  useLayoutEffect(() => {
+    document.title = tSeo("notFoundTitle");
+    const noindex = document.createElement("meta");
+    noindex.setAttribute("name", "robots");
+    noindex.setAttribute("content", "noindex");
+    document.head.appendChild(noindex);
+    return () => {
+      document.head.removeChild(noindex);
+    };
+  }, [tSeo]);
   return (
     <div className="grid h-svh w-full place-items-center p-4">
       <div className="flex flex-col items-center gap-8 text-center">

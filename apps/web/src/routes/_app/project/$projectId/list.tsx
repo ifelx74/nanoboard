@@ -21,6 +21,7 @@ import {
   getProjectTaskLabels,
   getProjectTasks,
 } from "@/lib/db/queries";
+import { projectRouteHead } from "@/lib/seo";
 import { db } from "@/lib/db/db";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { resolveLabelColor } from "@/lib/label-color";
@@ -32,6 +33,8 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/list")({
   component: RouteComponent,
+  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  head: projectRouteHead("list"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
   }),

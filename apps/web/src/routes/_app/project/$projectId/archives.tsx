@@ -22,6 +22,7 @@ import {
   getProject,
   restoreTask,
 } from "@/lib/db/queries";
+import { projectRouteHead } from "@/lib/seo";
 import { db } from "@/lib/db/db";
 import type { Task } from "@/lib/db/schema";
 import { formatMediumDate } from "@/lib/format";
@@ -31,6 +32,8 @@ import { taskKey } from "@/lib/task-key";
 
 export const Route = createFileRoute("/_app/project/$projectId/archives")({
   component: RouteComponent,
+  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  head: projectRouteHead("archives"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
   }),

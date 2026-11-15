@@ -11,6 +11,7 @@ const EXPECTED_NAMESPACES = [
   "list",
   "navigation",
   "project",
+  "seo",
   "settings",
   "stickies",
   "task",

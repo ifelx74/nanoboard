@@ -624,5 +624,25 @@
       "systemPreference": "Préférence système",
       "title": "Thème"
     }
+  },
+  "seo": {
+    "archivesDescription": "Tâches archivées de {{project}} — restaurez-les ou supprimez-les, 100 % stockées dans votre navigateur.",
+    "archivesTitle": "Archives — {{project}} · Nanoboard",
+    "boardDescription": "Kanban de {{project}} — tâches, colonnes et étiquettes, le tout en local.",
+    "boardTitle": "Kanban — {{project}} · Nanoboard",
+    "calendarDescription": "Calendrier des tâches planifiées de {{project}} — stocké localement dans votre navigateur.",
+    "calendarTitle": "Calendrier — {{project}} · Nanoboard",
+    "defaultDescription": "Nanoboard est un espace open-source et minimaliste pour vos tâches : kanban, tableau blanc, calendrier et post-it. Rapide, privé et 100 % stocké dans votre navigateur.",
+    "defaultTitle": "Nanoboard — Espace minimaliste et local pour vos tâches",
+    "fallbackTitle": "Nanoboard",
+    "listDescription": "Liste des tâches de {{project}} — regroupées par colonne, 100 % en local.",
+    "listTitle": "Liste — {{project}} · Nanoboard",
+    "notFoundTitle": "Page introuvable · Nanoboard",
+    "projectWhiteboardDescription": "Tableau blanc de {{project}} — esquissez librement, stocké localement dans votre navigateur.",
+    "projectWhiteboardTitle": "Tableau blanc — {{project}} · Nanoboard",
+    "stickiesDescription": "Consignez et parcourez vos post-it — rapide, privé, 100 % dans votre navigateur.",
+    "stickiesTitle": "Post-it · Nanoboard",
+    "whiteboardDescription": "Tous les tableaux blancs de vos projets, en une seule galerie — esquissez librement, tout en local.",
+    "whiteboardTitle": "Tableau blanc · Nanoboard"
   }
 }
