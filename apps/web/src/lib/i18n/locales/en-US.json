@@ -624,5 +624,25 @@
       "systemPreference": "System preference",
       "title": "Theme"
     }
+  },
+  "seo": {
+    "archivesDescription": "Archived tasks for {{project}} — restore or delete them, all stored locally in your browser.",
+    "archivesTitle": "Archives — {{project}} · Nanoboard",
+    "boardDescription": "Kanban board for {{project}} — tasks, columns, and labels, all local-first.",
+    "boardTitle": "Board — {{project}} · Nanoboard",
+    "calendarDescription": "Calendar of scheduled tasks for {{project}} — stored locally in your browser.",
+    "calendarTitle": "Calendar — {{project}} · Nanoboard",
+    "defaultDescription": "Minimalist, open-source space for your tasks: Kanban board, whiteboard, calendar, and sticky notes — fast, private, stored in your browser.",
+    "defaultTitle": "Nanoboard — Minimalist, Local-First Space for Your Tasks",
+    "fallbackTitle": "Nanoboard",
+    "listDescription": "Task list for {{project}} — grouped by column, all local-first.",
+    "listTitle": "List — {{project}} · Nanoboard",
+    "notFoundTitle": "Page Not Found · Nanoboard",
+    "projectWhiteboardDescription": "Whiteboard for {{project}} — sketch freely, stored locally in your browser.",
+    "projectWhiteboardTitle": "Whiteboard — {{project}} · Nanoboard",
+    "stickiesDescription": "Capture and browse sticky notes — fast, private, 100% in your browser.",
+    "stickiesTitle": "Stickies · Nanoboard",
+    "whiteboardDescription": "Every project's whiteboard in one gallery — sketch freely, stored locally.",
+    "whiteboardTitle": "Whiteboard · Nanoboard"
   }
 }

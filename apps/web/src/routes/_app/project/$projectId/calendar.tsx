@@ -10,12 +10,15 @@ import { buildMonthWeeks } from "@/components/calendar/month-grid-model";
 import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import TaskDrawer from "@/components/task/task-drawer";
 import { getProject, getProjectTasks } from "@/lib/db/queries";
+import { projectRouteHead } from "@/lib/seo";
 import { db } from "@/lib/db/db";
 import { parseLocalDate } from "@/lib/due-date-status";
 import { taskKey } from "@/lib/task-key";
 
 export const Route = createFileRoute("/_app/project/$projectId/calendar")({
   component: RouteComponent,
+  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  head: projectRouteHead("calendar"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
   }),

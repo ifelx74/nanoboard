@@ -10,9 +10,12 @@ import {
   getProjectTaskLabels,
   getProjectTasks,
 } from "@/lib/db/queries";
+import { projectRouteHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/_app/project/$projectId/board")({
   component: RouteComponent,
+  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  head: projectRouteHead("board"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
   }),

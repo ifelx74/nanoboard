@@ -36,7 +36,7 @@
 <div align="center">
   <figure>
     <a href="https://nanoboard.pages.dev" target="_blank" rel="noopener">
-      <img alt="nanoboard" src="apps/web/public/og-image.png" width="100%" />
+      <img alt="nanoboard" src="apps/web/public/og-image.jpg" width="100%" />
     </a>
     <figcaption>
       <p align="center">

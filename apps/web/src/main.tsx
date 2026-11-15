@@ -7,7 +7,7 @@ import { db } from "@/lib/db/db";
 import { resetToSeed } from "@/lib/db/seed";
 import { applyThemeClass, useThemeStore } from "@/store/theme";
 import { applyLocale, getResolvedLocale, useLocaleStore } from "@/store/locale";
-import { initI18n } from "@/lib/i18n/index";
+import { initI18n, i18n } from "@/lib/i18n/index";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { Toaster } from "@/components/ui/toast";
 import { routeTree } from "./routeTree.gen";
@@ -33,6 +33,10 @@ useThemeStore.subscribe((state) => applyThemeClass(state.theme));
 // Same for the locale: keep the resolved language and document.lang in sync
 // with the persisted preference for the app's whole lifetime.
 useLocaleStore.subscribe((state) => applyLocale(state.locale));
+
+i18n.on("languageChanged", () => {
+  void router.invalidate();
+});
 
 // Dev-only escape hatch: wipe and reseed the demo content from the console
 // with `await resetNanoboardToSeed()`. The populate seeding fires only on

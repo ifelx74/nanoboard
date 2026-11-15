@@ -121,16 +121,20 @@ function RouteComponent() {
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-9 px-6 py-10 lg:px-10">
             <header className="flex items-end justify-between gap-4">
               <div className="flex flex-col gap-1.5">
+                <h1 className="sr-only">
+                  Nanoboard — Minimalist, Local-First Space for Your Tasks:
+                  Kanban Board, Whiteboard, Calendar, and Sticky Notes
+                </h1>
                 <p className="text-[13px] font-medium text-muted-foreground">
                   {dateLine}
                 </p>
-                <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                <p className="text-3xl font-semibold tracking-tight text-foreground">
                   {dayPart === "morning"
                     ? t("greeting.morning")
                     : dayPart === "afternoon"
                       ? t("greeting.afternoon")
                       : t("greeting.evening")}
-                </h1>
+                </p>
               </div>
             </header>
 

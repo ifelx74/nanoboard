@@ -18,6 +18,7 @@ export const NAMESPACES = [
   "task",
   "activity",
   "settings",
+  "seo",
 ] as const;
 
 export type Namespace = (typeof NAMESPACES)[number];

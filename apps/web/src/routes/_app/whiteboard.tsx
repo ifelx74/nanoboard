@@ -8,9 +8,16 @@ import { GalleryHeader } from "@/components/whiteboard/gallery-header";
 import { db } from "@/lib/db/db";
 import { listWhiteboardGallery } from "@/lib/db/whiteboard-previews";
 import { compareStrings } from "@/lib/format";
+import { i18n } from "@/lib/i18n";
+import { pageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/_app/whiteboard")({
   component: RouteComponent,
+  head: () => {
+    const title = i18n.t("seo:whiteboardTitle");
+    const description = i18n.t("seo:whiteboardDescription");
+    return pageMeta(title, description);
+  },
 });
 
 function RouteComponent() {

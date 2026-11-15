@@ -8,3 +8,24 @@
 # the app shell wants.
 /sw.js
   Cache-Control: no-cache
+
+# App routes are browser-local workspaces — unique per visitor, empty for
+# crawlers, and never meant to rank. Only / is indexable. X-Robots-Tag is
+# honored by crawlers that run no JavaScript, unlike a client-side meta tag.
+/project/*
+  X-Robots-Tag: noindex
+/whiteboard
+  X-Robots-Tag: noindex
+/stickies
+  X-Robots-Tag: noindex
+
+# Report-only CSP logs violations to the browser console without blocking.
+# Enforce only after watching for violations in production. The sha256 hash
+# covers the inline theme pre-paint script in index.html — recompute it
+# (sha256, base64) if that script is ever edited. The Pages-injected
+# Cloudflare Web Analytics beacon needs the two cloudflareinsights hosts.
+/*
+  Strict-Transport-Security: max-age=15552000; includeSubDomains
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'sha256-PZrWTwnKpLBBTLQBEtDroq5l7qxpn0WVElWrVMHKN0A=' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
