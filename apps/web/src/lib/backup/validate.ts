@@ -1,6 +1,6 @@
 import { STICKY_COLORS, TASK_PRIORITIES } from "@/lib/db/schema";
 import type { BackupDocument, BackupTableName, BackupTables } from "./types";
-import { BACKUP_FORMAT_VERSION } from "./types";
+import { BACKUP_MAX_RESTORABLE_VERSION } from "./types";
 
 type Check = (value: unknown) => boolean;
 
@@ -126,16 +126,18 @@ const TABLE_FIELD_SPECS: Record<BackupTableName, FieldSpec[]> = {
 };
 
 /**
- * Reject a document whose format version is newer than this app speaks.
- * Older versions are accepted — their missing tables read as empty and their
- * older row shapes must still pass today's structural checks, which is the
- * migration contract: a version bump here is only allowed alongside a
- * validator that still accepts every older version's rows.
+ * Reject a document whose format version is newer than this app can
+ * restore. Older versions are accepted — their missing tables read as
+ * empty and their older row shapes must still pass today's structural
+ * checks, which is the migration contract: a version bump here is only
+ * allowed alongside a validator that still accepts every older version's
+ * rows. The cap is the newest restorable version: a v2 file (the encrypted
+ * envelope) is restorable, a plain writer still stamps v1.
  */
 export function assertSupportedBackupVersion(document: {
   version: number;
 }): void {
-  if (document.version > BACKUP_FORMAT_VERSION) {
+  if (document.version > BACKUP_MAX_RESTORABLE_VERSION) {
     throw new Error(
       "This backup was made by a newer version of nanoboard — update the app first, then restore.",
     );

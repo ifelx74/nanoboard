@@ -8,12 +8,17 @@ import {
 import {
   type ChangeEvent,
   type DragEvent,
+  type FormEvent,
   useEffect,
   useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import {
+  UnlockPassphraseFooter,
+  UnlockPassphraseForm,
+} from "@/components/passphrase/unlock-passphrase-form";
 import {
   Dialog,
   DialogClose,
@@ -40,7 +45,15 @@ import {
   planTaskImport,
   parseTaskImportFile,
 } from "@/lib/task-transfer/import";
+import {
+  isTaskTransferEnvelope,
+  openTaskTransferDocument,
+  readTaskTransferEnvelope,
+  TaskTransferDecryptError,
+} from "@/lib/task-transfer/encrypt";
 import { i18n } from "@/lib/i18n";
+import { MAX_IMPORT_FILE_BYTES } from "@/lib/file";
+import { cryptoAvailable } from "@/hooks/use-passphrase-protection";
 import { toast } from "@/lib/toast";
 import { cn, errorMessage } from "@/lib/utils";
 
@@ -59,7 +72,7 @@ const EXAMPLE_FORMAT = `{
   ]
 }`;
 
-type Mode = "pick" | "preview" | "result";
+type Mode = "pick" | "unlock" | "preview" | "result";
 
 export function ImportTasksDialog({
   projectId,
@@ -83,7 +96,15 @@ export function ImportTasksDialog({
   const [dragActive, setDragActive] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [pendingEnvelopeText, setPendingEnvelopeText] = useState<string | null>(
+    null,
+  );
+  const [passphrase, setPassphrase] = useState("");
+  const [showPassphrase, setShowPassphrase] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
   const pendingCount = plan?.tasks.length ?? 0;
+  const canUnlock = cryptoAvailable && passphrase.length > 0;
 
   useEffect(() => {
     if (open) return;
@@ -96,7 +117,26 @@ export function ImportTasksDialog({
     setDragActive(false);
     setParsing(false);
     setImporting(false);
+    setPendingEnvelopeText(null);
+    setPassphrase("");
+    setShowPassphrase(false);
+    setUnlocking(false);
+    setUnlockError(null);
   }, [open]);
+
+  async function planFromContent(name: string, content: string) {
+    const items = parseTaskImportFile(content);
+    const [projectColumns, projectLabels] = await Promise.all([
+      getProjectColumns(db, projectId),
+      getProjectLabels(projectId),
+    ]);
+    const nextPlan = planTaskImport(items, projectColumns, projectLabels);
+    setColumns(projectColumns);
+    setPlan(nextPlan);
+    setFileName(name);
+    setReport(null);
+    setMode("preview");
+  }
 
   async function handleFile(file: File) {
     if (parsing) return;
@@ -104,21 +144,38 @@ export function ImportTasksDialog({
       setError(t("import.chooseJsonError"));
       return;
     }
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      setError(t("import.fileTooLarge"));
+      return;
+    }
 
     setParsing(true);
     setError(null);
     try {
-      const items = parseTaskImportFile(await file.text());
-      const [projectColumns, projectLabels] = await Promise.all([
-        getProjectColumns(db, projectId),
-        getProjectLabels(projectId),
-      ]);
-      const nextPlan = planTaskImport(items, projectColumns, projectLabels);
-      setColumns(projectColumns);
-      setPlan(nextPlan);
-      setFileName(file.name);
-      setReport(null);
-      setMode("preview");
+      const text = await file.text();
+      if (isTaskTransferEnvelope(text)) {
+        try {
+          // Validate the header and version before asking for the passphrase.
+          readTaskTransferEnvelope(text);
+        } catch (cause) {
+          setPlan(null);
+          setReport(null);
+          setFileName(null);
+          setMode("pick");
+          setError(errorMessage(cause, t("import.readFailed")));
+          return;
+        }
+        setPendingEnvelopeText(text);
+        setFileName(file.name);
+        setPlan(null);
+        setReport(null);
+        setPassphrase("");
+        setShowPassphrase(false);
+        setUnlockError(null);
+        setMode("unlock");
+        return;
+      }
+      await planFromContent(file.name, text);
     } catch (cause) {
       setPlan(null);
       setReport(null);
@@ -127,6 +184,50 @@ export function ImportTasksDialog({
       setError(errorMessage(cause, t("import.readFailed")));
     } finally {
       setParsing(false);
+    }
+  }
+
+  async function handleUnlock(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    if (!pendingEnvelopeText || unlocking || !canUnlock) {
+      return;
+    }
+    setUnlocking(true);
+    setUnlockError(null);
+    let decrypted: string;
+    try {
+      decrypted = await openTaskTransferDocument(
+        pendingEnvelopeText,
+        passphrase,
+      );
+    } catch (cause) {
+      if (cause instanceof TaskTransferDecryptError) {
+        // GCM authentication failed: wrong passphrase, or the file is
+        // damaged or incomplete. One ambiguous message, unlimited in-place
+        // retry — the file stays loaded.
+        setUnlockError(t("import.unlockFailed"));
+        setUnlocking(false);
+        return;
+      }
+      // Decrypted (or re-validated) fine but the file is unusable: retrying
+      // the passphrase can't help — back to the pick step with the
+      // invalid-file message.
+      resetToPick();
+      setError(errorMessage(cause, t("import.readFailed")));
+      return;
+    }
+    setPassphrase("");
+    try {
+      await planFromContent(fileName ?? "", decrypted);
+      setPendingEnvelopeText(null);
+      setShowPassphrase(false);
+    } catch (cause) {
+      // A decrypt-ok file whose document doesn't plan is unfixable by
+      // passphrase — back to pick with the invalid-file message.
+      resetToPick();
+      setError(errorMessage(cause, t("import.readFailed")));
+    } finally {
+      setUnlocking(false);
     }
   }
 
@@ -192,25 +293,39 @@ export function ImportTasksDialog({
     setPlan(null);
     setReport(null);
     setError(null);
+    setPendingEnvelopeText(null);
+    setPassphrase("");
+    setShowPassphrase(false);
+    setUnlocking(false);
+    setUnlockError(null);
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (importing && !next) return;
+        if ((importing || unlocking) && !next) return;
         onOpenChange(next);
       }}
     >
-      <DialogPopup className="max-w-lg" showCloseButton={!importing}>
+      <DialogPopup
+        className="max-w-lg"
+        showCloseButton={!importing && !unlocking}
+      >
         <DialogHeader>
           <DialogTitle>
-            {mode === "result" ? t("import.completeTitle") : t("import.title")}
+            {mode === "result"
+              ? t("import.completeTitle")
+              : mode === "unlock"
+                ? t("import.unlockTitle")
+                : t("import.title")}
           </DialogTitle>
           <DialogDescription>
             {mode === "result"
               ? t("import.completeDescription", { name: projectName })
-              : t("import.description", { name: projectName })}
+              : mode === "unlock"
+                ? t("import.unlockDescription")
+                : t("import.description", { name: projectName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -224,6 +339,9 @@ export function ImportTasksDialog({
                 <pre className="max-h-40 overflow-auto rounded-lg border border-border bg-muted/50 p-3 font-mono text-xs">
                   {EXAMPLE_FORMAT}
                 </pre>
+                <p className="text-xs text-muted-foreground">
+                  {t("import.encryptedNote")}
+                </p>
               </div>
               <div
                 className={cn(
@@ -278,6 +396,31 @@ export function ImportTasksDialog({
                 </p>
               )}
             </>
+          )}
+
+          {mode === "unlock" && (
+            <UnlockPassphraseForm
+              formId="unlock-form"
+              inputId="transfer-unlock-passphrase"
+              fileName={fileName ?? ""}
+              passphrase={passphrase}
+              showPassphrase={showPassphrase}
+              busy={unlocking}
+              error={unlockError}
+              fileInputRef={fileInputRef}
+              onSubmit={(event) => void handleUnlock(event)}
+              onPassphraseChange={setPassphrase}
+              onTogglePassphraseVisibility={() =>
+                setShowPassphrase((value) => !value)
+              }
+              onFileChange={handleFileChange}
+              changeFileLabel={t("import.changeFile")}
+              passphraseLabel={t("export.passphrase")}
+              showPassphraseLabel={t("export.showPassphrase")}
+              hidePassphraseLabel={t("export.hidePassphrase")}
+              forgottenPassphraseNote={t("export.forgottenPassphrase")}
+              cryptoUnavailableLabel={t("export.cryptoUnavailable")}
+            />
           )}
 
           {mode === "preview" && plan && (
@@ -403,6 +546,17 @@ export function ImportTasksDialog({
             <DialogClose render={<Button variant="outline" size="sm" />}>
               {t("import.cancel")}
             </DialogClose>
+          )}
+          {mode === "unlock" && (
+            <UnlockPassphraseFooter
+              formId="unlock-form"
+              busy={unlocking}
+              canSubmit={canUnlock}
+              cancelLabel={t("import.cancel")}
+              submitLabel={t("import.unlock")}
+              submittingLabel={t("import.unlocking")}
+              onCancel={resetToPick}
+            />
           )}
           {mode === "preview" && (
             <>
