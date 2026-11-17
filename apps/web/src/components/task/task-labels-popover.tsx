@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { Check, Pencil, Plus, Search, X } from "lucide-react";
+import { Check, Pencil, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -163,13 +163,12 @@ export default function TaskLabelsPopover({
     return (
       <div className="w-auto">
         <div className="flex items-center gap-2 border-b border-border p-2">
-          <Search className="h-3 w-3 text-muted-foreground" />
           <Input
             ref={searchInputRef}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder={t("labels.search")}
-            className="h-auto border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+            type="search"
           />
         </div>
 
@@ -182,7 +181,7 @@ export default function TaskLabelsPopover({
           {filteredLabels.map((label) => (
             <div
               key={label.id}
-              className="group flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-accent/50"
+              className="group flex h-8 w-full items-center gap-2 px-2 text-left text-xs hover:bg-accent/50"
             >
               {editingId === label.id ? (
                 <Input
@@ -194,7 +193,8 @@ export default function TaskLabelsPopover({
                     if (e.key === "Escape") setEditingId(null);
                   }}
                   aria-label={t("labels.rename", { name: label.name })}
-                  className="h-6 text-xs"
+                  size="sm"
+                  className="text-xs"
                 />
               ) : (
                 <button
@@ -217,7 +217,7 @@ export default function TaskLabelsPopover({
                 </button>
               )}
               {editingId !== label.id && (
-                <div className="ml-auto hidden shrink-0 items-center gap-0.5 group-hover:flex">
+                <div className="ml-auto invisible flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-100 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                   <button
                     type="button"
                     aria-label={t("labels.rename", { name: label.name })}
