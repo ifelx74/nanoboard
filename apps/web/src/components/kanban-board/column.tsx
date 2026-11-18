@@ -11,6 +11,7 @@ import {
   CalendarClock,
   CalendarX,
   Plus,
+  SquareCheckBig,
 } from "lucide-react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,6 +21,7 @@ import { getColumnIcon } from "@/lib/column";
 import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
 import { formatShortDate } from "@/lib/format";
 import { getPriorityIcon } from "@/lib/priority";
+import { getChecklistStats } from "@/lib/task-checklist";
 import { taskKey } from "@/lib/task-key";
 import { cn } from "@/lib/utils";
 import { TaskLabels } from "@/components/task/task-labels";
@@ -68,6 +70,7 @@ export const TaskCardView = memo(function TaskCardView({
     "no-priority": tCommon("priority.noPriority"),
   };
   const priorityText = priorityLabels[task.priority];
+  const checklist = getChecklistStats(task.description);
 
   return (
     <article
@@ -85,7 +88,7 @@ export const TaskCardView = memo(function TaskCardView({
       <div className="mb-2 font-medium text-[11px] text-muted-foreground/90">
         {taskKey}
       </div>
-      <div className={cn(!isFinal && "mb-2.5")}>
+      <div className={cn((!isFinal || checklist) && "mb-2.5")}>
         <div
           className={cn(
             "overflow-hidden wrap-break-word font-medium text-[15px] leading-5",
@@ -109,17 +112,19 @@ export const TaskCardView = memo(function TaskCardView({
         </div>
       )}
 
-      {!isFinal && (
+      {(!isFinal || checklist) && (
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-          <Badge
-            variant={task.priority === "urgent" ? "destructive" : "outline"}
-            title={priorityText}
-            className="gap-1 font-medium rounded-md! text-sm h-6!"
-          >
-            {getPriorityIcon(task.priority)}
-            <span>{priorityText}</span>
-          </Badge>
-          {task.dueDate && (
+          {!isFinal && (
+            <Badge
+              variant={task.priority === "urgent" ? "destructive" : "outline"}
+              title={priorityText}
+              className="gap-1 font-medium rounded-md! text-sm h-6!"
+            >
+              {getPriorityIcon(task.priority)}
+              <span>{priorityText}</span>
+            </Badge>
+          )}
+          {!isFinal && task.dueDate && (
             <div
               className={cn(
                 "flex h-5 items-center gap-1 text-[10px]",
@@ -139,6 +144,12 @@ export const TaskCardView = memo(function TaskCardView({
               )}
               <span>{formatShortDate(parseLocalDate(task.dueDate))}</span>
             </div>
+          )}
+          {checklist && (
+            <span className="inline-flex h-5 shrink-0 cursor-default items-center gap-1 rounded-md px-1 text-[10px] tabular-nums">
+              <SquareCheckBig className="size-3" aria-hidden="true" />
+              {checklist.done}/{checklist.total}
+            </span>
           )}
         </div>
       )}
