@@ -1,13 +1,14 @@
-# Build the web app on every push to main and deploy it to Cloudflare Pages
-# (direct upload — the project "nanoboard" must exist first, created once in
-# the dashboard). Requires two repository secrets:
+# Build the web app and deploy it to Cloudflare Pages (direct upload — the
+# project "nanoboard" must exist first, created once in the dashboard).
+# Triggered manually only; pushes to main do not deploy. Requires two
+# repository secrets:
 #   CLOUDFLARE_API_TOKEN  — custom token with Account > Cloudflare Pages > Edit
 #   CLOUDFLARE_ACCOUNT_ID — Cloudflare account id (dashboard right sidebar)
+# Deploys are handled manually for now (GitHub Actions unavailable); this
+# workflow only runs when triggered by hand from the Actions tab.
 name: Deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
