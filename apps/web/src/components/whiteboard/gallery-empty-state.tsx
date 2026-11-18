@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { House, PencilRuler } from "lucide-react";
+import { House, SplinePointer } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ export function GalleryEmptyState() {
     <Empty>
       <EmptyHeader>
         <EmptyMedia variant="icon" className="size-12">
-          <PencilRuler className="size-7" />
+          <SplinePointer className="size-7" />
         </EmptyMedia>
         <EmptyTitle>{t("emptyState.title")}</EmptyTitle>
         <EmptyDescription>{t("emptyState.description")}</EmptyDescription>

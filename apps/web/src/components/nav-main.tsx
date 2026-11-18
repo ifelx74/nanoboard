@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { House, PencilRuler } from "lucide-react";
+import { House, SplinePointer } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -31,7 +31,7 @@ function NavButton({
       tooltip={tooltip}
       isActive={isActive}
       size="default"
-      className="h-8 text-[15px] text-primary"
+      className="h-8 text-[15px] text-muted-foreground transition-[width,height,padding,color] hover:text-primary data-[active=true]:text-primary data-[active=true]:hover:text-primary"
       onClick={onClick}
     >
       {icon}
@@ -51,7 +51,7 @@ export function NavMain() {
     <SidebarGroup className="shrink-0 gap-1 px-3">
       <SidebarGroupContent>
         <SidebarMenu className="gap-0.5">
-          <SidebarMenuItem>
+          <SidebarMenuItem className="flex flex-col gap-0.5">
             <NavButton
               tooltip={t("home")}
               isActive={pathname === "" || pathname === "/"}
@@ -70,7 +70,7 @@ export function NavMain() {
               tooltip={t("whiteboard")}
               isActive={pathname === "/whiteboard"}
               onClick={() => navigate({ to: "/whiteboard" })}
-              icon={<PencilRuler aria-hidden="true" />}
+              icon={<SplinePointer aria-hidden="true" />}
               label={t("whiteboard")}
             />
           </SidebarMenuItem>

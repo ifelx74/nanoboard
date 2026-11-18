@@ -1,4 +1,4 @@
-import { PencilRuler } from "lucide-react";
+import { SplinePointer } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SidebarTriggerHeader } from "../common/sidebar-trigger-header";
 import Layout from "../common/layout";
@@ -16,7 +16,7 @@ export function GalleryHeader() {
         <div className="flex items-center gap-1">
           <SidebarTriggerHeader />
           <div className="flex items-center gap-1.5">
-            <PencilRuler className="size-4 shrink-0" />
+            <SplinePointer className="size-4 shrink-0" />
             <span className="text-sm font-semibold text-card-foreground">
               {t("header.title")}
             </span>
