@@ -148,7 +148,7 @@ export function StickiesLayout({
 
       <DragOverlay dropAnimation={null}>
         {activeSticky ? (
-          <div className="m-2">
+          <div className="m-2 rotate-6 scale-[1.02] cursor-grabbing transition-transform duration-150 ease-out shadow-2xl">
             <StickyCard sticky={activeSticky} showToolbar={false} />
           </div>
         ) : null}
