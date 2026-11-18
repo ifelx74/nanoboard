@@ -5,7 +5,7 @@ import {
   ChevronsUpDown,
   ClipboardClock,
   List,
-  PencilSparkles,
+  SplinePointer,
   SquareKanban,
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -128,7 +128,7 @@ export function ProjectLayout({
                           })
                         }
                       >
-                        <PencilSparkles />
+                        <SplinePointer />
                         {t("toolbar.whiteboard")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
