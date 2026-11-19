@@ -65,8 +65,6 @@ export type TimelineModel<TTask extends TimelineTaskInput> = {
   chartWidth: number;
   /** Tasks without any date; shown nowhere, only counted. */
   undatedCount: number;
-  dayIndexAtOffset: (offsetPx: number) => number;
-  dateToDayIndex: (date: Date) => number;
 };
 
 export type TimelineDragMode = "move" | "resize-start" | "resize-end";
@@ -76,6 +74,11 @@ export type TimelineDragResult = {
   startDate?: string;
   dueDate?: string;
 };
+
+/** Maps `-0` to `0` so day-quantised deltas never render as negative zero. */
+function normalizeNegativeZero(value: number): number {
+  return value === 0 ? 0 : value;
+}
 
 /**
  * Day snapping for a drag: move keeps the delta, and the dragged edge of a
@@ -89,9 +92,10 @@ export function clampDragDayDelta(
 ): number {
   if (mode === "move") return dayDelta;
   const maxShrink = Math.max(0, spanDays - 1);
-  if (mode === "resize-start") return Math.min(dayDelta, maxShrink) + 0;
-  const clamped = Math.max(dayDelta, -maxShrink);
-  return clamped === 0 ? 0 : clamped;
+  if (mode === "resize-start") {
+    return normalizeNegativeZero(Math.min(dayDelta, maxShrink));
+  }
+  return normalizeNegativeZero(Math.max(dayDelta, -maxShrink));
 }
 
 /**
@@ -151,7 +155,7 @@ function parseDay(value: string): Date {
  * `start = startDate ?? dueDate`, `end = dueDate ?? startDate`, swapping if
  * the raw strings are inverted. Undated tasks return `null`.
  */
-export function normalizeTaskSpan(
+function normalizeTaskSpan(
   task: Pick<TimelineTaskInput, "startDate" | "dueDate">,
 ): { chartStart: Date; chartEnd: Date } | null {
   const rawStart = task.startDate ? parseDay(task.startDate) : undefined;
@@ -255,21 +259,11 @@ export function buildTimeline<TTask extends TimelineTaskInput>(
       return left.task.position - right.task.position;
     });
 
-  const dayIndexAtOffset = (offsetPx: number): number => {
-    const index = Math.floor(offsetPx / DAY_WIDTH);
-    return Math.min(Math.max(index, 0), days.length - 1);
-  };
-
-  const dateToDayIndex = (date: Date): number =>
-    differenceInCalendarDays(startOfDay(date), rangeStart);
-
   return {
     days,
     months,
     rows,
     chartWidth: days.length * DAY_WIDTH,
     undatedCount,
-    dayIndexAtOffset,
-    dateToDayIndex,
   };
 }

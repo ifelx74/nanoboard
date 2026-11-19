@@ -27,7 +27,7 @@ here rather than to invent new language.
   timeline. "Removed from the board and every work surface" is the standard
   phrasing.
 - **Reading surface** — a non-editable view of tasks. Board, List (grouped
-  by status), Calendar (month grid), Timeline (gantt day axis).
+  by status), Calendar (month grid).
 - **Label** — a per-project colored tag. Assignments live in the
   **TaskLabel** join table (`&[taskId+labelId]`); re-attaching is a no-op.
 - **Task resource** — a manual URL link on a task (resource type `"url"`).
@@ -51,8 +51,9 @@ here rather than to invent new language.
 - **Timeline** — the per-project gantt-style work surface
   (`/project/$projectId/timeline`). Dated tasks render as status-colored
   bars on a fixed 40 logical px/day horizontal axis; undated tasks never
-  render. A work surface and a reading surface; dates change only through
-  the task drawer.
+  render. A work surface, not a reading surface: the Timeline edits dates
+  only — never text, titles, labels, or positions. Dates change by
+  dragging bars to reschedule or resize them, or through the task drawer.
 
 ## Task lifecycle
 

@@ -327,10 +327,6 @@ export async function updateTaskPriority(
 }
 
 /**
- * A string sets the start date, `null` clears it. Rejects a start after the
- * task's current due date, mirroring range validation.
- */
-/**
  * `yyyy-mm-dd` validity probe that never throws: the shifted values are
  * re-validated with the same asserts used for single-field writes. Reuses
  * local day math so a 4-digit-year overflow (e.g. 9999-12-31 + 1 day) rolls
@@ -404,6 +400,10 @@ export async function shiftTaskDates(
   });
 }
 
+/**
+ * A string sets the start date, `null` clears it. Rejects a start after the
+ * task's current due date, mirroring range validation.
+ */
 export async function updateTaskStartDate(
   id: string,
   startDate: StartDateString | null,

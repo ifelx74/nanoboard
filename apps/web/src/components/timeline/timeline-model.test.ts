@@ -189,21 +189,6 @@ describe("buildTimeline columns", () => {
 });
 
 describe("buildTimeline geometry", () => {
-  it("round-trips day indexes and pixel offsets", () => {
-    const model = buildTimeline([], anchor);
-    const rangeStart = model.days[0].date;
-
-    expect(model.dayIndexAtOffset(0)).toBe(0);
-    expect(model.dayIndexAtOffset(DAY_WIDTH - 1)).toBe(0);
-    expect(model.dayIndexAtOffset(DAY_WIDTH)).toBe(1);
-    expect(model.dayIndexAtOffset(13 * DAY_WIDTH + 3)).toBe(13);
-    expect(model.dayIndexAtOffset(model.chartWidth - 1)).toBe(
-      model.days.length - 1,
-    );
-    expect(model.dateToDayIndex(rangeStart)).toBe(0);
-    expect(model.dateToDayIndex(new Date(2026, 9, 19))).toBe(13);
-  });
-
   it("positions a multi-day bar from its span", () => {
     const model = buildTimeline(
       [task("span", "2026-10-12", "2026-10-14")],
@@ -217,15 +202,6 @@ describe("buildTimeline geometry", () => {
 
     expect(model.rows[0].left).toBe(expectedLeft);
     expect(model.rows[0].width).toBe(3 * DAY_WIDTH);
-  });
-
-  it("clamps pixel offsets beyond the chart to the nearest day", () => {
-    const model = buildTimeline([], anchor);
-
-    expect(model.dayIndexAtOffset(model.chartWidth + 500)).toBe(
-      model.days.length - 1,
-    );
-    expect(model.dayIndexAtOffset(-50)).toBe(0);
   });
 });
 
@@ -398,6 +374,44 @@ describe("applyDragDelta resize-end", () => {
   it("pins a due-only one-day bar against leftward resize-end drags", () => {
     expect(
       applyDragDelta(task("d", undefined, "2026-10-22"), "resize-end", -30),
+    ).toEqual({ dueDate: "2026-10-22" });
+  });
+});
+
+describe("applyDragDelta on a single-dated bar (resize creates the missing date)", () => {
+  it("start-dated bar, resize-end drag: creates the due date at the dragged position", () => {
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "resize-end", 4),
+    ).toEqual({ dueDate: "2026-10-26" });
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "resize-end", -2),
+    ).toEqual({ dueDate: "2026-10-22" });
+  });
+
+  it("start-dated bar, resize-start drag: shifts the lone start date", () => {
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "resize-start", -3),
+    ).toEqual({ startDate: "2026-10-19" });
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "resize-start", 3),
+    ).toEqual({ startDate: "2026-10-22" });
+  });
+
+  it("due-dated bar, resize-start drag: creates the start date clamped to <= due date", () => {
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "resize-start", -3),
+    ).toEqual({ startDate: "2026-10-19" });
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "resize-start", 4),
+    ).toEqual({ startDate: "2026-10-22" });
+  });
+
+  it("due-dated bar, resize-end drag: shifts the lone due date", () => {
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "resize-end", 5),
+    ).toEqual({ dueDate: "2026-10-27" });
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "resize-end", -3),
     ).toEqual({ dueDate: "2026-10-22" });
   });
 });

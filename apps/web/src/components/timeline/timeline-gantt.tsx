@@ -6,6 +6,7 @@ import {
   type RefObject,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 import { db } from "@/lib/db/db";
@@ -61,11 +62,17 @@ const INITIAL_MOUNT_ROWS = 16;
 /** Pointer travel past which a press on a bar counts as a drag, not a click. */
 const DRAG_CLICK_THRESHOLD_PX = 4;
 
+/** Resolves the positioned bar wrapper that parents the grabbed element. */
+function positionedBarWrapper(element: HTMLElement): HTMLDivElement | null {
+  const parent = element.parentElement;
+  return parent instanceof HTMLDivElement ? parent : null;
+}
+
 type DragState = {
   pointerId: number;
   mode: TimelineDragMode;
   /** The bar's outer positioned element; mutated directly during the gesture. */
-  barEl: HTMLDivElement;
+  barPositionedWrapper: HTMLDivElement;
   task: TimelineGanttTask;
   spanDays: number;
   startX: number;
@@ -74,6 +81,19 @@ type DragState = {
   originLeft: number;
   originWidth: number;
   moved: boolean;
+};
+
+/** Gesture plumbing shared by every row: drag start, move/up/cancel, click suppression. */
+type TimelineGesture = {
+  onStartDrag: (
+    event: ReactPointerEvent<HTMLElement>,
+    row: TimelineRowModel<TimelineGanttTask>,
+    mode: TimelineDragMode,
+  ) => void;
+  onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  suppressClickRef: RefObject<boolean>;
 };
 
 type TimelineGanttProps = {
@@ -93,6 +113,8 @@ export default function TimelineGantt({
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
   const suppressClickRef = useRef(false);
+  const didCenterOnTodayRef = useRef(false);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
 
   function startDrag(
     event: ReactPointerEvent<HTMLElement>,
@@ -103,13 +125,14 @@ export default function TimelineGantt({
     // One gesture at a time; a second finger on another bar is ignored.
     if (dragRef.current) return;
     const captureTarget = event.currentTarget;
-    const barEl = captureTarget.parentElement as HTMLDivElement;
+    const barPositionedWrapper = positionedBarWrapper(captureTarget);
+    if (!barPositionedWrapper) return;
     captureTarget.setPointerCapture(event.pointerId);
     suppressClickRef.current = false;
     dragRef.current = {
       pointerId: event.pointerId,
       mode,
-      barEl,
+      barPositionedWrapper,
       task: row.task,
       spanDays: row.spanDays,
       startX: event.clientX,
@@ -123,20 +146,20 @@ export default function TimelineGantt({
   function applyGestureGeometry(drag: DragState) {
     const offset = drag.deltaDays * DAY_WIDTH;
     if (drag.mode === "move") {
-      drag.barEl.style.left = `${drag.originLeft + offset}px`;
+      drag.barPositionedWrapper.style.left = `${drag.originLeft + offset}px`;
       return;
     }
     if (drag.mode === "resize-start") {
-      drag.barEl.style.left = `${drag.originLeft + offset}px`;
-      drag.barEl.style.width = `${drag.originWidth - offset}px`;
+      drag.barPositionedWrapper.style.left = `${drag.originLeft + offset}px`;
+      drag.barPositionedWrapper.style.width = `${drag.originWidth - offset}px`;
       return;
     }
-    drag.barEl.style.width = `${drag.originWidth + offset}px`;
+    drag.barPositionedWrapper.style.width = `${drag.originWidth + offset}px`;
   }
 
   function restoreGestureGeometry(drag: DragState) {
-    drag.barEl.style.left = `${drag.originLeft}px`;
-    drag.barEl.style.width = `${drag.originWidth}px`;
+    drag.barPositionedWrapper.style.left = `${drag.originLeft}px`;
+    drag.barPositionedWrapper.style.width = `${drag.originWidth}px`;
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -205,9 +228,13 @@ export default function TimelineGantt({
   };
 
   // Centre the viewport on today on mount so the current period is in view
-  // even when the range extends far into the past. Re-centres when the range
-  // is rebuilt (tasks changed) rather than on every render.
+  // even when the range extends far into the past. Runs once: later model
+  // rebuilds (a drag commit or a drawer date edit) must not yank the
+  // viewport away from where the user just acted. The Today button
+  // re-centres on demand via `scrollToToday`.
   useEffect(() => {
+    if (didCenterOnTodayRef.current) return;
+    didCenterOnTodayRef.current = true;
     const container = scrollRef.current;
     const todayIndex = model.days.findIndex((day) => day.isToday);
     if (!container || todayIndex < 0) return;
@@ -217,6 +244,13 @@ export default function TimelineGantt({
   }, [model]);
 
   const hasRows = model.rows.length > 0;
+  const gesture: TimelineGesture = {
+    onStartDrag: startDrag,
+    onPointerMove: handlePointerMove,
+    onPointerUp: handlePointerUp,
+    onPointerCancel: handlePointerCancel,
+    suppressClickRef,
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -380,12 +414,10 @@ export default function TimelineGantt({
                   chartWidth={model.chartWidth}
                   rootRef={scrollRef}
                   onOpenTask={onOpenTask}
-                  onStartDrag={startDrag}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerCancel={handlePointerCancel}
                   onOpenFromGesture={openTaskFromGesture}
-                  suppressClickRef={suppressClickRef}
+                  gesture={gesture}
+                  isActive={activeRowId === row.task.id}
+                  onActiveRowChange={setActiveRowId}
                 />
               ))}
             </div>
@@ -402,16 +434,11 @@ type TimelineRowProps = {
   chartWidth: number;
   rootRef: RefObject<HTMLDivElement | null>;
   onOpenTask: (taskId: string) => void;
-  onStartDrag: (
-    event: ReactPointerEvent<HTMLElement>,
-    row: TimelineRowModel<TimelineGanttTask>,
-    mode: TimelineDragMode,
-  ) => void;
-  onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
-  onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
-  onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
   onOpenFromGesture: (taskId: string) => void;
-  suppressClickRef: RefObject<boolean>;
+  gesture: TimelineGesture;
+  /** Whether this row is the shared active (hovered/focused) row. */
+  isActive: boolean;
+  onActiveRowChange: (taskId: string | null) => void;
 };
 
 function TimelineRow({
@@ -420,12 +447,10 @@ function TimelineRow({
   chartWidth,
   rootRef,
   onOpenTask,
-  onStartDrag,
-  onPointerMove,
-  onPointerUp,
-  onPointerCancel,
   onOpenFromGesture,
-  suppressClickRef,
+  gesture,
+  isActive,
+  onActiveRowChange,
 }: TimelineRowProps): JSX.Element {
   const { t } = useTranslation("timeline");
   const { rowRef, mounted } = useLazyRowMount(rootRef, {
@@ -438,13 +463,26 @@ function TimelineRow({
   return (
     <div
       ref={rowRef}
-      className="group/row relative z-10 flex border-b border-border/60"
+      className="relative z-10 flex border-b border-border/60"
       style={{ height: ROW_HEIGHT }}
+      onMouseEnter={() => onActiveRowChange(task.id)}
+      onMouseLeave={() => onActiveRowChange(null)}
+      onFocus={() => onActiveRowChange(task.id)}
+      onBlur={(event) => {
+        const next = event.relatedTarget;
+        if (next instanceof Node && event.currentTarget.contains(next)) {
+          return;
+        }
+        onActiveRowChange(null);
+      }}
     >
       {mounted && (
         <>
           <div
-            className="sticky left-0 z-20 h-full shrink-0 border-r border-border bg-background transition-colors group-hover/row:bg-accent group-focus-within/row:bg-accent"
+            className={cn(
+              "sticky left-0 z-20 h-full shrink-0 border-r border-border transition-colors",
+              isActive ? "bg-accent" : "bg-background",
+            )}
             style={{ width: SIDEBAR_WIDTH }}
           >
             <button
@@ -470,7 +508,10 @@ function TimelineRow({
             </button>
           </div>
           <div
-            className="relative h-full shrink-0 transition-colors group-hover/row:bg-accent/50 group-focus-within/row:bg-accent/50"
+            className={cn(
+              "relative h-full shrink-0 transition-colors",
+              isActive && "bg-accent/50",
+            )}
             style={{ width: chartWidth }}
           >
             <div
@@ -481,13 +522,13 @@ function TimelineRow({
                 top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
                 height: BAR_HEIGHT,
               }}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerCancel={onPointerCancel}
+              onPointerMove={gesture.onPointerMove}
+              onPointerUp={gesture.onPointerUp}
+              onPointerCancel={gesture.onPointerCancel}
               onClick={() => {
                 // Swallow the post-drag click on handles/edges so a
                 // drag never leaks a stale flag into a later click.
-                suppressClickRef.current = false;
+                gesture.suppressClickRef.current = false;
               }}
             >
               <button
@@ -495,7 +536,9 @@ function TimelineRow({
                 title={t("taskBarTitle", { label, range })}
                 aria-label={t("taskBarLabel", { label, range })}
                 data-task-status={task.status}
-                onPointerDown={(event) => onStartDrag(event, row, "move")}
+                onPointerDown={(event) =>
+                  gesture.onStartDrag(event, row, "move")
+                }
                 onClick={() => onOpenFromGesture(task.id)}
                 className={cn(
                   "absolute inset-0 cursor-grab rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
@@ -505,13 +548,15 @@ function TimelineRow({
               <div
                 aria-hidden="true"
                 onPointerDown={(event) =>
-                  onStartDrag(event, row, "resize-start")
+                  gesture.onStartDrag(event, row, "resize-start")
                 }
                 className="absolute left-0 top-0 z-10 h-full w-3 cursor-ew-resize"
               />
               <div
                 aria-hidden="true"
-                onPointerDown={(event) => onStartDrag(event, row, "resize-end")}
+                onPointerDown={(event) =>
+                  gesture.onStartDrag(event, row, "resize-end")
+                }
                 className="absolute right-0 top-0 z-10 h-full w-3 cursor-ew-resize"
               />
             </div>
