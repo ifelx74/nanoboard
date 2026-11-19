@@ -203,6 +203,19 @@
       "failed": "Échec de la création du post-it"
     }
   },
+  "timeline": {
+    "title": "Chronologie",
+    "today": "Aujourd'hui",
+    "task": "Tâche",
+    "taskBarTitle": "{{label}} · {{range}}",
+    "taskBarLabel": "{{label}}, {{range}}",
+    "undatedNote_one": "{{count}} tâche sans dates n'apparaît pas dans la chronologie.",
+    "undatedNote_other": "{{count}} tâches sans dates n'apparaissent pas dans la chronologie.",
+    "undatedNoteLink": "Voir sur le tableau",
+    "emptyTitle": "Rien de planifié pour l'instant",
+    "emptyDescription": "Les tâches avec une date de début ou d'échéance apparaîtront ici sous forme de barres.",
+    "emptyAction": "Voir le tableau"
+  },
   "whiteboard": {
     "header": {
       "title": "Tableau blanc"
@@ -355,6 +368,7 @@
       "calendar": "Calendrier",
       "fallbackProject": "Projet",
       "list": "Liste",
+      "timeline": "Chronologie",
       "whiteboard": "Tableau blanc"
     }
   },
@@ -696,6 +710,8 @@
     "projectWhiteboardTitle": "Tableau blanc — {{project}} · Nanoboard",
     "stickiesDescription": "Consignez et parcourez vos post-it — rapide, privé, 100 % dans votre navigateur.",
     "stickiesTitle": "Post-it · Nanoboard",
+    "timelineDescription": "Chronologie des tâches planifiées de {{project}} — stockée localement dans votre navigateur.",
+    "timelineTitle": "Chronologie — {{project}} · Nanoboard",
     "whiteboardDescription": "Tous les tableaux blancs de vos projets, en une seule galerie — esquissez librement, tout en local.",
     "whiteboardTitle": "Tableau blanc · Nanoboard"
   }

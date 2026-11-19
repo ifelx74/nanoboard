@@ -8,234 +8,255 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteImport } from './routes/_app'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppStickiesRouteImport } from './routes/_app/stickies'
-import { Route as AppWhiteboardRouteImport } from './routes/_app/whiteboard'
-import { Route as AppProjectProjectIdIndexRouteImport } from './routes/_app/project/$projectId/index'
-import { Route as AppProjectProjectIdArchivesRouteImport } from './routes/_app/project/$projectId/archives'
-import { Route as AppProjectProjectIdBoardRouteImport } from './routes/_app/project/$projectId/board'
-import { Route as AppProjectProjectIdCalendarRouteImport } from './routes/_app/project/$projectId/calendar'
-import { Route as AppProjectProjectIdListRouteImport } from './routes/_app/project/$projectId/list'
-import { Route as AppProjectProjectIdWhiteboardRouteImport } from './routes/_app/project/$projectId/whiteboard'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as AppRouteImport } from "./routes/_app";
+import { Route as AppIndexRouteImport } from "./routes/_app/index";
+import { Route as AppStickiesRouteImport } from "./routes/_app/stickies";
+import { Route as AppWhiteboardRouteImport } from "./routes/_app/whiteboard";
+import { Route as AppProjectProjectIdIndexRouteImport } from "./routes/_app/project/$projectId/index";
+import { Route as AppProjectProjectIdArchivesRouteImport } from "./routes/_app/project/$projectId/archives";
+import { Route as AppProjectProjectIdBoardRouteImport } from "./routes/_app/project/$projectId/board";
+import { Route as AppProjectProjectIdCalendarRouteImport } from "./routes/_app/project/$projectId/calendar";
+import { Route as AppProjectProjectIdListRouteImport } from "./routes/_app/project/$projectId/list";
+import { Route as AppProjectProjectIdTimelineRouteImport } from "./routes/_app/project/$projectId/timeline";
+import { Route as AppProjectProjectIdWhiteboardRouteImport } from "./routes/_app/project/$projectId/whiteboard";
 
 const AppRoute = AppRouteImport.update({
-  id: '/_app',
+  id: "/_app",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AppIndexRoute = AppIndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppStickiesRoute = AppStickiesRouteImport.update({
-  id: '/stickies',
-  path: '/stickies',
+  id: "/stickies",
+  path: "/stickies",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppWhiteboardRoute = AppWhiteboardRouteImport.update({
-  id: '/whiteboard',
-  path: '/whiteboard',
+  id: "/whiteboard",
+  path: "/whiteboard",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
 const AppProjectProjectIdIndexRoute =
   AppProjectProjectIdIndexRouteImport.update({
-    id: '/project/$projectId/',
-    path: '/project/$projectId/',
+    id: "/project/$projectId/",
+    path: "/project/$projectId/",
     getParentRoute: () => AppRoute,
-  } as any)
+  } as any);
 const AppProjectProjectIdArchivesRoute =
   AppProjectProjectIdArchivesRouteImport.update({
-    id: '/project/$projectId/archives',
-    path: '/project/$projectId/archives',
+    id: "/project/$projectId/archives",
+    path: "/project/$projectId/archives",
     getParentRoute: () => AppRoute,
-  } as any)
+  } as any);
 const AppProjectProjectIdBoardRoute =
   AppProjectProjectIdBoardRouteImport.update({
-    id: '/project/$projectId/board',
-    path: '/project/$projectId/board',
+    id: "/project/$projectId/board",
+    path: "/project/$projectId/board",
     getParentRoute: () => AppRoute,
-  } as any)
+  } as any);
 const AppProjectProjectIdCalendarRoute =
   AppProjectProjectIdCalendarRouteImport.update({
-    id: '/project/$projectId/calendar',
-    path: '/project/$projectId/calendar',
+    id: "/project/$projectId/calendar",
+    path: "/project/$projectId/calendar",
     getParentRoute: () => AppRoute,
-  } as any)
+  } as any);
 const AppProjectProjectIdListRoute = AppProjectProjectIdListRouteImport.update({
-  id: '/project/$projectId/list',
-  path: '/project/$projectId/list',
+  id: "/project/$projectId/list",
+  path: "/project/$projectId/list",
   getParentRoute: () => AppRoute,
-} as any)
+} as any);
+const AppProjectProjectIdTimelineRoute =
+  AppProjectProjectIdTimelineRouteImport.update({
+    id: "/project/$projectId/timeline",
+    path: "/project/$projectId/timeline",
+    getParentRoute: () => AppRoute,
+  } as any);
 const AppProjectProjectIdWhiteboardRoute =
   AppProjectProjectIdWhiteboardRouteImport.update({
-    id: '/project/$projectId/whiteboard',
-    path: '/project/$projectId/whiteboard',
+    id: "/project/$projectId/whiteboard",
+    path: "/project/$projectId/whiteboard",
     getParentRoute: () => AppRoute,
-  } as any)
+  } as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
-  '/stickies': typeof AppStickiesRoute
-  '/whiteboard': typeof AppWhiteboardRoute
-  '/project/$projectId/archives': typeof AppProjectProjectIdArchivesRoute
-  '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
-  '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
-  '/project/$projectId/list': typeof AppProjectProjectIdListRoute
-  '/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
-  '/project/$projectId/': typeof AppProjectProjectIdIndexRoute
+  "/": typeof AppIndexRoute;
+  "/stickies": typeof AppStickiesRoute;
+  "/whiteboard": typeof AppWhiteboardRoute;
+  "/project/$projectId/archives": typeof AppProjectProjectIdArchivesRoute;
+  "/project/$projectId/board": typeof AppProjectProjectIdBoardRoute;
+  "/project/$projectId/calendar": typeof AppProjectProjectIdCalendarRoute;
+  "/project/$projectId/list": typeof AppProjectProjectIdListRoute;
+  "/project/$projectId/timeline": typeof AppProjectProjectIdTimelineRoute;
+  "/project/$projectId/whiteboard": typeof AppProjectProjectIdWhiteboardRoute;
+  "/project/$projectId/": typeof AppProjectProjectIdIndexRoute;
 }
 export interface FileRoutesByTo {
-  '/stickies': typeof AppStickiesRoute
-  '/whiteboard': typeof AppWhiteboardRoute
-  '/': typeof AppIndexRoute
-  '/project/$projectId/archives': typeof AppProjectProjectIdArchivesRoute
-  '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
-  '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
-  '/project/$projectId/list': typeof AppProjectProjectIdListRoute
-  '/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
-  '/project/$projectId': typeof AppProjectProjectIdIndexRoute
+  "/stickies": typeof AppStickiesRoute;
+  "/whiteboard": typeof AppWhiteboardRoute;
+  "/": typeof AppIndexRoute;
+  "/project/$projectId/archives": typeof AppProjectProjectIdArchivesRoute;
+  "/project/$projectId/board": typeof AppProjectProjectIdBoardRoute;
+  "/project/$projectId/calendar": typeof AppProjectProjectIdCalendarRoute;
+  "/project/$projectId/list": typeof AppProjectProjectIdListRoute;
+  "/project/$projectId/timeline": typeof AppProjectProjectIdTimelineRoute;
+  "/project/$projectId/whiteboard": typeof AppProjectProjectIdWhiteboardRoute;
+  "/project/$projectId": typeof AppProjectProjectIdIndexRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/_app': typeof AppRouteWithChildren
-  '/_app/stickies': typeof AppStickiesRoute
-  '/_app/whiteboard': typeof AppWhiteboardRoute
-  '/_app/': typeof AppIndexRoute
-  '/_app/project/$projectId/archives': typeof AppProjectProjectIdArchivesRoute
-  '/_app/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
-  '/_app/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
-  '/_app/project/$projectId/list': typeof AppProjectProjectIdListRoute
-  '/_app/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
-  '/_app/project/$projectId/': typeof AppProjectProjectIdIndexRoute
+  __root__: typeof rootRouteImport;
+  "/_app": typeof AppRouteWithChildren;
+  "/_app/stickies": typeof AppStickiesRoute;
+  "/_app/whiteboard": typeof AppWhiteboardRoute;
+  "/_app/": typeof AppIndexRoute;
+  "/_app/project/$projectId/archives": typeof AppProjectProjectIdArchivesRoute;
+  "/_app/project/$projectId/board": typeof AppProjectProjectIdBoardRoute;
+  "/_app/project/$projectId/calendar": typeof AppProjectProjectIdCalendarRoute;
+  "/_app/project/$projectId/list": typeof AppProjectProjectIdListRoute;
+  "/_app/project/$projectId/timeline": typeof AppProjectProjectIdTimelineRoute;
+  "/_app/project/$projectId/whiteboard": typeof AppProjectProjectIdWhiteboardRoute;
+  "/_app/project/$projectId/": typeof AppProjectProjectIdIndexRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | '/stickies'
-    | '/whiteboard'
-    | '/project/$projectId/archives'
-    | '/project/$projectId/board'
-    | '/project/$projectId/calendar'
-    | '/project/$projectId/list'
-    | '/project/$projectId/whiteboard'
-    | '/project/$projectId/'
-  fileRoutesByTo: FileRoutesByTo
+    | "/"
+    | "/stickies"
+    | "/whiteboard"
+    | "/project/$projectId/archives"
+    | "/project/$projectId/board"
+    | "/project/$projectId/calendar"
+    | "/project/$projectId/list"
+    | "/project/$projectId/timeline"
+    | "/project/$projectId/whiteboard"
+    | "/project/$projectId/";
+  fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/stickies'
-    | '/whiteboard'
-    | '/'
-    | '/project/$projectId/archives'
-    | '/project/$projectId/board'
-    | '/project/$projectId/calendar'
-    | '/project/$projectId/list'
-    | '/project/$projectId/whiteboard'
-    | '/project/$projectId'
+    | "/stickies"
+    | "/whiteboard"
+    | "/"
+    | "/project/$projectId/archives"
+    | "/project/$projectId/board"
+    | "/project/$projectId/calendar"
+    | "/project/$projectId/list"
+    | "/project/$projectId/timeline"
+    | "/project/$projectId/whiteboard"
+    | "/project/$projectId";
   id:
-    | '__root__'
-    | '/_app'
-    | '/_app/stickies'
-    | '/_app/whiteboard'
-    | '/_app/'
-    | '/_app/project/$projectId/archives'
-    | '/_app/project/$projectId/board'
-    | '/_app/project/$projectId/calendar'
-    | '/_app/project/$projectId/list'
-    | '/_app/project/$projectId/whiteboard'
-    | '/_app/project/$projectId/'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/_app"
+    | "/_app/stickies"
+    | "/_app/whiteboard"
+    | "/_app/"
+    | "/_app/project/$projectId/archives"
+    | "/_app/project/$projectId/board"
+    | "/_app/project/$projectId/calendar"
+    | "/_app/project/$projectId/list"
+    | "/_app/project/$projectId/timeline"
+    | "/_app/project/$projectId/whiteboard"
+    | "/_app/project/$projectId/";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  AppRoute: typeof AppRouteWithChildren
+  AppRoute: typeof AppRouteWithChildren;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/': {
-      id: '/_app/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/stickies': {
-      id: '/_app/stickies'
-      path: '/stickies'
-      fullPath: '/stickies'
-      preLoaderRoute: typeof AppStickiesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/whiteboard': {
-      id: '/_app/whiteboard'
-      path: '/whiteboard'
-      fullPath: '/whiteboard'
-      preLoaderRoute: typeof AppWhiteboardRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/project/$projectId/': {
-      id: '/_app/project/$projectId/'
-      path: '/project/$projectId'
-      fullPath: '/project/$projectId/'
-      preLoaderRoute: typeof AppProjectProjectIdIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/project/$projectId/archives': {
-      id: '/_app/project/$projectId/archives'
-      path: '/project/$projectId/archives'
-      fullPath: '/project/$projectId/archives'
-      preLoaderRoute: typeof AppProjectProjectIdArchivesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/project/$projectId/board': {
-      id: '/_app/project/$projectId/board'
-      path: '/project/$projectId/board'
-      fullPath: '/project/$projectId/board'
-      preLoaderRoute: typeof AppProjectProjectIdBoardRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/project/$projectId/calendar': {
-      id: '/_app/project/$projectId/calendar'
-      path: '/project/$projectId/calendar'
-      fullPath: '/project/$projectId/calendar'
-      preLoaderRoute: typeof AppProjectProjectIdCalendarRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/project/$projectId/list': {
-      id: '/_app/project/$projectId/list'
-      path: '/project/$projectId/list'
-      fullPath: '/project/$projectId/list'
-      preLoaderRoute: typeof AppProjectProjectIdListRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/project/$projectId/whiteboard': {
-      id: '/_app/project/$projectId/whiteboard'
-      path: '/project/$projectId/whiteboard'
-      fullPath: '/project/$projectId/whiteboard'
-      preLoaderRoute: typeof AppProjectProjectIdWhiteboardRouteImport
-      parentRoute: typeof AppRoute
-    }
+    "/_app": {
+      id: "/_app";
+      path: "";
+      fullPath: "/";
+      preLoaderRoute: typeof AppRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_app/": {
+      id: "/_app/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof AppIndexRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/stickies": {
+      id: "/_app/stickies";
+      path: "/stickies";
+      fullPath: "/stickies";
+      preLoaderRoute: typeof AppStickiesRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/whiteboard": {
+      id: "/_app/whiteboard";
+      path: "/whiteboard";
+      fullPath: "/whiteboard";
+      preLoaderRoute: typeof AppWhiteboardRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/project/$projectId/": {
+      id: "/_app/project/$projectId/";
+      path: "/project/$projectId";
+      fullPath: "/project/$projectId/";
+      preLoaderRoute: typeof AppProjectProjectIdIndexRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/project/$projectId/archives": {
+      id: "/_app/project/$projectId/archives";
+      path: "/project/$projectId/archives";
+      fullPath: "/project/$projectId/archives";
+      preLoaderRoute: typeof AppProjectProjectIdArchivesRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/project/$projectId/board": {
+      id: "/_app/project/$projectId/board";
+      path: "/project/$projectId/board";
+      fullPath: "/project/$projectId/board";
+      preLoaderRoute: typeof AppProjectProjectIdBoardRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/project/$projectId/calendar": {
+      id: "/_app/project/$projectId/calendar";
+      path: "/project/$projectId/calendar";
+      fullPath: "/project/$projectId/calendar";
+      preLoaderRoute: typeof AppProjectProjectIdCalendarRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/project/$projectId/list": {
+      id: "/_app/project/$projectId/list";
+      path: "/project/$projectId/list";
+      fullPath: "/project/$projectId/list";
+      preLoaderRoute: typeof AppProjectProjectIdListRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/project/$projectId/timeline": {
+      id: "/_app/project/$projectId/timeline";
+      path: "/project/$projectId/timeline";
+      fullPath: "/project/$projectId/timeline";
+      preLoaderRoute: typeof AppProjectProjectIdTimelineRouteImport;
+      parentRoute: typeof AppRoute;
+    };
+    "/_app/project/$projectId/whiteboard": {
+      id: "/_app/project/$projectId/whiteboard";
+      path: "/project/$projectId/whiteboard";
+      fullPath: "/project/$projectId/whiteboard";
+      preLoaderRoute: typeof AppProjectProjectIdWhiteboardRouteImport;
+      parentRoute: typeof AppRoute;
+    };
   }
 }
 
 interface AppRouteChildren {
-  AppStickiesRoute: typeof AppStickiesRoute
-  AppWhiteboardRoute: typeof AppWhiteboardRoute
-  AppIndexRoute: typeof AppIndexRoute
-  AppProjectProjectIdArchivesRoute: typeof AppProjectProjectIdArchivesRoute
-  AppProjectProjectIdBoardRoute: typeof AppProjectProjectIdBoardRoute
-  AppProjectProjectIdCalendarRoute: typeof AppProjectProjectIdCalendarRoute
-  AppProjectProjectIdListRoute: typeof AppProjectProjectIdListRoute
-  AppProjectProjectIdWhiteboardRoute: typeof AppProjectProjectIdWhiteboardRoute
-  AppProjectProjectIdIndexRoute: typeof AppProjectProjectIdIndexRoute
+  AppStickiesRoute: typeof AppStickiesRoute;
+  AppWhiteboardRoute: typeof AppWhiteboardRoute;
+  AppIndexRoute: typeof AppIndexRoute;
+  AppProjectProjectIdArchivesRoute: typeof AppProjectProjectIdArchivesRoute;
+  AppProjectProjectIdBoardRoute: typeof AppProjectProjectIdBoardRoute;
+  AppProjectProjectIdCalendarRoute: typeof AppProjectProjectIdCalendarRoute;
+  AppProjectProjectIdListRoute: typeof AppProjectProjectIdListRoute;
+  AppProjectProjectIdTimelineRoute: typeof AppProjectProjectIdTimelineRoute;
+  AppProjectProjectIdWhiteboardRoute: typeof AppProjectProjectIdWhiteboardRoute;
+  AppProjectProjectIdIndexRoute: typeof AppProjectProjectIdIndexRoute;
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -246,15 +267,16 @@ const AppRouteChildren: AppRouteChildren = {
   AppProjectProjectIdBoardRoute: AppProjectProjectIdBoardRoute,
   AppProjectProjectIdCalendarRoute: AppProjectProjectIdCalendarRoute,
   AppProjectProjectIdListRoute: AppProjectProjectIdListRoute,
+  AppProjectProjectIdTimelineRoute: AppProjectProjectIdTimelineRoute,
   AppProjectProjectIdWhiteboardRoute: AppProjectProjectIdWhiteboardRoute,
   AppProjectProjectIdIndexRoute: AppProjectProjectIdIndexRoute,
-}
+};
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();

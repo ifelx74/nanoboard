@@ -18,7 +18,7 @@ export function pageMeta(title: string, description: string) {
 }
 
 export type ProjectSection =
-  "board" | "list" | "calendar" | "archives" | "whiteboard";
+  "board" | "list" | "calendar" | "archives" | "whiteboard" | "timeline";
 
 export function projectPageMeta(
   section: ProjectSection,
@@ -44,6 +44,11 @@ export function projectPageMeta(
     case "calendar": {
       const title = i18n.t("seo:calendarTitle", { project });
       const description = i18n.t("seo:calendarDescription", { project });
+      return pageMeta(title, description);
+    }
+    case "timeline": {
+      const title = i18n.t("seo:timelineTitle", { project });
+      const description = i18n.t("seo:timelineDescription", { project });
       return pageMeta(title, description);
     }
     case "archives": {

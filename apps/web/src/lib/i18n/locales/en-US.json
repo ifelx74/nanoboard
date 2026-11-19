@@ -203,6 +203,19 @@
       "failed": "Failed to create sticky"
     }
   },
+  "timeline": {
+    "title": "Timeline",
+    "today": "Today",
+    "task": "Task",
+    "taskBarTitle": "{{label}} · {{range}}",
+    "taskBarLabel": "{{label}}, {{range}}",
+    "undatedNote_one": "{{count}} task without dates is not shown on the timeline.",
+    "undatedNote_other": "{{count}} tasks without dates are not shown on the timeline.",
+    "undatedNoteLink": "View on the board",
+    "emptyTitle": "Nothing scheduled yet",
+    "emptyDescription": "Tasks with a start or due date show up here as bars.",
+    "emptyAction": "Go to the board"
+  },
   "whiteboard": {
     "header": {
       "title": "Whiteboard"
@@ -355,6 +368,7 @@
       "calendar": "Calendar",
       "fallbackProject": "Project",
       "list": "List",
+      "timeline": "Timeline",
       "whiteboard": "Whiteboard"
     }
   },
@@ -696,6 +710,8 @@
     "projectWhiteboardTitle": "Whiteboard — {{project}} · Nanoboard",
     "stickiesDescription": "Capture and browse sticky notes — fast, private, 100% in your browser.",
     "stickiesTitle": "Stickies · Nanoboard",
+    "timelineDescription": "Timeline of scheduled tasks for {{project}} — stored locally in your browser.",
+    "timelineTitle": "Timeline — {{project}} · Nanoboard",
     "whiteboardDescription": "Every project's whiteboard in one gallery — sketch freely, stored locally.",
     "whiteboardTitle": "Whiteboard · Nanoboard"
   }

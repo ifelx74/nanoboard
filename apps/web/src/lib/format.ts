@@ -38,6 +38,12 @@ export function formatWeekdayShort(date: Date, locale?: string): string {
   }).format(date);
 }
 
+export function formatWeekdayNarrow(date: Date, locale?: string): string {
+  return new Intl.DateTimeFormat(effectiveLocale(locale), {
+    weekday: "narrow",
+  }).format(date);
+}
+
 export function formatDayNumber(date: Date, locale?: string): string {
   return new Intl.DateTimeFormat(effectiveLocale(locale), {
     day: "numeric",
