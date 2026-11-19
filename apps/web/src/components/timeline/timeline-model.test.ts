@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   DAY_WIDTH,
   MIN_WINDOW_DAYS,
+  applyDragDelta,
   buildTimeline,
+  clampDragDayDelta,
   type TimelineTaskInput,
 } from "./timeline-model";
 
@@ -224,5 +226,178 @@ describe("buildTimeline geometry", () => {
       model.days.length - 1,
     );
     expect(model.dayIndexAtOffset(-50)).toBe(0);
+  });
+});
+
+describe("clampDragDayDelta", () => {
+  it("returns the delta unchanged for move drags", () => {
+    expect(clampDragDayDelta("move", 5, 3)).toBe(3);
+    expect(clampDragDayDelta("move", 5, -12)).toBe(-12);
+    expect(clampDragDayDelta("move", 1, 7)).toBe(7);
+  });
+
+  it("clamps resize-start drags so the left edge never passes the right edge", () => {
+    expect(clampDragDayDelta("resize-start", 5, 99)).toBe(4);
+    expect(clampDragDayDelta("resize-start", 5, 4)).toBe(4);
+    expect(clampDragDayDelta("resize-start", 5, 2)).toBe(2);
+    expect(clampDragDayDelta("resize-start", 5, -99)).toBe(-99);
+  });
+
+  it("clamps resize-end drags so the right edge never passes the left edge", () => {
+    expect(clampDragDayDelta("resize-end", 5, -99)).toBe(-4);
+    expect(clampDragDayDelta("resize-end", 5, -4)).toBe(-4);
+    expect(clampDragDayDelta("resize-end", 5, -2)).toBe(-2);
+    expect(clampDragDayDelta("resize-end", 5, 99)).toBe(99);
+  });
+
+  it("pins both edges of a one-day bar for resize drags", () => {
+    expect(clampDragDayDelta("resize-start", 1, 3)).toBe(0);
+    expect(clampDragDayDelta("resize-start", 1, -3)).toBe(-3);
+    expect(clampDragDayDelta("resize-end", 1, -3)).toBe(0);
+    expect(clampDragDayDelta("resize-end", 1, 3)).toBe(3);
+  });
+});
+
+describe("applyDragDelta move", () => {
+  it("shifts both dates together, preserving duration", () => {
+    expect(
+      applyDragDelta(task("m", "2026-10-12", "2026-10-14"), "move", 3),
+    ).toEqual({ startDate: "2026-10-15", dueDate: "2026-10-17" });
+  });
+
+  it("shifts both dates backwards for negative deltas", () => {
+    expect(
+      applyDragDelta(task("m", "2026-10-12", "2026-10-14"), "move", -5),
+    ).toEqual({ startDate: "2026-10-07", dueDate: "2026-10-09" });
+  });
+
+  it("shifts only the due date of a due-only task", () => {
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "move", 4),
+    ).toEqual({ dueDate: "2026-10-26" });
+  });
+
+  it("shifts only the start date of a start-only task", () => {
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "move", -4),
+    ).toEqual({ startDate: "2026-10-18" });
+  });
+
+  it("returns the entered dates unchanged for a zero delta", () => {
+    expect(
+      applyDragDelta(task("m", "2026-10-12", "2026-10-14"), "move", 0),
+    ).toEqual({ startDate: "2026-10-12", dueDate: "2026-10-14" });
+  });
+
+  it("shifts across month and year boundaries", () => {
+    expect(
+      applyDragDelta(task("m", "2026-12-30", "2027-01-02"), "move", 3),
+    ).toEqual({ startDate: "2027-01-02", dueDate: "2027-01-05" });
+  });
+
+  it("returns no dates for an undated task", () => {
+    expect(applyDragDelta(task("u", undefined, undefined), "move", 5)).toEqual(
+      {},
+    );
+  });
+});
+
+describe("applyDragDelta resize-start", () => {
+  it("moves only the start date of a two-dated task", () => {
+    expect(
+      applyDragDelta(task("r", "2026-10-12", "2026-10-20"), "resize-start", 3),
+    ).toEqual({ startDate: "2026-10-15" });
+  });
+
+  it("clamps the start at the due date, keeping a one-day bar", () => {
+    expect(
+      applyDragDelta(task("r", "2026-10-12", "2026-10-14"), "resize-start", 99),
+    ).toEqual({ startDate: "2026-10-14" });
+  });
+
+  it("clamps a drag to the due date exactly on the last allowed day", () => {
+    expect(
+      applyDragDelta(task("r", "2026-10-12", "2026-10-14"), "resize-start", 2),
+    ).toEqual({ startDate: "2026-10-14" });
+  });
+
+  it("extends the bar to the left for negative deltas", () => {
+    expect(
+      applyDragDelta(task("r", "2026-10-12", "2026-10-14"), "resize-start", -6),
+    ).toEqual({ startDate: "2026-10-06" });
+  });
+
+  it("sets the missing start endpoint on a due-only bar", () => {
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "resize-start", -3),
+    ).toEqual({ startDate: "2026-10-19" });
+  });
+
+  it("clamps the missing start endpoint of a due-only bar to the due date", () => {
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "resize-start", 4),
+    ).toEqual({ startDate: "2026-10-22" });
+  });
+
+  it("shifts a start-only one-day bar like the left edge of its span", () => {
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "resize-start", -3),
+    ).toEqual({ startDate: "2026-10-19" });
+  });
+
+  it("pins a start-only one-day bar against rightward resize-start drags", () => {
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "resize-start", 3),
+    ).toEqual({ startDate: "2026-10-22" });
+  });
+});
+
+describe("applyDragDelta resize-end", () => {
+  it("moves only the due date of a two-dated task", () => {
+    expect(
+      applyDragDelta(task("r", "2026-10-12", "2026-10-20"), "resize-end", 3),
+    ).toEqual({ dueDate: "2026-10-23" });
+  });
+
+  it("clamps the due at the start date, keeping a one-day bar", () => {
+    expect(
+      applyDragDelta(task("r", "2026-10-18", "2026-10-20"), "resize-end", -99),
+    ).toEqual({ dueDate: "2026-10-18" });
+  });
+
+  it("clamps a drag to the start date exactly on the last allowed day", () => {
+    expect(
+      applyDragDelta(task("r", "2026-10-18", "2026-10-20"), "resize-end", -2),
+    ).toEqual({ dueDate: "2026-10-18" });
+  });
+
+  it("extends the bar to the right for positive deltas", () => {
+    expect(
+      applyDragDelta(task("r", "2026-10-18", "2026-10-20"), "resize-end", 9),
+    ).toEqual({ dueDate: "2026-10-29" });
+  });
+
+  it("sets the missing due endpoint on a start-only bar", () => {
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "resize-end", 3),
+    ).toEqual({ dueDate: "2026-10-25" });
+  });
+
+  it("clamps the missing due endpoint of a start-only bar to the start date", () => {
+    expect(
+      applyDragDelta(task("s", "2026-10-22", undefined), "resize-end", -4),
+    ).toEqual({ dueDate: "2026-10-22" });
+  });
+
+  it("shifts a due-only one-day bar like the right edge of its span", () => {
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "resize-end", 5),
+    ).toEqual({ dueDate: "2026-10-27" });
+  });
+
+  it("pins a due-only one-day bar against leftward resize-end drags", () => {
+    expect(
+      applyDragDelta(task("d", undefined, "2026-10-22"), "resize-end", -30),
+    ).toEqual({ dueDate: "2026-10-22" });
   });
 });

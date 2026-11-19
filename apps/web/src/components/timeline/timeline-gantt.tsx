@@ -1,7 +1,20 @@
 import { Link } from "@tanstack/react-router";
 import { ChartGantt } from "lucide-react";
-import { type JSX, useEffect, useRef } from "react";
+import {
+  type JSX,
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useRef,
+} from "react";
 import { useTranslation } from "react-i18next";
+import { db } from "@/lib/db/db";
+import {
+  shiftTaskDates,
+  updateTaskDueDate,
+  updateTaskStartDate,
+} from "@/lib/db/tasks";
+import { startDate, type DueDateString } from "@/lib/db/schema";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -24,7 +37,11 @@ import {
   DAY_WIDTH,
   ROW_HEIGHT,
   SIDEBAR_WIDTH,
+  applyDragDelta,
+  clampDragDayDelta,
+  type TimelineDragMode,
   type TimelineModel,
+  type TimelineRow,
   type TimelineTaskInput,
 } from "./timeline-model";
 
@@ -37,6 +54,23 @@ export type TimelineGanttTask = TimelineTaskInput & {
 
 const MONTH_ROW_HEIGHT = 28;
 const DAY_ROW_HEIGHT = 36;
+/** Pointer travel past which a press on a bar counts as a drag, not a click. */
+const DRAG_CLICK_THRESHOLD_PX = 4;
+
+type DragState = {
+  pointerId: number;
+  mode: TimelineDragMode;
+  /** The bar's outer positioned element; mutated directly during the gesture. */
+  barEl: HTMLDivElement;
+  task: TimelineGanttTask;
+  spanDays: number;
+  startX: number;
+  /** Day-quantised, clamped to the one-day minimum. */
+  deltaDays: number;
+  originLeft: number;
+  originWidth: number;
+  moved: boolean;
+};
 
 type TimelineGanttProps = {
   model: TimelineModel<TimelineGanttTask>;
@@ -53,6 +87,109 @@ export default function TimelineGantt({
 }: TimelineGanttProps): JSX.Element {
   const { t } = useTranslation("timeline");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const suppressClickRef = useRef(false);
+
+  function startDrag(
+    event: ReactPointerEvent<HTMLElement>,
+    row: TimelineRow<TimelineGanttTask>,
+    mode: TimelineDragMode,
+  ) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    // One gesture at a time; a second finger on another bar is ignored.
+    if (dragRef.current) return;
+    const captureTarget = event.currentTarget;
+    const barEl = captureTarget.parentElement as HTMLDivElement;
+    captureTarget.setPointerCapture(event.pointerId);
+    suppressClickRef.current = false;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      mode,
+      barEl,
+      task: row.task,
+      spanDays: row.spanDays,
+      startX: event.clientX,
+      deltaDays: 0,
+      originLeft: row.left,
+      originWidth: row.width,
+      moved: false,
+    };
+  }
+
+  function applyGestureGeometry(drag: DragState) {
+    const offset = drag.deltaDays * DAY_WIDTH;
+    if (drag.mode === "move") {
+      drag.barEl.style.left = `${drag.originLeft + offset}px`;
+      return;
+    }
+    if (drag.mode === "resize-start") {
+      drag.barEl.style.left = `${drag.originLeft + offset}px`;
+      drag.barEl.style.width = `${drag.originWidth - offset}px`;
+      return;
+    }
+    drag.barEl.style.width = `${drag.originWidth + offset}px`;
+  }
+
+  function restoreGestureGeometry(drag: DragState) {
+    drag.barEl.style.left = `${drag.originLeft}px`;
+    drag.barEl.style.width = `${drag.originWidth}px`;
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const raw = Math.round((event.clientX - drag.startX) / DAY_WIDTH);
+    drag.deltaDays = clampDragDayDelta(drag.mode, drag.spanDays, raw);
+    if (Math.abs(event.clientX - drag.startX) > DRAG_CLICK_THRESHOLD_PX) {
+      drag.moved = true;
+    }
+    applyGestureGeometry(drag);
+  }
+
+  function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    dragRef.current = null;
+    if (drag.moved) suppressClickRef.current = true;
+    void commitGesture(drag);
+  }
+
+  function handlePointerCancel(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    dragRef.current = null;
+    restoreGestureGeometry(drag);
+  }
+
+  async function commitGesture(drag: DragState) {
+    if (drag.deltaDays === 0) return;
+    const { task, mode, deltaDays } = drag;
+    try {
+      if (mode === "move") {
+        await shiftTaskDates(db, task.id, deltaDays);
+        return;
+      }
+      const dates = applyDragDelta(task, mode, deltaDays);
+      if (mode === "resize-start" && dates.startDate !== undefined) {
+        await updateTaskStartDate(task.id, startDate(dates.startDate));
+        return;
+      }
+      if (mode === "resize-end" && dates.dueDate !== undefined) {
+        await updateTaskDueDate(task.id, dates.dueDate as DueDateString);
+      }
+    } catch {
+      restoreGestureGeometry(drag);
+      toast.error(t("dragRescheduleFailed"));
+    }
+  }
+
+  function openTaskFromGesture(taskId: string) {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    onOpenTask(taskId);
+  }
 
   const scrollToToday = (behavior: ScrollBehavior) => {
     const container = scrollRef.current;
@@ -273,23 +410,52 @@ export default function TimelineGantt({
                       className="relative h-full shrink-0 transition-colors group-hover/row:bg-accent/50 group-focus-within/row:bg-accent/50"
                       style={{ width: model.chartWidth }}
                     >
-                      <button
-                        type="button"
-                        title={t("taskBarTitle", { label, range })}
-                        aria-label={t("taskBarLabel", { label, range })}
-                        data-task-status={task.status}
-                        onClick={() => onOpenTask(task.id)}
-                        className={cn(
-                          "absolute z-10 cursor-pointer rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          getCalendarTaskStatusClass(task.status),
-                        )}
+                      <div
+                        className="absolute z-10 touch-none select-none"
                         style={{
                           left: row.left,
                           width: row.width,
                           top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
                           height: BAR_HEIGHT,
                         }}
-                      />
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerCancel}
+                        onClick={() => {
+                          // Swallow the post-drag click on handles/edges so a
+                          // drag never leaks a stale flag into a later click.
+                          suppressClickRef.current = false;
+                        }}
+                      >
+                        <button
+                          type="button"
+                          title={t("taskBarTitle", { label, range })}
+                          aria-label={t("taskBarLabel", { label, range })}
+                          data-task-status={task.status}
+                          onPointerDown={(event) =>
+                            startDrag(event, row, "move")
+                          }
+                          onClick={() => openTaskFromGesture(task.id)}
+                          className={cn(
+                            "absolute inset-0 cursor-grab rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+                            getCalendarTaskStatusClass(task.status),
+                          )}
+                        />
+                        <div
+                          aria-hidden="true"
+                          onPointerDown={(event) =>
+                            startDrag(event, row, "resize-start")
+                          }
+                          className="absolute left-0 top-0 z-10 h-full w-3 cursor-ew-resize"
+                        />
+                        <div
+                          aria-hidden="true"
+                          onPointerDown={(event) =>
+                            startDrag(event, row, "resize-end")
+                          }
+                          className="absolute right-0 top-0 z-10 h-full w-3 cursor-ew-resize"
+                        />
+                      </div>
                     </div>
                   </div>
                 );
