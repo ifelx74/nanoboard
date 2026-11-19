@@ -214,7 +214,8 @@
     "undatedNoteLink": "View on the board",
     "emptyTitle": "Nothing scheduled yet",
     "emptyDescription": "Tasks with a start or due date show up here as bars.",
-    "emptyAction": "Go to the board"
+    "emptyAction": "Go to the board",
+    "dragRescheduleFailed": "Couldn't reschedule the task. The bar was reverted."
   },
   "whiteboard": {
     "header": {

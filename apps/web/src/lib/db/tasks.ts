@@ -330,6 +330,80 @@ export async function updateTaskPriority(
  * A string sets the start date, `null` clears it. Rejects a start after the
  * task's current due date, mirroring range validation.
  */
+/**
+ * `yyyy-mm-dd` validity probe that never throws: the shifted values are
+ * re-validated with the same asserts used for single-field writes. Reuses
+ * local day math so a 4-digit-year overflow (e.g. 9999-12-31 + 1 day) rolls
+ * into a string the asserts reject instead of a silent date roll-over.
+ */
+function shiftDayString(value: string, dayDelta: number): string {
+  const [year, month, day] = value.split("-").map(Number);
+  const shifted = new Date(
+    year ?? 1970,
+    (month ?? 1) - 1,
+    (day ?? 1) + dayDelta,
+  );
+  const y = String(shifted.getFullYear()).padStart(4, "0");
+  const m = String(shifted.getMonth() + 1).padStart(2, "0");
+  const d = String(shifted.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Timeline move write: shifts every existing date field on the task by
+ * `dayDelta` days in a single transaction. A single-dated task shifts its
+ * lone date; an undated task and a zero delta are no-ops (no write, no
+ * `updatedAt` bump). Validates `yyyy-mm-dd` semantics of the stored and
+ * shifted values and the `start <= due` invariant; any failure aborts the
+ * transaction, so no partial write is ever persisted. `updatedAt` is bumped
+ * once per write. Takes the db handle as its first parameter like the other
+ * testable writers. Throws on a missing task or a non-integer delta.
+ */
+export async function shiftTaskDates(
+  database: NanoboardDB,
+  id: string,
+  dayDelta: number,
+): Promise<void> {
+  if (!Number.isInteger(dayDelta)) {
+    throw new Error(`dayDelta must be an integer. Received ${dayDelta}.`);
+  }
+  if (dayDelta === 0) return;
+
+  await database.transaction("rw", database.tasks, async () => {
+    const task = await database.tasks.get(id);
+    if (!task) {
+      throw new Error("Task not found.");
+    }
+    if (task.startDate !== undefined) assertValidStartDate(task.startDate);
+    if (task.dueDate !== undefined) assertValidDueDate(task.dueDate);
+
+    if (task.startDate === undefined && task.dueDate === undefined) {
+      return;
+    }
+
+    const shifted: {
+      startDate?: StartDateString;
+      dueDate?: DueDateString;
+    } = {};
+    if (task.startDate !== undefined) {
+      const value = shiftDayString(task.startDate, dayDelta);
+      assertValidStartDate(value as StartDateString);
+      shifted.startDate = value as StartDateString;
+    }
+    if (task.dueDate !== undefined) {
+      const value = shiftDayString(task.dueDate, dayDelta);
+      assertValidDueDate(value as DueDateString);
+      shifted.dueDate = value as DueDateString;
+    }
+    assertValidDateRange(shifted.startDate, shifted.dueDate);
+
+    await database.tasks.update(id, {
+      ...shifted,
+      updatedAt: Date.now(),
+    });
+  });
+}
+
 export async function updateTaskStartDate(
   id: string,
   startDate: StartDateString | null,
