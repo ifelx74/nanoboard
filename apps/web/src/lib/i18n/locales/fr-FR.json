@@ -214,7 +214,8 @@
     "undatedNoteLink": "Voir sur le tableau",
     "emptyTitle": "Rien de planifié pour l'instant",
     "emptyDescription": "Les tâches avec une date de début ou d'échéance apparaîtront ici sous forme de barres.",
-    "emptyAction": "Voir le tableau"
+    "emptyAction": "Voir le tableau",
+    "dragRescheduleFailed": "Impossible de replanifier la tâche. La barre a été rétablie."
   },
   "whiteboard": {
     "header": {
