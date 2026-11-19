@@ -1,7 +1,7 @@
 # nanoboard — Context
 
-nanoboard is a minimalist, local-first space for tasks: kanban board, list
-and calendar views, an Excalidraw whiteboard, and sticky notes. There is no
+nanoboard is a minimalist, local-first space for tasks: kanban board, list,
+calendar, and timeline views, an Excalidraw whiteboard, and sticky notes. There is no
 server — all data lives in the browser's IndexedDB via Dexie. This file is
 the glossary for the domain; use these terms (not synonyms) in issues, specs,
 code, and comments. If a needed concept isn't here, that's a signal to add it
@@ -23,10 +23,11 @@ here rather than to invent new language.
 - **Task** — a work item in a project. Has a per-project sequential
   **`number`** and a human **task key** (`taskKey()`, e.g. `WR-1`).
   `status` mirrors the slug of its parent column and is written in sync.
-- **Work surface** — any surface that shows tasks: board, list, calendar.
-  "Removed from the board and every work surface" is the standard phrasing.
+- **Work surface** — any surface that shows tasks: board, list, calendar,
+  timeline. "Removed from the board and every work surface" is the standard
+  phrasing.
 - **Reading surface** — a non-editable view of tasks. Board, List (grouped
-  by status), Calendar (month grid).
+  by status), Calendar (month grid), Timeline (gantt day axis).
 - **Label** — a per-project colored tag. Assignments live in the
   **TaskLabel** join table (`&[taskId+labelId]`); re-attaching is a no-op.
 - **Task resource** — a manual URL link on a task (resource type `"url"`).
@@ -47,6 +48,11 @@ here rather than to invent new language.
   `dataUrl`). Exists if and only if the saved scene has ≥1 non-deleted
   element; written by content-ful saves, removed by emptied-canvas saves and
   on project deletion.
+- **Timeline** — the per-project gantt-style work surface
+  (`/project/$projectId/timeline`). Dated tasks render as status-colored
+  bars on a fixed 40 logical px/day horizontal axis; undated tasks never
+  render. A work surface and a reading surface; dates change only through
+  the task drawer.
 
 ## Task lifecycle
 
@@ -55,8 +61,8 @@ here rather than to invent new language.
   archived, enforced at the data layer. Active = stamp absent.
 - **Archives** — the per-project route and UI (`/project/$projectId/archives`)
   listing soft-archived tasks. Archived tasks are excluded from the board,
-  list, calendar, counts, and stats everywhere except the Archives route and
-  explicitly `includeArchived` reads.
+  list, calendar, timeline, counts, and stats everywhere except the Archives
+  route and explicitly `includeArchived` reads.
 - **Restore** — re-inserting an archived task in place (its original column
   and position).
 - **Sweep** — the "Archive completed tasks" bulk action.

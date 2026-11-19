@@ -15,6 +15,7 @@ const EXPECTED_NAMESPACES = [
   "settings",
   "stickies",
   "task",
+  "timeline",
   "whiteboard",
 ];
 

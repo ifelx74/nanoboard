@@ -1,0 +1,303 @@
+import { Link } from "@tanstack/react-router";
+import { ChartGantt } from "lucide-react";
+import { type JSX, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { getCalendarTaskStatusClass } from "@/components/calendar/calendar-task-bar";
+import { cn } from "@/lib/utils";
+import {
+  formatDayNumber,
+  formatMonthYear,
+  formatWeekdayNarrow,
+} from "@/lib/format";
+import { formatDayRange } from "@/lib/due-date-status";
+import {
+  BAR_HEIGHT,
+  DAY_WIDTH,
+  ROW_HEIGHT,
+  SIDEBAR_WIDTH,
+  type TimelineModel,
+  type TimelineTaskInput,
+} from "./timeline-model";
+
+export type TimelineGanttTask = TimelineTaskInput & {
+  title: string;
+  status: string;
+  /** Ticket key (`SLUG-12`); empty until the route resolves the project. */
+  key: string;
+};
+
+const MONTH_ROW_HEIGHT = 28;
+const DAY_ROW_HEIGHT = 36;
+
+type TimelineGanttProps = {
+  model: TimelineModel<TimelineGanttTask>;
+  projectId: string;
+  onOpenTask: (taskId: string) => void;
+  onEmptyAction: () => void;
+};
+
+export default function TimelineGantt({
+  model,
+  projectId,
+  onOpenTask,
+  onEmptyAction,
+}: TimelineGanttProps): JSX.Element {
+  const { t } = useTranslation("timeline");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToToday = (behavior: ScrollBehavior) => {
+    const container = scrollRef.current;
+    const todayIndex = model.days.findIndex((day) => day.isToday);
+    if (!container || todayIndex < 0) return;
+    const visibleChart = container.clientWidth - SIDEBAR_WIDTH;
+    const target = todayIndex * DAY_WIDTH + DAY_WIDTH / 2 - visibleChart / 2;
+    container.scrollTo({ left: Math.max(0, target), behavior });
+  };
+
+  // Centre the viewport on today on mount so the current period is in view
+  // even when the range extends far into the past. Re-centres when the range
+  // is rebuilt (tasks changed) rather than on every render.
+  useEffect(() => {
+    const container = scrollRef.current;
+    const todayIndex = model.days.findIndex((day) => day.isToday);
+    if (!container || todayIndex < 0) return;
+    const visibleChart = container.clientWidth - SIDEBAR_WIDTH;
+    const target = todayIndex * DAY_WIDTH + DAY_WIDTH / 2 - visibleChart / 2;
+    container.scrollTo({ left: Math.max(0, target) });
+  }, [model]);
+
+  const hasRows = model.rows.length > 0;
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between gap-3 border-b border-border/80 px-3 py-2 sm:px-4">
+        <h1 className="truncate text-sm font-semibold text-foreground">
+          {t("title")}
+        </h1>
+        <Button
+          variant="outline"
+          size="xs"
+          className="min-h-11 touch-manipulation sm:min-h-0"
+          onClick={() => scrollToToday("smooth")}
+        >
+          {t("today")}
+        </Button>
+      </div>
+
+      {model.undatedCount > 0 && (
+        <div className="border-b border-border/60 bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground sm:px-4">
+          <span>{t("undatedNote", { count: model.undatedCount })} </span>
+          <Link
+            to="/project/$projectId/board"
+            params={{ projectId }}
+            className="font-medium underline underline-offset-2 transition-colors hover:text-foreground"
+          >
+            {t("undatedNoteLink")}
+          </Link>
+        </div>
+      )}
+
+      {!hasRows ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center bg-muted/20 p-6">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon" className="size-12">
+                <ChartGantt className="size-6" aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
+              <EmptyDescription>{t("emptyDescription")}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent className="flex-row justify-center gap-2">
+              <Button size="sm" onClick={onEmptyAction}>
+                {t("emptyAction")}
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          className="min-h-0 flex-1 overflow-auto overscroll-x-contain"
+        >
+          <div
+            className="relative"
+            style={{ width: SIDEBAR_WIDTH + model.chartWidth }}
+          >
+            {/* Sticky two-row header: month labels above weekday/day cells. */}
+            <div className="sticky top-0 z-30">
+              <div
+                className="flex border-b border-border bg-background"
+                style={{ height: MONTH_ROW_HEIGHT }}
+              >
+                <div
+                  className="sticky left-0 z-10 h-full shrink-0 border-r border-border bg-background"
+                  style={{ width: SIDEBAR_WIDTH }}
+                />
+                <div
+                  className="relative h-full shrink-0"
+                  style={{ width: model.chartWidth }}
+                >
+                  {model.months.map((month) => (
+                    <div
+                      key={month.key}
+                      title={formatMonthYear(month.date)}
+                      className="absolute top-0 flex h-full items-center overflow-hidden border-r border-border/60 px-2 text-[11px] font-medium text-foreground"
+                      style={{
+                        left: month.startIndex * DAY_WIDTH,
+                        width: month.dayCount * DAY_WIDTH,
+                      }}
+                    >
+                      <span className="truncate">
+                        {formatMonthYear(month.date)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div
+                className="flex border-b border-border bg-background"
+                style={{ height: DAY_ROW_HEIGHT }}
+              >
+                <div
+                  className="sticky left-0 z-10 flex h-full shrink-0 items-end border-r border-border bg-background px-3 pb-1.5"
+                  style={{ width: SIDEBAR_WIDTH }}
+                >
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("task")}
+                  </span>
+                </div>
+                <div
+                  className="flex h-full shrink-0"
+                  style={{ width: model.chartWidth }}
+                >
+                  {model.days.map((day) => (
+                    <div
+                      key={day.index}
+                      className={cn(
+                        "flex h-full w-10 shrink-0 flex-col items-center justify-center border-r border-border/50",
+                        day.isWeekend && "bg-muted/40",
+                        day.isToday && "bg-primary/10",
+                      )}
+                    >
+                      <span className="text-[9px] font-medium uppercase leading-none text-muted-foreground">
+                        {formatWeekdayNarrow(day.date)}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[11px] leading-tight tabular-nums text-foreground",
+                          day.isToday && "font-bold text-primary",
+                        )}
+                      >
+                        {formatDayNumber(day.date)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Rows: one flex component each — sticky sidebar cell + chart
+                cell — inside the shared overflow container. */}
+            <div className="relative">
+              {/* Weekend / today tint columns behind the bars. */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 z-0"
+                style={{ left: SIDEBAR_WIDTH, width: model.chartWidth }}
+              >
+                {model.days.map((day) =>
+                  day.isWeekend || day.isToday ? (
+                    <div
+                      key={day.index}
+                      className={cn(
+                        "absolute inset-y-0",
+                        day.isToday ? "bg-primary/10" : "bg-muted/30",
+                      )}
+                      style={{
+                        left: day.index * DAY_WIDTH,
+                        width: DAY_WIDTH,
+                      }}
+                    />
+                  ) : null,
+                )}
+              </div>
+
+              {model.rows.map((row) => {
+                const { task } = row;
+                const range = formatDayRange(task.chartStart, task.chartEnd);
+                const label = task.key
+                  ? `${task.key} · ${task.title}`
+                  : task.title;
+
+                return (
+                  <div
+                    key={task.id}
+                    className="group/row relative z-10 flex h-11 border-b border-border/60"
+                  >
+                    <div
+                      className="sticky left-0 z-20 h-full shrink-0 border-r border-border bg-background transition-colors group-hover/row:bg-accent group-focus-within/row:bg-accent"
+                      style={{ width: SIDEBAR_WIDTH }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => onOpenTask(task.id)}
+                        className="flex h-full w-full items-center gap-2 px-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "h-6 w-1.5 shrink-0 rounded-full border",
+                            getCalendarTaskStatusClass(task.status),
+                          )}
+                        />
+                        {task.key && (
+                          <span className="w-14 shrink-0 truncate font-mono text-[11px] text-muted-foreground">
+                            {task.key}
+                          </span>
+                        )}
+                        <span className="min-w-0 flex-1 truncate text-xs text-foreground">
+                          {task.title}
+                        </span>
+                      </button>
+                    </div>
+                    <div
+                      className="relative h-full shrink-0 transition-colors group-hover/row:bg-accent/50 group-focus-within/row:bg-accent/50"
+                      style={{ width: model.chartWidth }}
+                    >
+                      <button
+                        type="button"
+                        title={t("taskBarTitle", { label, range })}
+                        aria-label={t("taskBarLabel", { label, range })}
+                        data-task-status={task.status}
+                        onClick={() => onOpenTask(task.id)}
+                        className={cn(
+                          "absolute z-10 cursor-pointer rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          getCalendarTaskStatusClass(task.status),
+                        )}
+                        style={{
+                          left: row.left,
+                          width: row.width,
+                          top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
+                          height: BAR_HEIGHT,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

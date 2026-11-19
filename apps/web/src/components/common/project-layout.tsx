@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   Archive,
   CalendarDays,
+  ChartGantt,
   ChevronsUpDown,
   ClipboardClock,
   List,
@@ -30,7 +31,7 @@ import {
 import { Button } from "../ui/button";
 
 export type ProjectView =
-  "board" | "calendar" | "list" | "whiteboard" | "archives";
+  "board" | "calendar" | "list" | "whiteboard" | "archives" | "timeline";
 export type ProjectLayoutView = "backlog" | "whiteboard";
 
 type ViewMeta = { key: ProjectView; title: string; icon: typeof List };
@@ -54,10 +55,13 @@ export function ProjectLayout({
     { key: "board", title: t("toolbar.board"), icon: SquareKanban },
     { key: "calendar", title: t("toolbar.calendar"), icon: CalendarDays },
     { key: "list", title: t("toolbar.list"), icon: List },
+    { key: "timeline", title: t("toolbar.timeline"), icon: ChartGantt },
   ];
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
-  // is backlog view if activeView is board, calendar, or list
-  const isBacklogView = ["board", "calendar", "list"].includes(activeView);
+  // is backlog view if activeView is board, calendar, list, or timeline
+  const isBacklogView = ["board", "calendar", "list", "timeline"].includes(
+    activeView,
+  );
   const isArchivesView = activeView === "archives";
 
   return (
