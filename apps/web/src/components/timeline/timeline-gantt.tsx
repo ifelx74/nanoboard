@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ChartGantt } from "lucide-react";
-import { type JSX, useEffect, useRef } from "react";
+import { type JSX, type RefObject, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +25,10 @@ import {
   ROW_HEIGHT,
   SIDEBAR_WIDTH,
   type TimelineModel,
+  type TimelineRow as TimelineRowModel,
   type TimelineTaskInput,
 } from "./timeline-model";
+import { useLazyRowMount } from "./use-lazy-row";
 
 export type TimelineGanttTask = TimelineTaskInput & {
   title: string;
@@ -37,6 +39,8 @@ export type TimelineGanttTask = TimelineTaskInput & {
 
 const MONTH_ROW_HEIGHT = 28;
 const DAY_ROW_HEIGHT = 36;
+/** Rows above the fold render their contents on first paint. */
+const INITIAL_MOUNT_ROWS = 16;
 
 type TimelineGanttProps = {
   model: TimelineModel<TimelineGanttTask>;
@@ -231,72 +235,104 @@ export default function TimelineGantt({
                 )}
               </div>
 
-              {model.rows.map((row) => {
-                const { task } = row;
-                const range = formatDayRange(task.chartStart, task.chartEnd);
-                const label = task.key
-                  ? `${task.key} · ${task.title}`
-                  : task.title;
-
-                return (
-                  <div
-                    key={task.id}
-                    className="group/row relative z-10 flex h-11 border-b border-border/60"
-                  >
-                    <div
-                      className="sticky left-0 z-20 h-full shrink-0 border-r border-border bg-background transition-colors group-hover/row:bg-accent group-focus-within/row:bg-accent"
-                      style={{ width: SIDEBAR_WIDTH }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => onOpenTask(task.id)}
-                        className="flex h-full w-full items-center gap-2 px-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "h-6 w-1.5 shrink-0 rounded-full border",
-                            getCalendarTaskStatusClass(task.status),
-                          )}
-                        />
-                        {task.key && (
-                          <span className="w-14 shrink-0 truncate font-mono text-[11px] text-muted-foreground">
-                            {task.key}
-                          </span>
-                        )}
-                        <span className="min-w-0 flex-1 truncate text-xs text-foreground">
-                          {task.title}
-                        </span>
-                      </button>
-                    </div>
-                    <div
-                      className="relative h-full shrink-0 transition-colors group-hover/row:bg-accent/50 group-focus-within/row:bg-accent/50"
-                      style={{ width: model.chartWidth }}
-                    >
-                      <button
-                        type="button"
-                        title={t("taskBarTitle", { label, range })}
-                        aria-label={t("taskBarLabel", { label, range })}
-                        data-task-status={task.status}
-                        onClick={() => onOpenTask(task.id)}
-                        className={cn(
-                          "absolute z-10 cursor-pointer rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          getCalendarTaskStatusClass(task.status),
-                        )}
-                        style={{
-                          left: row.left,
-                          width: row.width,
-                          top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
-                          height: BAR_HEIGHT,
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+              {model.rows.map((row, index) => (
+                <TimelineRow
+                  key={row.task.id}
+                  row={row}
+                  index={index}
+                  chartWidth={model.chartWidth}
+                  rootRef={scrollRef}
+                  onOpenTask={onOpenTask}
+                />
+              ))}
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+type TimelineRowProps = {
+  row: TimelineRowModel<TimelineGanttTask>;
+  index: number;
+  chartWidth: number;
+  rootRef: RefObject<HTMLDivElement | null>;
+  onOpenTask: (taskId: string) => void;
+};
+
+function TimelineRow({
+  row,
+  index,
+  chartWidth,
+  rootRef,
+  onOpenTask,
+}: TimelineRowProps): JSX.Element {
+  const { t } = useTranslation("timeline");
+  const { rowRef, mounted } = useLazyRowMount(rootRef, {
+    initiallyMounted: index < INITIAL_MOUNT_ROWS,
+  });
+  const { task } = row;
+  const range = formatDayRange(task.chartStart, task.chartEnd);
+  const label = task.key ? `${task.key} · ${task.title}` : task.title;
+
+  return (
+    <div
+      ref={rowRef}
+      className="group/row relative z-10 flex border-b border-border/60"
+      style={{ height: ROW_HEIGHT }}
+    >
+      {mounted && (
+        <>
+          <div
+            className="sticky left-0 z-20 h-full shrink-0 border-r border-border bg-background transition-colors group-hover/row:bg-accent group-focus-within/row:bg-accent"
+            style={{ width: SIDEBAR_WIDTH }}
+          >
+            <button
+              type="button"
+              onClick={() => onOpenTask(task.id)}
+              className="flex h-full w-full items-center gap-2 px-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "h-6 w-1.5 shrink-0 rounded-full border",
+                  getCalendarTaskStatusClass(task.status),
+                )}
+              />
+              {task.key && (
+                <span className="w-14 shrink-0 truncate font-mono text-[11px] text-muted-foreground">
+                  {task.key}
+                </span>
+              )}
+              <span className="min-w-0 flex-1 truncate text-xs text-foreground">
+                {task.title}
+              </span>
+            </button>
+          </div>
+          <div
+            className="relative h-full shrink-0 transition-colors group-hover/row:bg-accent/50 group-focus-within/row:bg-accent/50"
+            style={{ width: chartWidth }}
+          >
+            <button
+              type="button"
+              title={t("taskBarTitle", { label, range })}
+              aria-label={t("taskBarLabel", { label, range })}
+              data-task-status={task.status}
+              onClick={() => onOpenTask(task.id)}
+              className={cn(
+                "absolute z-10 cursor-pointer rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                getCalendarTaskStatusClass(task.status),
+              )}
+              style={{
+                left: row.left,
+                width: row.width,
+                top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
+                height: BAR_HEIGHT,
+              }}
+            />
+          </div>
+        </>
       )}
     </div>
   );
