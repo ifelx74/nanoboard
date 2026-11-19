@@ -3,6 +3,7 @@ import { ChartGantt } from "lucide-react";
 import {
   type JSX,
   type PointerEvent as ReactPointerEvent,
+  type RefObject,
   useEffect,
   useRef,
 } from "react";
@@ -41,9 +42,10 @@ import {
   clampDragDayDelta,
   type TimelineDragMode,
   type TimelineModel,
-  type TimelineRow,
+  type TimelineRow as TimelineRowModel,
   type TimelineTaskInput,
 } from "./timeline-model";
+import { useLazyRowMount } from "./use-lazy-row";
 
 export type TimelineGanttTask = TimelineTaskInput & {
   title: string;
@@ -54,6 +56,8 @@ export type TimelineGanttTask = TimelineTaskInput & {
 
 const MONTH_ROW_HEIGHT = 28;
 const DAY_ROW_HEIGHT = 36;
+/** Rows above the fold render their contents on first paint. */
+const INITIAL_MOUNT_ROWS = 16;
 /** Pointer travel past which a press on a bar counts as a drag, not a click. */
 const DRAG_CLICK_THRESHOLD_PX = 4;
 
@@ -92,7 +96,7 @@ export default function TimelineGantt({
 
   function startDrag(
     event: ReactPointerEvent<HTMLElement>,
-    row: TimelineRow<TimelineGanttTask>,
+    row: TimelineRowModel<TimelineGanttTask>,
     mode: TimelineDragMode,
   ) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -368,101 +372,151 @@ export default function TimelineGantt({
                 )}
               </div>
 
-              {model.rows.map((row) => {
-                const { task } = row;
-                const range = formatDayRange(task.chartStart, task.chartEnd);
-                const label = task.key
-                  ? `${task.key} · ${task.title}`
-                  : task.title;
-
-                return (
-                  <div
-                    key={task.id}
-                    className="group/row relative z-10 flex h-11 border-b border-border/60"
-                  >
-                    <div
-                      className="sticky left-0 z-20 h-full shrink-0 border-r border-border bg-background transition-colors group-hover/row:bg-accent group-focus-within/row:bg-accent"
-                      style={{ width: SIDEBAR_WIDTH }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => onOpenTask(task.id)}
-                        className="flex h-full w-full items-center gap-2 px-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "h-6 w-1.5 shrink-0 rounded-full border",
-                            getCalendarTaskStatusClass(task.status),
-                          )}
-                        />
-                        {task.key && (
-                          <span className="w-14 shrink-0 truncate font-mono text-[11px] text-muted-foreground">
-                            {task.key}
-                          </span>
-                        )}
-                        <span className="min-w-0 flex-1 truncate text-xs text-foreground">
-                          {task.title}
-                        </span>
-                      </button>
-                    </div>
-                    <div
-                      className="relative h-full shrink-0 transition-colors group-hover/row:bg-accent/50 group-focus-within/row:bg-accent/50"
-                      style={{ width: model.chartWidth }}
-                    >
-                      <div
-                        className="absolute z-10 touch-none select-none"
-                        style={{
-                          left: row.left,
-                          width: row.width,
-                          top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
-                          height: BAR_HEIGHT,
-                        }}
-                        onPointerMove={handlePointerMove}
-                        onPointerUp={handlePointerUp}
-                        onPointerCancel={handlePointerCancel}
-                        onClick={() => {
-                          // Swallow the post-drag click on handles/edges so a
-                          // drag never leaks a stale flag into a later click.
-                          suppressClickRef.current = false;
-                        }}
-                      >
-                        <button
-                          type="button"
-                          title={t("taskBarTitle", { label, range })}
-                          aria-label={t("taskBarLabel", { label, range })}
-                          data-task-status={task.status}
-                          onPointerDown={(event) =>
-                            startDrag(event, row, "move")
-                          }
-                          onClick={() => openTaskFromGesture(task.id)}
-                          className={cn(
-                            "absolute inset-0 cursor-grab rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
-                            getCalendarTaskStatusClass(task.status),
-                          )}
-                        />
-                        <div
-                          aria-hidden="true"
-                          onPointerDown={(event) =>
-                            startDrag(event, row, "resize-start")
-                          }
-                          className="absolute left-0 top-0 z-10 h-full w-3 cursor-ew-resize"
-                        />
-                        <div
-                          aria-hidden="true"
-                          onPointerDown={(event) =>
-                            startDrag(event, row, "resize-end")
-                          }
-                          className="absolute right-0 top-0 z-10 h-full w-3 cursor-ew-resize"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {model.rows.map((row, index) => (
+                <TimelineRow
+                  key={row.task.id}
+                  row={row}
+                  index={index}
+                  chartWidth={model.chartWidth}
+                  rootRef={scrollRef}
+                  onOpenTask={onOpenTask}
+                  onStartDrag={startDrag}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerCancel}
+                  onOpenFromGesture={openTaskFromGesture}
+                  suppressClickRef={suppressClickRef}
+                />
+              ))}
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+type TimelineRowProps = {
+  row: TimelineRowModel<TimelineGanttTask>;
+  index: number;
+  chartWidth: number;
+  rootRef: RefObject<HTMLDivElement | null>;
+  onOpenTask: (taskId: string) => void;
+  onStartDrag: (
+    event: ReactPointerEvent<HTMLElement>,
+    row: TimelineRowModel<TimelineGanttTask>,
+    mode: TimelineDragMode,
+  ) => void;
+  onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onOpenFromGesture: (taskId: string) => void;
+  suppressClickRef: RefObject<boolean>;
+};
+
+function TimelineRow({
+  row,
+  index,
+  chartWidth,
+  rootRef,
+  onOpenTask,
+  onStartDrag,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onOpenFromGesture,
+  suppressClickRef,
+}: TimelineRowProps): JSX.Element {
+  const { t } = useTranslation("timeline");
+  const { rowRef, mounted } = useLazyRowMount(rootRef, {
+    initiallyMounted: index < INITIAL_MOUNT_ROWS,
+  });
+  const { task } = row;
+  const range = formatDayRange(task.chartStart, task.chartEnd);
+  const label = task.key ? `${task.key} · ${task.title}` : task.title;
+
+  return (
+    <div
+      ref={rowRef}
+      className="group/row relative z-10 flex border-b border-border/60"
+      style={{ height: ROW_HEIGHT }}
+    >
+      {mounted && (
+        <>
+          <div
+            className="sticky left-0 z-20 h-full shrink-0 border-r border-border bg-background transition-colors group-hover/row:bg-accent group-focus-within/row:bg-accent"
+            style={{ width: SIDEBAR_WIDTH }}
+          >
+            <button
+              type="button"
+              onClick={() => onOpenTask(task.id)}
+              className="flex h-full w-full items-center gap-2 px-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "h-6 w-1.5 shrink-0 rounded-full border",
+                  getCalendarTaskStatusClass(task.status),
+                )}
+              />
+              {task.key && (
+                <span className="w-14 shrink-0 truncate font-mono text-[11px] text-muted-foreground">
+                  {task.key}
+                </span>
+              )}
+              <span className="min-w-0 flex-1 truncate text-xs text-foreground">
+                {task.title}
+              </span>
+            </button>
+          </div>
+          <div
+            className="relative h-full shrink-0 transition-colors group-hover/row:bg-accent/50 group-focus-within/row:bg-accent/50"
+            style={{ width: chartWidth }}
+          >
+            <div
+              className="absolute z-10 touch-none select-none"
+              style={{
+                left: row.left,
+                width: row.width,
+                top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
+                height: BAR_HEIGHT,
+              }}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
+              onClick={() => {
+                // Swallow the post-drag click on handles/edges so a
+                // drag never leaks a stale flag into a later click.
+                suppressClickRef.current = false;
+              }}
+            >
+              <button
+                type="button"
+                title={t("taskBarTitle", { label, range })}
+                aria-label={t("taskBarLabel", { label, range })}
+                data-task-status={task.status}
+                onPointerDown={(event) => onStartDrag(event, row, "move")}
+                onClick={() => onOpenFromGesture(task.id)}
+                className={cn(
+                  "absolute inset-0 cursor-grab rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+                  getCalendarTaskStatusClass(task.status),
+                )}
+              />
+              <div
+                aria-hidden="true"
+                onPointerDown={(event) =>
+                  onStartDrag(event, row, "resize-start")
+                }
+                className="absolute left-0 top-0 z-10 h-full w-3 cursor-ew-resize"
+              />
+              <div
+                aria-hidden="true"
+                onPointerDown={(event) => onStartDrag(event, row, "resize-end")}
+                className="absolute right-0 top-0 z-10 h-full w-3 cursor-ew-resize"
+              />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
