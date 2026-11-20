@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChartGantt } from "lucide-react";
+import { CalendarDays, ChartGantt } from "lucide-react";
 import {
   type JSX,
   type PointerEvent as ReactPointerEvent,
@@ -15,9 +15,21 @@ import {
   updateTaskDueDate,
   updateTaskStartDate,
 } from "@/lib/db/tasks";
-import { startDate, type DueDateString } from "@/lib/db/schema";
+import {
+  startDate,
+  type ColumnSlug,
+  type DueDateString,
+  type TaskPriority,
+} from "@/lib/db/schema";
 import { toast } from "@/lib/toast";
+import { getColumnIcon } from "@/lib/column";
+import { getPriorityIcon } from "@/lib/priority";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Empty,
   EmptyContent,
@@ -50,7 +62,10 @@ import { useLazyRowMount } from "./use-lazy-row";
 
 export type TimelineGanttTask = TimelineTaskInput & {
   title: string;
-  status: string;
+  status: ColumnSlug;
+  statusName: string;
+  isFinal: boolean;
+  priority: TaskPriority;
   /** Ticket key (`SLUG-12`); empty until the route resolves the project. */
   key: string;
 };
@@ -453,12 +468,22 @@ function TimelineRow({
   onActiveRowChange,
 }: TimelineRowProps): JSX.Element {
   const { t } = useTranslation("timeline");
+  const { t: tCommon } = useTranslation("common");
   const { rowRef, mounted } = useLazyRowMount(rootRef, {
     initiallyMounted: index < INITIAL_MOUNT_ROWS,
   });
+  const [previewOpen, setPreviewOpen] = useState(false);
   const { task } = row;
   const range = formatDayRange(task.chartStart, task.chartEnd);
   const label = task.key ? `${task.key} · ${task.title}` : task.title;
+  const priorityLabels: Record<TaskPriority, string> = {
+    urgent: tCommon("priority.urgent"),
+    high: tCommon("priority.high"),
+    medium: tCommon("priority.medium"),
+    low: tCommon("priority.low"),
+    "no-priority": tCommon("priority.noPriority"),
+  };
+  const priorityText = priorityLabels[task.priority];
 
   return (
     <div
@@ -534,27 +559,60 @@ function TimelineRow({
                 gesture.suppressClickRef.current = false;
               }}
             >
-              <button
-                type="button"
-                title={t("taskBarTitle", { label, range })}
-                aria-label={t("taskBarLabel", { label, range })}
-                data-task-status={task.status}
-                onPointerDown={(event) =>
-                  gesture.onStartDrag(event, row, "move")
-                }
-                onClick={() => onOpenFromGesture(task.id)}
-                className={cn(
-                  "absolute inset-0 flex cursor-grab items-center overflow-hidden rounded-md border px-2 text-left text-[11px] font-medium leading-none text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
-                  getCalendarTaskStatusClass(task.status),
-                )}
-              >
-                <span
-                  className="pointer-events-none min-w-0 flex-1 truncate"
-                  style={{ position: "sticky", left: SIDEBAR_WIDTH }}
+              <Tooltip open={previewOpen} onOpenChange={setPreviewOpen}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={t("taskBarLabel", { label, range })}
+                    data-task-status={task.status}
+                    onPointerDown={(event) => {
+                      setPreviewOpen(false);
+                      gesture.onStartDrag(event, row, "move");
+                    }}
+                    onClick={() => onOpenFromGesture(task.id)}
+                    className={cn(
+                      "absolute inset-0 flex cursor-grab items-center overflow-hidden rounded-md border px-2 text-left text-[11px] font-medium leading-none text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+                      getCalendarTaskStatusClass(task.status),
+                    )}
+                  >
+                    <span
+                      className="pointer-events-none min-w-0 flex-1 truncate"
+                      style={{ position: "sticky", left: SIDEBAR_WIDTH }}
+                    >
+                      {task.title}
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  align="start"
+                  sideOffset={8}
+                  className="pointer-events-none w-72 [--viewport-inline-padding:0px]"
                 >
-                  {task.title}
-                </span>
-              </button>
+                  <div className="space-y-1.5 p-3">
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <span className="font-mono">{task.key}</span>
+                      <span aria-hidden="true">·</span>
+                      {getColumnIcon(task.status, task.isFinal)}
+                      <span className="truncate">{task.statusName}</span>
+                      <span className="ml-auto flex items-center gap-1">
+                        {getPriorityIcon(task.priority)}
+                        <span className="sr-only">{priorityText}</span>
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium leading-snug">
+                      {task.title}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <CalendarDays
+                        className="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span>{range}</span>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
               <div
                 aria-hidden="true"
                 onPointerDown={(event) =>

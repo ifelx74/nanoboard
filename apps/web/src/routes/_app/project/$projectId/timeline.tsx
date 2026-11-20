@@ -7,7 +7,11 @@ import TimelineGantt, {
 } from "@/components/timeline/timeline-gantt";
 import { buildTimeline } from "@/components/timeline/timeline-model";
 import TaskDrawer from "@/components/task/task-drawer";
-import { getProject, getProjectTasks } from "@/lib/db/queries";
+import {
+  getProject,
+  getProjectColumns,
+  getProjectTasks,
+} from "@/lib/db/queries";
 import { projectRouteHead } from "@/lib/seo";
 import { db } from "@/lib/db/db";
 import { taskKey } from "@/lib/task-key";
@@ -26,22 +30,33 @@ function RouteComponent() {
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
   const tasks = useLiveQuery(() => getProjectTasks(db, projectId), [projectId]);
+  const columns = useLiveQuery(
+    () => getProjectColumns(db, projectId),
+    [projectId],
+  );
   const project = useLiveQuery(() => getProject(projectId), [projectId]);
   const slug = project?.slug ?? "";
 
-  const timelineTasks: TimelineGanttTask[] = useMemo(
-    () =>
-      (tasks ?? []).map((task) => ({
+  const timelineTasks: TimelineGanttTask[] = useMemo(() => {
+    const columnsBySlug = new Map(
+      (columns ?? []).map((column) => [String(column.slug), column]),
+    );
+    return (tasks ?? []).map((task) => {
+      const column = columnsBySlug.get(String(task.status));
+      return {
         id: task.id,
         title: task.title,
         status: task.status,
+        statusName: column?.name ?? String(task.status),
+        isFinal: column?.isFinal ?? false,
+        priority: task.priority,
         key: taskKey(slug, task.number),
         startDate: task.startDate,
         dueDate: task.dueDate,
         position: task.position,
-      })),
-    [tasks, slug],
-  );
+      };
+    });
+  }, [tasks, columns, slug]);
 
   const model = useMemo(() => buildTimeline(timelineTasks), [timelineTasks]);
 
@@ -68,7 +83,7 @@ function RouteComponent() {
     });
   }
 
-  if (tasks === undefined) {
+  if (tasks === undefined || columns === undefined) {
     return (
       <ProjectLayout projectId={projectId} activeView="timeline">
         <div className="flex h-full min-h-0 flex-col" aria-hidden="true">
