@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
   Archive,
-  CalendarDays,
+  Calendar,
   ChartGantt,
   ChevronsUpDown,
   ClipboardClock,
@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export type ProjectView =
   "board" | "calendar" | "list" | "whiteboard" | "archives" | "timeline";
@@ -53,7 +54,7 @@ export function ProjectLayout({
   const { t } = useTranslation("project");
   const views: ViewMeta[] = [
     { key: "board", title: t("toolbar.board"), icon: SquareKanban },
-    { key: "calendar", title: t("toolbar.calendar"), icon: CalendarDays },
+    { key: "calendar", title: t("toolbar.calendar"), icon: Calendar },
     { key: "list", title: t("toolbar.list"), icon: List },
     { key: "timeline", title: t("toolbar.timeline"), icon: ChartGantt },
   ];
@@ -156,26 +157,33 @@ export function ProjectLayout({
           {isBacklogView ? (
             <div className="flex items-center gap-1">
               {views.map((view) => (
-                <button
-                  key={view.key}
-                  type="button"
-                  onClick={() =>
-                    navigate({
-                      to: `/project/$projectId/${view.key}`,
-                      params: { projectId },
-                    })
-                  }
-                  title={view.title}
-                  className={cn(
-                    "flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors",
-                    activeView === view.key
-                      ? "bg-brand-100 dark:bg-brand-900 text-sidebar-accent-foreground"
-                      : "text-muted-foreground hover:bg-brand-100 dark:hover:bg-brand-800 hover:text-foreground",
-                  )}
-                >
-                  <view.icon className="size-3.5" aria-hidden="true" />
-                  <span className="hidden sm:block">{view.title}</span>
-                </button>
+                <Tooltip key={view.key}>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        key={view.key}
+                        type="button"
+                        onClick={() =>
+                          navigate({
+                            to: `/project/$projectId/${view.key}`,
+                            params: { projectId },
+                          })
+                        }
+                        className={cn(
+                          "flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors cursor-pointer",
+                          activeView === view.key
+                            ? "bg-brand-100 dark:bg-brand-900 text-sidebar-accent-foreground"
+                            : "text-muted-foreground hover:bg-brand-100 dark:hover:bg-brand-800 hover:text-foreground",
+                        )}
+                      >
+                        <view.icon className="size-3.5" aria-hidden="true" />
+                      </button>
+                    }
+                  />
+                  <TooltipContent>
+                    <span>{view.title}</span>
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
           ) : isArchivesView ? (
