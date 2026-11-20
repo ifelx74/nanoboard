@@ -18,6 +18,7 @@ import { Route as AppProjectProjectIdArchivesRouteImport } from './routes/_app/p
 import { Route as AppProjectProjectIdBoardRouteImport } from './routes/_app/project/$projectId/board'
 import { Route as AppProjectProjectIdCalendarRouteImport } from './routes/_app/project/$projectId/calendar'
 import { Route as AppProjectProjectIdListRouteImport } from './routes/_app/project/$projectId/list'
+import { Route as AppProjectProjectIdTimelineRouteImport } from './routes/_app/project/$projectId/timeline'
 import { Route as AppProjectProjectIdWhiteboardRouteImport } from './routes/_app/project/$projectId/whiteboard'
 
 const AppRoute = AppRouteImport.update({
@@ -68,6 +69,12 @@ const AppProjectProjectIdListRoute = AppProjectProjectIdListRouteImport.update({
   path: '/project/$projectId/list',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProjectProjectIdTimelineRoute =
+  AppProjectProjectIdTimelineRouteImport.update({
+    id: '/project/$projectId/timeline',
+    path: '/project/$projectId/timeline',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppProjectProjectIdWhiteboardRoute =
   AppProjectProjectIdWhiteboardRouteImport.update({
     id: '/project/$projectId/whiteboard',
@@ -83,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
   '/project/$projectId/list': typeof AppProjectProjectIdListRoute
+  '/project/$projectId/timeline': typeof AppProjectProjectIdTimelineRoute
   '/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
   '/project/$projectId/': typeof AppProjectProjectIdIndexRoute
 }
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
   '/project/$projectId/list': typeof AppProjectProjectIdListRoute
+  '/project/$projectId/timeline': typeof AppProjectProjectIdTimelineRoute
   '/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
   '/project/$projectId': typeof AppProjectProjectIdIndexRoute
 }
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/_app/project/$projectId/board': typeof AppProjectProjectIdBoardRoute
   '/_app/project/$projectId/calendar': typeof AppProjectProjectIdCalendarRoute
   '/_app/project/$projectId/list': typeof AppProjectProjectIdListRoute
+  '/_app/project/$projectId/timeline': typeof AppProjectProjectIdTimelineRoute
   '/_app/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
   '/_app/project/$projectId/': typeof AppProjectProjectIdIndexRoute
 }
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/project/$projectId/board'
     | '/project/$projectId/calendar'
     | '/project/$projectId/list'
+    | '/project/$projectId/timeline'
     | '/project/$projectId/whiteboard'
     | '/project/$projectId/'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/project/$projectId/board'
     | '/project/$projectId/calendar'
     | '/project/$projectId/list'
+    | '/project/$projectId/timeline'
     | '/project/$projectId/whiteboard'
     | '/project/$projectId'
   id:
@@ -143,6 +155,7 @@ export interface FileRouteTypes {
     | '/_app/project/$projectId/board'
     | '/_app/project/$projectId/calendar'
     | '/_app/project/$projectId/list'
+    | '/_app/project/$projectId/timeline'
     | '/_app/project/$projectId/whiteboard'
     | '/_app/project/$projectId/'
   fileRoutesById: FileRoutesById
@@ -216,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProjectProjectIdListRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/project/$projectId/timeline': {
+      id: '/_app/project/$projectId/timeline'
+      path: '/project/$projectId/timeline'
+      fullPath: '/project/$projectId/timeline'
+      preLoaderRoute: typeof AppProjectProjectIdTimelineRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/project/$projectId/whiteboard': {
       id: '/_app/project/$projectId/whiteboard'
       path: '/project/$projectId/whiteboard'
@@ -234,6 +254,7 @@ interface AppRouteChildren {
   AppProjectProjectIdBoardRoute: typeof AppProjectProjectIdBoardRoute
   AppProjectProjectIdCalendarRoute: typeof AppProjectProjectIdCalendarRoute
   AppProjectProjectIdListRoute: typeof AppProjectProjectIdListRoute
+  AppProjectProjectIdTimelineRoute: typeof AppProjectProjectIdTimelineRoute
   AppProjectProjectIdWhiteboardRoute: typeof AppProjectProjectIdWhiteboardRoute
   AppProjectProjectIdIndexRoute: typeof AppProjectProjectIdIndexRoute
 }
@@ -246,6 +267,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProjectProjectIdBoardRoute: AppProjectProjectIdBoardRoute,
   AppProjectProjectIdCalendarRoute: AppProjectProjectIdCalendarRoute,
   AppProjectProjectIdListRoute: AppProjectProjectIdListRoute,
+  AppProjectProjectIdTimelineRoute: AppProjectProjectIdTimelineRoute,
   AppProjectProjectIdWhiteboardRoute: AppProjectProjectIdWhiteboardRoute,
   AppProjectProjectIdIndexRoute: AppProjectProjectIdIndexRoute,
 }
