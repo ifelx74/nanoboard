@@ -479,16 +479,19 @@ function TimelineRow({
       {mounted && (
         <>
           <div
-            className={cn(
-              "sticky left-0 z-20 h-full shrink-0 border-r border-border transition-colors",
-              isActive ? "bg-accent" : "bg-background",
-            )}
+            className="sticky left-0 z-20 h-full shrink-0 border-r border-border bg-background"
             style={{ width: SIDEBAR_WIDTH }}
           >
+            {isActive && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-accent"
+              />
+            )}
             <button
               type="button"
               onClick={() => onOpenTask(task.id)}
-              className="flex h-full w-full items-center gap-2 px-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              className="relative flex h-full w-full items-center gap-2 px-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
             >
               <span
                 aria-hidden="true"
@@ -541,10 +544,17 @@ function TimelineRow({
                 }
                 onClick={() => onOpenFromGesture(task.id)}
                 className={cn(
-                  "absolute inset-0 cursor-grab rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+                  "absolute inset-0 flex cursor-grab items-center overflow-hidden rounded-md border px-2 text-left text-[11px] font-medium leading-none text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
                   getCalendarTaskStatusClass(task.status),
                 )}
-              />
+              >
+                <span
+                  className="pointer-events-none min-w-0 flex-1 truncate"
+                  style={{ position: "sticky", left: SIDEBAR_WIDTH }}
+                >
+                  {task.title}
+                </span>
+              </button>
               <div
                 aria-hidden="true"
                 onPointerDown={(event) =>
