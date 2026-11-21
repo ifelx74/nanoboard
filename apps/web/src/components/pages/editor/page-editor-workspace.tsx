@@ -1,6 +1,7 @@
-import type { AnyExtension } from "@tiptap/core";
+import type { AnyExtension, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import type { StarterKitOptions } from "@tiptap/starter-kit";
+import { PanelRight } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -14,11 +15,24 @@ import {
   type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { db } from "@/lib/db/db";
 import { pruneOrphanPageAssets } from "@/lib/db/page-assets";
 import { savePageContent, updatePageTitle } from "@/lib/db/pages";
 import type { Page, PageContent } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
+import {
+  computePageStats,
+  extractHeadings,
+  extractPageImages,
+  type PageHeadingEntry,
+  type PageImageEntry,
+} from "@/lib/pages/document";
 import { createPagesEditorExtensions } from "@/lib/pages/editor-extensions";
 import type { PageImageLightboxTarget } from "@/lib/pages/extensions/image-node";
 import { insertPageTable } from "@/lib/pages/extensions/table-extension";
@@ -46,10 +60,16 @@ import {
   createEmojiCalloutSlashCommands,
   EMOJI_CALLOUT_UNIQUE_ID_TYPES,
 } from "./page-emoji-callout-feature";
+import { PageFloatingOutline } from "./page-floating-outline";
 import { PageHeaderLogoPicker } from "./page-header-logo-picker";
 import { createPageImageFeature } from "./page-image-feature";
 import { PageImageLightbox } from "./page-image-lightbox";
 import { PageLinkPopover } from "./page-link-popover";
+import {
+  PageNavigationPane,
+  type PageNavigationPaneTab,
+} from "./page-navigation-pane";
+import { scrollToPageHeading, scrollToPageImage } from "./page-outline-list";
 import type { PageSlashCommandAdditionalEntry } from "./page-slash-commands";
 import { PageStickyToolbar } from "./page-sticky-toolbar";
 import { PageTableToolbar } from "./page-table-toolbar";
@@ -57,6 +77,7 @@ import "./pages-editor.css";
 
 const TITLE_AUTOSAVE_DELAY_MS = 500;
 const CONTENT_AUTOSAVE_DELAY_MS = 600;
+const LIVE_DOC_SYNC_DELAY_MS = 100;
 
 export type PageEditorWorkspaceProps = {
   page: Page;
@@ -93,6 +114,10 @@ export type PageEditorWorkspaceProps = {
   onEditorReady?: (editor: Editor | null) => void;
   /** Optional shared per-page ObjectURL cache (e.g. reused by Ticket 07's Assets tab). */
   assetUrlCache?: PageAssetUrlCache;
+  /** Controlled active tab of the slide-in right navigation pane (`undefined` = closed). */
+  activePaneTab?: PageNavigationPaneTab;
+  /** Called when the user opens, switches, or closes the right navigation pane. */
+  onPaneTabChange?: (tab: PageNavigationPaneTab | undefined) => void;
 };
 
 /**
@@ -119,6 +144,8 @@ export default function PageEditorWorkspace({
   disabledSlashCommands,
   onEditorReady,
   assetUrlCache,
+  activePaneTab,
+  onPaneTabChange,
 }: PageEditorWorkspaceProps) {
   const { t } = useTranslation("pages");
   const readOnly = page.isLocked || page.archivedAt !== undefined;
@@ -166,12 +193,28 @@ export default function PageEditorWorkspace({
 
   const [scrollContainerEl, setScrollContainerEl] =
     useState<HTMLDivElement | null>(null);
+  const [liveDoc, setLiveDoc] = useState<JSONContent>(
+    initialContent.contentJson,
+  );
+  const liveDocTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorWrapperRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<Editor | null>(null);
   const isHydratedRef = useRef(false);
   const contentDirtyRef = useRef(false);
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastContentSaveRef = useRef<Promise<boolean>>(Promise.resolve(true));
+
+  const scheduleLiveDocSync = useCallback((currentEditor: Editor) => {
+    if (liveDocTimerRef.current) {
+      clearTimeout(liveDocTimerRef.current);
+    }
+    liveDocTimerRef.current = setTimeout(() => {
+      liveDocTimerRef.current = null;
+      if (!currentEditor.isDestroyed) {
+        setLiveDoc(currentEditor.getJSON());
+      }
+    }, LIVE_DOC_SYNC_DELAY_MS);
+  }, []);
 
   const focusTitleEnd = useCallback(() => {
     const input = titleInputRef.current;
@@ -267,7 +310,8 @@ export default function PageEditorWorkspace({
       onCreate: ({ editor: created }) => {
         editorRef.current = created;
       },
-      onUpdate: () => {
+      onUpdate: ({ editor: updated }) => {
+        scheduleLiveDocSync(updated);
         if (!isHydratedRef.current || readOnlyRef.current) return;
         contentDirtyRef.current = true;
         if (contentTimerRef.current) {
@@ -286,14 +330,30 @@ export default function PageEditorWorkspace({
     editorRef.current = editor;
     if (editor) {
       // Enable autosave after initial mount + UniqueID initialization so
-      // simply opening an existing page never triggers a spurious write.
+      // simply opening an existing page never triggers a spurious write,
+      // while still capturing UniqueID attrs for Outline/Assets navigation.
       isHydratedRef.current = true;
+      setLiveDoc(editor.getJSON());
     }
     onEditorReady?.(editor ?? null);
     return () => {
+      if (liveDocTimerRef.current) {
+        clearTimeout(liveDocTimerRef.current);
+        liveDocTimerRef.current = null;
+      }
       onEditorReady?.(null);
     };
   }, [editor, onEditorReady]);
+
+  // Flush any pending live-doc debounce immediately when opening the right pane.
+  useEffect(() => {
+    if (!activePaneTab || !editor || editor.isDestroyed) return;
+    if (liveDocTimerRef.current) {
+      clearTimeout(liveDocTimerRef.current);
+      liveDocTimerRef.current = null;
+      setLiveDoc(editor.getJSON());
+    }
+  }, [activePaneTab, editor]);
 
   useEffect(() => {
     const becameReadOnly = readOnly && !readOnlyRef.current;
@@ -434,91 +494,156 @@ export default function PageEditorWorkspace({
     editor.commands.focus("end");
   }
 
+  const headings = useMemo(() => extractHeadings(liveDoc), [liveDoc]);
+  const stats = useMemo(() => computePageStats(liveDoc), [liveDoc]);
+  const images = useMemo(() => extractPageImages(liveDoc), [liveDoc]);
+
+  const handleSelectHeading = useCallback(
+    (heading: PageHeadingEntry) => {
+      scrollToPageHeading(scrollContainerEl, heading);
+    },
+    [scrollContainerEl],
+  );
+
+  const handleSelectImage = useCallback(
+    (image: PageImageEntry, index: number) => {
+      scrollToPageImage(scrollContainerEl, image, index);
+    },
+    [scrollContainerEl],
+  );
+
+  const isPaneOpen = activePaneTab !== undefined;
+
+  const builtInToolbarRightSlot =
+    onPaneTabChange && !isPaneOpen ? (
+      <TooltipProvider delay={300}>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <button
+                type="button"
+                aria-label={t("rightPane.open")}
+                onClick={() => onPaneTabChange("outline")}
+                className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-sm text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <PanelRight className="size-3.5" aria-hidden="true" />
+              </button>
+            }
+          />
+          <TooltipContent side="left">{t("rightPane.open")}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ) : null;
+
+  const builtInFloatingOverlaySlot =
+    onPaneTabChange && !isPaneOpen ? (
+      <PageFloatingOutline
+        headings={headings}
+        onSelectHeading={handleSelectHeading}
+        onOpenOutlinePane={() => onPaneTabChange("outline")}
+      />
+    ) : null;
+
   return (
     <PageAssetUrlProvider pageId={pageId} cache={activeAssetUrlCache}>
-      <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
-        <PageStickyToolbar
-          editor={editor}
-          isEditable={!readOnly}
-          isFullWidth={isFullWidth}
-          isStickyToolbarEnabled={isStickyToolbarEnabled}
-          onInsertTable={onInsertTable ?? insertPageTable}
-          onInsertImage={onInsertImage ?? imageFeature.insertImage}
-          extraInsertSlot={extraInsertSlot}
-          rightSlot={toolbarRightSlot}
-        />
+      <div className="relative flex h-full w-full overflow-hidden bg-background">
+        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+          <PageStickyToolbar
+            editor={editor}
+            isEditable={!readOnly}
+            isFullWidth={isFullWidth}
+            isStickyToolbarEnabled={isStickyToolbarEnabled}
+            onInsertTable={onInsertTable ?? insertPageTable}
+            onInsertImage={onInsertImage ?? imageFeature.insertImage}
+            extraInsertSlot={extraInsertSlot}
+            rightSlot={toolbarRightSlot ?? builtInToolbarRightSlot}
+          />
 
-        <div
-          ref={setScrollContainerEl}
-          id="page-content-container"
-          data-page-canvas="true"
-          className="relative min-h-0 flex-1 overflow-y-auto"
-          onClick={handleCanvasClick}
-        >
           <div
+            ref={setScrollContainerEl}
+            id="page-content-container"
             data-page-canvas="true"
-            className={cn(
-              "nb-page-frame pt-10 pb-64",
-              isFullWidth && "wide-layout",
-            )}
+            className="relative min-h-0 flex-1 overflow-y-auto"
+            onClick={handleCanvasClick}
           >
-            <div className="nb-page-header-container group/page-header mb-4">
-              {headerTopSlot ?? (
-                <PageHeaderLogoPicker
-                  page={page}
-                  isTitleEmpty={title.trim() === ""}
-                  disabled={readOnly}
-                />
+            <div
+              data-page-canvas="true"
+              className={cn(
+                "nb-page-frame pt-10 pb-64",
+                isFullWidth && "wide-layout",
               )}
-              <textarea
-                ref={titleInputRef}
-                rows={1}
-                value={title}
-                readOnly={readOnly}
-                aria-readonly={readOnly}
-                onChange={handleTitleChange}
-                onKeyDown={handleTitleKeyDown}
-                onBlur={flushTitle}
-                placeholder={t("untitled")}
-                aria-label={t("editor.titleAriaLabel")}
-                className={cn(
-                  "block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50",
-                  readOnly && "cursor-default",
+            >
+              <div className="nb-page-header-container group/page-header mb-4">
+                {headerTopSlot ?? (
+                  <PageHeaderLogoPicker
+                    page={page}
+                    isTitleEmpty={title.trim() === ""}
+                    disabled={readOnly}
+                  />
                 )}
-              />
+                <textarea
+                  ref={titleInputRef}
+                  rows={1}
+                  value={title}
+                  readOnly={readOnly}
+                  aria-readonly={readOnly}
+                  onChange={handleTitleChange}
+                  onKeyDown={handleTitleKeyDown}
+                  onBlur={flushTitle}
+                  placeholder={t("untitled")}
+                  aria-label={t("editor.titleAriaLabel")}
+                  className={cn(
+                    "block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50",
+                    readOnly && "cursor-default",
+                  )}
+                />
+              </div>
+
+              <div ref={editorWrapperRef} className="nb-page-editor relative">
+                {editor && !readOnly && (
+                  <>
+                    <PageBubbleMenu
+                      editor={editor}
+                      scrollTarget={scrollContainerEl}
+                    />
+                    <PageTableToolbar
+                      editor={editor}
+                      scrollTarget={scrollContainerEl}
+                    />
+                    <PageBlockDragHandle editor={editor} />
+                  </>
+                )}
+                {editor && (
+                  <PageLinkPopover
+                    editor={editor}
+                    containerRef={editorWrapperRef}
+                  />
+                )}
+                <PageEditorEditableContext.Provider value={!readOnly}>
+                  <EditorContent
+                    editor={editor}
+                    aria-label={t("editor.bodyAriaLabel")}
+                  />
+                </PageEditorEditableContext.Provider>
+              </div>
             </div>
 
-            <div ref={editorWrapperRef} className="nb-page-editor relative">
-              {editor && !readOnly && (
-                <>
-                  <PageBubbleMenu
-                    editor={editor}
-                    scrollTarget={scrollContainerEl}
-                  />
-                  <PageTableToolbar
-                    editor={editor}
-                    scrollTarget={scrollContainerEl}
-                  />
-                  <PageBlockDragHandle editor={editor} />
-                </>
-              )}
-              {editor && (
-                <PageLinkPopover
-                  editor={editor}
-                  containerRef={editorWrapperRef}
-                />
-              )}
-              <PageEditorEditableContext.Provider value={!readOnly}>
-                <EditorContent
-                  editor={editor}
-                  aria-label={t("editor.bodyAriaLabel")}
-                />
-              </PageEditorEditableContext.Provider>
-            </div>
+            {floatingOverlaySlot ?? builtInFloatingOverlaySlot}
           </div>
-
-          {floatingOverlaySlot}
         </div>
+
+        {onPaneTabChange && (
+          <PageNavigationPane
+            page={page}
+            activeTab={activePaneTab}
+            headings={headings}
+            stats={stats}
+            images={images}
+            onTabChange={onPaneTabChange}
+            onSelectHeading={handleSelectHeading}
+            onSelectImage={handleSelectImage}
+          />
+        )}
       </div>
 
       <PageImageLightbox

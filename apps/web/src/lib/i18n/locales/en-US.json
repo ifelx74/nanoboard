@@ -684,6 +684,40 @@
       "colorAriaLabel": "Callout background color",
       "resetColor": "Reset background color"
     },
+    "outline": {
+      "openPane": "Open outline panel",
+      "previewAriaLabel": "Page outline",
+      "emptyTitle": "No headings yet",
+      "emptyDescription": "Add H1–H3 headings to navigate this page from the outline."
+    },
+    "rightPane": {
+      "ariaLabel": "Page navigation panel",
+      "open": "Open page panel",
+      "close": "Close page panel",
+      "tabsAriaLabel": "Page panel sections",
+      "tabs": {
+        "outline": "Outline",
+        "info": "Info",
+        "assets": "Assets"
+      },
+      "info": {
+        "words": "Words",
+        "characters": "Characters",
+        "paragraphs": "Paragraphs",
+        "readTime": "Read time",
+        "readTimeSeconds": "{{count}}s",
+        "readTimeMinutes": "{{count}}m",
+        "updated": "Updated",
+        "created": "Created"
+      },
+      "assets": {
+        "emptyTitle": "No assets yet",
+        "emptyDescription": "Images added to this page will appear here.",
+        "untitledImage": "Untitled image",
+        "jumpToImage": "Scroll to {{name}}",
+        "download": "Download"
+      }
+    },
     "export": {
       "title": "Export page",
       "description": "Download this page as a Markdown (.md) file.",
