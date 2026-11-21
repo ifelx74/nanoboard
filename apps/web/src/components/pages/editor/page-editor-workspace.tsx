@@ -55,7 +55,13 @@ import {
   PAGE_CODE_TABLE_UNIQUE_ID_TYPES,
 } from "./page-code-table-config";
 import { PageEditorEditableContext } from "./page-editor-context";
+import {
+  createEmojiCalloutExtensions,
+  createEmojiCalloutSlashCommands,
+  EMOJI_CALLOUT_UNIQUE_ID_TYPES,
+} from "./page-emoji-callout-feature";
 import { PageFloatingOutline } from "./page-floating-outline";
+import { PageHeaderLogoPicker } from "./page-header-logo-picker";
 import { createPageImageFeature } from "./page-image-feature";
 import { PageImageLightbox } from "./page-image-lightbox";
 import { PageLinkPopover } from "./page-link-popover";
@@ -281,16 +287,19 @@ export default function PageEditorWorkspace({
         },
         extraExtensions: [
           ...createPageCodeTableExtensions(),
+          ...createEmojiCalloutExtensions(),
           imageFeature.extension,
           ...(extraExtensions ?? []),
         ],
         extraUniqueIdTypes: [
           ...PAGE_CODE_TABLE_UNIQUE_ID_TYPES,
+          ...EMOJI_CALLOUT_UNIQUE_ID_TYPES,
           imageFeature.uniqueIdType,
           ...(extraUniqueIdTypes ?? []),
         ],
         extraSlashCommands: [
           createPageTableSlashCommandEntry(),
+          ...createEmojiCalloutSlashCommands(),
           imageFeature.slashCommand,
           ...(extraSlashCommands ?? []),
         ],
@@ -564,8 +573,14 @@ export default function PageEditorWorkspace({
                 isFullWidth && "wide-layout",
               )}
             >
-              <div className="nb-page-header-container mb-4">
-                {headerTopSlot}
+              <div className="nb-page-header-container group/page-header mb-4">
+                {headerTopSlot ?? (
+                  <PageHeaderLogoPicker
+                    page={page}
+                    isTitleEmpty={title.trim() === ""}
+                    disabled={readOnly}
+                  />
+                )}
                 <textarea
                   ref={titleInputRef}
                   rows={1}

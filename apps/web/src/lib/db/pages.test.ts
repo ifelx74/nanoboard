@@ -17,6 +17,7 @@ import {
   savePageContent,
   setPageFavorite,
   setPageLocked,
+  updatePageLogo,
   updatePageTitle,
 } from "./pages";
 import {
@@ -777,6 +778,88 @@ describe("Pages lifecycle operations on fake-indexeddb", () => {
         ["p2", "Sprint checklist"],
       ]),
     );
+
+    await db.close();
+  });
+
+  it("updatePageLogo validates and persists emoji, colored Lucide icon, and null removal without touching content", async () => {
+    const db = createTestDb();
+    await seedTestDb(db);
+    const now = vi.spyOn(Date, "now");
+    now.mockReturnValue(TEST_NOW);
+
+    const pageId = await createPage(db, "project-1", {
+      title: "Design Doc",
+      contentJson: {
+        type: "doc",
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "Body" }] },
+        ],
+      },
+    });
+
+    // Set emoji logo.
+    now.mockReturnValue(TEST_NOW + 1_000);
+    await updatePageLogo(db, pageId, { type: "emoji", value: "🧭" });
+    let loaded = await getPageWithContent(db, pageId);
+    expect(loaded?.page.logo).toEqual({ type: "emoji", value: "🧭" });
+    expect(loaded?.page.updatedAt).toBe(TEST_NOW + 1_000);
+    expect(loaded?.content.contentText).toBe("Body");
+
+    // Replace with colored Lucide project icon.
+    now.mockReturnValue(TEST_NOW + 2_000);
+    await updatePageLogo(db, pageId, {
+      type: "icon",
+      name: "Rocket",
+      color: "#5e6ad2",
+    });
+    loaded = await getPageWithContent(db, pageId);
+    expect(loaded?.page.logo).toEqual({
+      type: "icon",
+      name: "Rocket",
+      color: "#5e6ad2",
+    });
+    expect(loaded?.page.updatedAt).toBe(TEST_NOW + 2_000);
+
+    // Invalid logos reject before touching IndexedDB.
+    now.mockReturnValue(TEST_NOW + 2_500);
+    await expect(
+      updatePageLogo(db, pageId, { type: "emoji", value: "not-an-emoji" }),
+    ).rejects.toThrow("Invalid page logo.");
+    await expect(
+      updatePageLogo(db, pageId, {
+        type: "icon",
+        name: "NonExistentIcon",
+        color: "#5e6ad2",
+      }),
+    ).rejects.toThrow("Invalid page logo.");
+    await expect(
+      updatePageLogo(db, pageId, {
+        type: "icon",
+        name: "Rocket",
+        color: "javascript:alert(1)",
+      }),
+    ).rejects.toThrow("Invalid page logo.");
+
+    loaded = await getPageWithContent(db, pageId);
+    expect(loaded?.page.logo).toEqual({
+      type: "icon",
+      name: "Rocket",
+      color: "#5e6ad2",
+    });
+    expect(loaded?.page.updatedAt).toBe(TEST_NOW + 2_000);
+
+    // Remove logo with null.
+    now.mockReturnValue(TEST_NOW + 3_000);
+    await updatePageLogo(db, pageId, null);
+    loaded = await getPageWithContent(db, pageId);
+    expect(loaded?.page.logo).toBeNull();
+    expect(loaded?.page.updatedAt).toBe(TEST_NOW + 3_000);
+
+    // Rejects missing page.
+    await expect(
+      updatePageLogo(db, "missing-page", { type: "emoji", value: "💡" }),
+    ).rejects.toThrow("Page not found.");
 
     await db.close();
   });

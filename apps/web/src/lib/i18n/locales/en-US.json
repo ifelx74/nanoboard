@@ -644,6 +644,42 @@
         "downloadFailed": "Failed to download image."
       }
     },
+    "logoPicker": {
+      "addIcon": "Icon",
+      "changeLogo": "Change page icon",
+      "remove": "Remove",
+      "emojiTab": "Emoji",
+      "iconsTab": "Icons",
+      "searchEmojis": "Search emojis…",
+      "searchIcons": "Search icons…",
+      "emptyEmojis": "No emojis found",
+      "emptyIcons": "No icons found",
+      "customColorToggle": "Custom hex color",
+      "customColorLabel": "Hex color",
+      "saveError": "Failed to update page icon",
+      "categories": {
+        "smileys": "Smileys & Emotion",
+        "people": "People & Body",
+        "nature": "Animals & Nature",
+        "food": "Food & Drink",
+        "travel": "Travel & Places",
+        "activities": "Activities",
+        "objects": "Objects",
+        "symbols": "Symbols",
+        "flags": "Flags"
+      },
+      "inlineSuggestionAriaLabel": "Emoji suggestions",
+      "slashEmojiTitle": "Emoji",
+      "slashEmojiDescription": "Insert an inline emoji."
+    },
+    "callout": {
+      "slashTitle": "Callout",
+      "slashDescription": "Highlight important information.",
+      "changeIcon": "Change callout icon",
+      "colorButton": "Color",
+      "colorAriaLabel": "Callout background color",
+      "resetColor": "Reset background color"
+    },
     "outline": {
       "openPane": "Open outline panel",
       "previewAriaLabel": "Page outline",

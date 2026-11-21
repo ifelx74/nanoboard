@@ -24,7 +24,7 @@ export function PageLogoIcon({
         aria-hidden="true"
         className={cn(
           "inline-flex shrink-0 items-center justify-center leading-none",
-          emojiClassName ?? "text-sm",
+          emojiClassName ?? "size-4 text-sm",
         )}
       >
         {logo.value}
