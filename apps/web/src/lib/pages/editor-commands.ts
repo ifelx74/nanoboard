@@ -1,5 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import type { Selection } from "@tiptap/pm/state";
+import { resolveSmartCodeAction } from "@/lib/pages/code-blocks";
 import { normalizeLinkHref } from "@/lib/pages/links";
 
 export type PageTextAlignment = "left" | "center" | "right";
@@ -24,26 +25,33 @@ export function isCellSelection(selection: Selection): boolean {
  * - Single-line selection → toggles inline code mark.
  */
 export function toggleSmartCode(editor: Editor): void {
-  if (editor.isActive("codeBlock")) {
-    editor.chain().focus().toggleCodeBlock().run();
-    return;
-  }
-
   const { selection, doc } = editor.state;
-  if (selection.empty) {
+  const selectedText = selection.empty
+    ? ""
+    : doc.textBetween(selection.from, selection.to, "\n", "\n");
+  const action = resolveSmartCodeAction({
+    inCodeBlock: editor.isActive("codeBlock"),
+    selectionEmpty: selection.empty,
+    selectedText,
+    sameParent: selection.$from.sameParent(selection.$to),
+  });
+
+  if (action === "exit-code-block" || action === "toggle-code-block") {
     editor.chain().focus().toggleCodeBlock().run();
     return;
   }
 
-  const text = doc.textBetween(selection.from, selection.to, "\n");
-  if (text.includes("\n")) {
+  if (action === "wrap-code-block") {
     editor
       .chain()
       .focus()
       .deleteRange({ from: selection.from, to: selection.to })
       .insertContentAt(selection.from, {
         type: "codeBlock",
-        content: [{ type: "text", text }],
+        content:
+          selectedText.length > 0
+            ? [{ type: "text", text: selectedText }]
+            : undefined,
       })
       .run();
     return;

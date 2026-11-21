@@ -21,6 +21,7 @@ import type { Page, PageContent } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { createPagesEditorExtensions } from "@/lib/pages/editor-extensions";
 import type { PageImageLightboxTarget } from "@/lib/pages/extensions/image-node";
+import { insertPageTable } from "@/lib/pages/extensions/table-extension";
 import {
   createPageAssetUrlCache,
   type PageAssetUrlCache,
@@ -33,11 +34,19 @@ import {
 } from "./page-asset-url-context";
 import { PageBlockDragHandle } from "./page-block-drag-handle";
 import { PageBubbleMenu } from "./page-bubble-menu";
+import {
+  createPageCodeTableExtensions,
+  createPageTableSlashCommandEntry,
+  PAGE_CODE_TABLE_STARTER_KIT_OVERRIDES,
+  PAGE_CODE_TABLE_UNIQUE_ID_TYPES,
+} from "./page-code-table-config";
+import { PageEditorEditableContext } from "./page-editor-context";
 import { createPageImageFeature } from "./page-image-feature";
 import { PageImageLightbox } from "./page-image-lightbox";
 import { PageLinkPopover } from "./page-link-popover";
 import type { PageSlashCommandAdditionalEntry } from "./page-slash-commands";
 import { PageStickyToolbar } from "./page-sticky-toolbar";
+import { PageTableToolbar } from "./page-table-toolbar";
 import "./pages-editor.css";
 
 const TITLE_AUTOSAVE_DELAY_MS = 500;
@@ -223,13 +232,22 @@ export default function PageEditorWorkspace({
       extensions: createPagesEditorExtensions({
         editable: !readOnly,
         onFocusTitleEnd: focusTitleEnd,
-        starterKitOverrides,
-        extraExtensions: [imageFeature.extension, ...(extraExtensions ?? [])],
+        starterKitOverrides: {
+          ...PAGE_CODE_TABLE_STARTER_KIT_OVERRIDES,
+          ...starterKitOverrides,
+        },
+        extraExtensions: [
+          ...createPageCodeTableExtensions(),
+          imageFeature.extension,
+          ...(extraExtensions ?? []),
+        ],
         extraUniqueIdTypes: [
+          ...PAGE_CODE_TABLE_UNIQUE_ID_TYPES,
           imageFeature.uniqueIdType,
           ...(extraUniqueIdTypes ?? []),
         ],
         extraSlashCommands: [
+          createPageTableSlashCommandEntry(),
           imageFeature.slashCommand,
           ...(extraSlashCommands ?? []),
         ],
@@ -415,7 +433,7 @@ export default function PageEditorWorkspace({
           isEditable={!readOnly}
           isFullWidth={isFullWidth}
           isStickyToolbarEnabled={isStickyToolbarEnabled}
-          onInsertTable={onInsertTable}
+          onInsertTable={onInsertTable ?? insertPageTable}
           onInsertImage={onInsertImage ?? imageFeature.insertImage}
           extraInsertSlot={extraInsertSlot}
           rightSlot={toolbarRightSlot}
@@ -462,6 +480,10 @@ export default function PageEditorWorkspace({
                     editor={editor}
                     scrollTarget={scrollContainerEl}
                   />
+                  <PageTableToolbar
+                    editor={editor}
+                    scrollTarget={scrollContainerEl}
+                  />
                   <PageBlockDragHandle editor={editor} />
                 </>
               )}
@@ -471,10 +493,12 @@ export default function PageEditorWorkspace({
                   containerRef={editorWrapperRef}
                 />
               )}
-              <EditorContent
-                editor={editor}
-                aria-label={t("editor.bodyAriaLabel")}
-              />
+              <PageEditorEditableContext.Provider value={!readOnly}>
+                <EditorContent
+                  editor={editor}
+                  aria-label={t("editor.bodyAriaLabel")}
+                />
+              </PageEditorEditableContext.Provider>
             </div>
           </div>
 

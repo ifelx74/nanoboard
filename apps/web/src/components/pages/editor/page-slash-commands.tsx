@@ -32,6 +32,7 @@ import {
 } from "react";
 import { i18n } from "@/lib/i18n";
 import { PAGE_COLORS } from "@/lib/pages/colors";
+import { toggleSmartCode } from "@/lib/pages/editor-commands";
 import {
   filterSlashCommandSections,
   getNextSlashCommandIndex,
@@ -226,7 +227,8 @@ function buildBaseSlashSections(): PageSlashCommandSection[] {
           searchTerms: ["code", "codeblock", "snippet", "pre"],
           icon: <Code className={iconClass} aria-hidden="true" />,
           command: ({ editor, range }) => {
-            editor.chain().focus().deleteRange(range).toggleCodeBlock().run();
+            editor.chain().focus().deleteRange(range).run();
+            toggleSmartCode(editor);
           },
         },
         {

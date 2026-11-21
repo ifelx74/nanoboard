@@ -1,0 +1,122 @@
+@layer components {
+  /* Plane GitHub Dark theme for Pages Lowlight code blocks — imported strictly
+     inside the lazy Pages editor chunk so zero bytes enter initial CSS. */
+
+  .nb-page-editor .tiptap .nb-code-block {
+    margin: 0.5rem 0;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block pre {
+    margin: 0;
+    border-radius: var(--radius-lg);
+    border: 1px solid #30363d;
+    background-color: #0d1117;
+    color: #c9d1d9;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.5rem;
+    tab-size: 2;
+    overflow-x: auto;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block pre code,
+  .nb-page-editor .tiptap .nb-code-block pre code.hljs {
+    display: block;
+    background: transparent;
+    padding: 0;
+    border: 0;
+    color: #c9d1d9;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: pre;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-doctag,
+  .nb-page-editor .tiptap .nb-code-block .hljs-keyword,
+  .nb-page-editor .tiptap .nb-code-block .hljs-meta .hljs-keyword,
+  .nb-page-editor .tiptap .nb-code-block .hljs-template-tag,
+  .nb-page-editor .tiptap .nb-code-block .hljs-template-variable,
+  .nb-page-editor .tiptap .nb-code-block .hljs-type,
+  .nb-page-editor .tiptap .nb-code-block .hljs-variable.language_ {
+    color: #ff7b72;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-title,
+  .nb-page-editor .tiptap .nb-code-block .hljs-title.class_,
+  .nb-page-editor .tiptap .nb-code-block .hljs-title.class_.inherited__,
+  .nb-page-editor .tiptap .nb-code-block .hljs-title.function_ {
+    color: #d2a8ff;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-attr,
+  .nb-page-editor .tiptap .nb-code-block .hljs-attribute,
+  .nb-page-editor .tiptap .nb-code-block .hljs-literal,
+  .nb-page-editor .tiptap .nb-code-block .hljs-meta,
+  .nb-page-editor .tiptap .nb-code-block .hljs-number,
+  .nb-page-editor .tiptap .nb-code-block .hljs-operator,
+  .nb-page-editor .tiptap .nb-code-block .hljs-selector-attr,
+  .nb-page-editor .tiptap .nb-code-block .hljs-selector-class,
+  .nb-page-editor .tiptap .nb-code-block .hljs-selector-id,
+  .nb-page-editor .tiptap .nb-code-block .hljs-variable {
+    color: #79c0ff;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-meta .hljs-string,
+  .nb-page-editor .tiptap .nb-code-block .hljs-regexp,
+  .nb-page-editor .tiptap .nb-code-block .hljs-string {
+    color: #a5d6ff;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-built_in,
+  .nb-page-editor .tiptap .nb-code-block .hljs-symbol {
+    color: #ffa657;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-code,
+  .nb-page-editor .tiptap .nb-code-block .hljs-comment,
+  .nb-page-editor .tiptap .nb-code-block .hljs-formula {
+    color: #8b949e;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-name,
+  .nb-page-editor .tiptap .nb-code-block .hljs-quote,
+  .nb-page-editor .tiptap .nb-code-block .hljs-selector-pseudo,
+  .nb-page-editor .tiptap .nb-code-block .hljs-selector-tag {
+    color: #7ee787;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-subst {
+    color: #c9d1d9;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-section {
+    color: #1f6feb;
+    font-weight: 700;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-bullet {
+    color: #f2cc60;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-emphasis {
+    color: #c9d1d9;
+    font-style: italic;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-strong {
+    color: #c9d1d9;
+    font-weight: 700;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-addition {
+    color: #aff5b4;
+    background-color: #033a16;
+  }
+
+  .nb-page-editor .tiptap .nb-code-block .hljs-deletion {
+    color: #ffdcd7;
+    background-color: #67060c;
+  }
+}

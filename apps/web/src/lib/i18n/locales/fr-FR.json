@@ -585,6 +585,32 @@
         "saveContent": "Échec de l'enregistrement du contenu"
       }
     },
+    "codeBlock": {
+      "auto": "Auto",
+      "plainText": "Texte brut",
+      "selectLanguage": "Choisir le langage du code",
+      "searchLanguage": "Rechercher un langage…",
+      "noLanguages": "Aucun langage correspondant",
+      "copy": "Copier le code",
+      "copied": "Copié !",
+      "copyError": "Échec de la copie du code"
+    },
+    "table": {
+      "toolbarAriaLabel": "Contrôles du tableau",
+      "slashTitle": "Tableau",
+      "slashDesc": "Insérer un tableau 3×3.",
+      "rowGroup": "Ligne",
+      "columnGroup": "Col.",
+      "addRowBefore": "Ajouter une ligne au-dessus",
+      "addRowAfter": "Ajouter une ligne en dessous",
+      "deleteRow": "Supprimer la ligne",
+      "addColumnBefore": "Ajouter une colonne avant",
+      "addColumnAfter": "Ajouter une colonne après",
+      "deleteColumn": "Supprimer la colonne",
+      "headerRow": "En-tête",
+      "toggleHeaderRow": "Activer ou désactiver la ligne d'en-tête",
+      "deleteTable": "Supprimer le tableau"
+    },
     "image": {
       "slashTitle": "Image",
       "slashDesc": "Importer ou intégrer une image.",
