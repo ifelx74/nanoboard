@@ -643,6 +643,40 @@
         "invalidUrl": "Saisissez une URL d'image http ou https valide.",
         "downloadFailed": "Échec du téléchargement de l'image."
       }
+    },
+    "outline": {
+      "openPane": "Ouvrir le panneau du plan",
+      "previewAriaLabel": "Plan de la page",
+      "emptyTitle": "Aucun titre pour le moment",
+      "emptyDescription": "Ajoutez des titres H1 à H3 pour parcourir cette page depuis le plan."
+    },
+    "rightPane": {
+      "ariaLabel": "Panneau de navigation de la page",
+      "open": "Ouvrir le panneau de la page",
+      "close": "Fermer le panneau de la page",
+      "tabsAriaLabel": "Sections du panneau de la page",
+      "tabs": {
+        "outline": "Plan",
+        "info": "Infos",
+        "assets": "Ressources"
+      },
+      "info": {
+        "words": "Mots",
+        "characters": "Caractères",
+        "paragraphs": "Paragraphes",
+        "readTime": "Temps de lecture",
+        "readTimeSeconds": "{{count}} s",
+        "readTimeMinutes": "{{count}} min",
+        "updated": "Modifiée",
+        "created": "Créée"
+      },
+      "assets": {
+        "emptyTitle": "Aucune ressource pour le moment",
+        "emptyDescription": "Les images ajoutées à cette page apparaîtront ici.",
+        "untitledImage": "Image sans titre",
+        "jumpToImage": "Aller à {{name}}",
+        "download": "Télécharger"
+      }
     }
   },
   "task": {

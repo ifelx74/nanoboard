@@ -559,8 +559,13 @@ export function PageStickyToolbar({
         </div>
       </div>
 
-      {shouldHideToolbar && rightSlot && (
-        <div className="absolute top-0 right-0 z-10 flex h-[52px] items-center px-4">
+      {rightSlot && (
+        <div
+          className={cn(
+            "absolute top-0 right-0 z-10 flex h-[52px] items-center px-4",
+            !shouldHideToolbar && "md:hidden",
+          )}
+        >
           {rightSlot}
         </div>
       )}

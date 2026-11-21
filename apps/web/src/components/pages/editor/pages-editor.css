@@ -152,6 +152,12 @@
 
   .nb-page-editor .tiptap h1,
   .nb-page-editor .tiptap h2,
+  .nb-page-editor .tiptap h3 {
+    scroll-margin-top: 2rem;
+  }
+
+  .nb-page-editor .tiptap h1,
+  .nb-page-editor .tiptap h2,
   .nb-page-editor .tiptap h3,
   .nb-page-editor .tiptap h4,
   .nb-page-editor .tiptap h5,

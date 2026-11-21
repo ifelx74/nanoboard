@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { FileQuestion, MoveHorizontal, PanelTop } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
@@ -38,6 +38,8 @@ const PageEditorWorkspace = lazy(
   () => import("@/components/pages/editor/page-editor-workspace"),
 );
 
+type PagePaneTab = "outline" | "info" | "assets";
+
 export const Route = createFileRoute("/_app/project/$projectId/pages/$pageId")({
   component: RouteComponent,
   // Read `db.pages` directly in the loader so TanStack Router's route-tree
@@ -53,10 +55,24 @@ export const Route = createFileRoute("/_app/project/$projectId/pages/$pageId")({
     return { project, page: scopedPage };
   },
   head: projectPageDetailRouteHead(),
+  // Keep validateSearch inline so the route tree never pulls lazy Pages editor
+  // modules into the initial app-shell bundle.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { paneTab?: PagePaneTab } => ({
+    paneTab:
+      search.paneTab === "outline" ||
+      search.paneTab === "info" ||
+      search.paneTab === "assets"
+        ? search.paneTab
+        : undefined,
+  }),
 });
 
 function RouteComponent() {
   const { projectId, pageId } = Route.useParams();
+  const { paneTab } = Route.useSearch();
+  const navigate = useNavigate();
   const { t } = useTranslation("pages");
   const {
     isFullWidth,
@@ -179,6 +195,16 @@ function RouteComponent() {
     />
   );
 
+  function handlePaneTabChange(nextTab: PagePaneTab | undefined) {
+    if (nextTab === paneTab) return;
+    void navigate({
+      to: "/project/$projectId/pages/$pageId",
+      params: { projectId, pageId },
+      search: nextTab ? { paneTab: nextTab } : {},
+      replace: true,
+    });
+  }
+
   return (
     <ProjectLayout
       projectId={projectId}
@@ -196,6 +222,8 @@ function RouteComponent() {
           initialContent={pageResult.content}
           isFullWidth={isFullWidth}
           isStickyToolbarEnabled={isStickyToolbarEnabled}
+          activePaneTab={paneTab}
+          onPaneTabChange={handlePaneTabChange}
           onTitleChange={(nextTitle) =>
             setLiveTitle({ pageId, title: nextTitle })
           }
