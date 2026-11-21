@@ -54,7 +54,7 @@ export function PageHeaderLogoPicker({
   return (
     <div className="mb-1 flex flex-col">
       {!hasLogo && !disabled && (
-        <div className="flex h-[48px] items-end text-left">
+        <div className="flex h-12 items-end text-left">
           <div
             className={cn(
               "transition-opacity duration-200",
@@ -90,13 +90,13 @@ export function PageHeaderLogoPicker({
         className={cn(
           "overflow-hidden transition-all duration-300 ease-out",
           hasLogo
-            ? "mt-1 mb-1 max-h-[56px] opacity-100"
+            ? "mt-1 mb-1 max-h-14 opacity-100 px-2"
             : "pointer-events-none max-h-0 opacity-0",
         )}
       >
         {hasLogo &&
           (disabled ? (
-            <div className="-ml-2 grid size-[56px] place-items-center rounded-sm">
+            <div className="-ml-2 grid size-14 place-items-center rounded-sm">
               <PageLogoIcon
                 logo={page.logo}
                 className="size-12"
@@ -115,7 +115,7 @@ export function PageHeaderLogoPicker({
                   type="button"
                   aria-label={t("logoPicker.changeLogo")}
                   className={cn(
-                    "-ml-2 grid size-[56px] cursor-pointer place-items-center rounded-sm transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+                    "-ml-2 grid size-14 cursor-pointer place-items-center rounded-sm transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
                     pickerOpen && "bg-accent",
                   )}
                 >
