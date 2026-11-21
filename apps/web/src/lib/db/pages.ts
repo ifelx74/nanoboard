@@ -9,6 +9,7 @@ import {
   extractContentText,
   rewriteAssetIds,
 } from "../pages/document";
+import { normalizePageLogo } from "../pages/logo";
 
 export interface CreatePageInput {
   title?: string;
@@ -34,12 +35,13 @@ export async function createPage(
   const now = Date.now();
   const contentJson = input?.contentJson ?? createEmptyPageContent();
   const contentText = extractContentText(contentJson);
+  const logo = normalizePageLogo(input?.logo ?? null);
 
   const page: Page = {
     id,
     projectId,
     title: input?.title ?? "",
-    logo: input?.logo ?? null,
+    logo,
     isFavorite: false,
     isLocked: false,
     createdAt: now,
@@ -147,6 +149,26 @@ export async function updatePageTitle(
 ): Promise<void> {
   const updated = await database.pages.update(pageId, {
     title,
+    updatedAt: Date.now(),
+  });
+  if (updated === 0) {
+    throw new Error("Page not found.");
+  }
+}
+
+/**
+ * Validates and persists a page's emoji logo, colored Lucide icon, or `null`
+ * removal, bumping `updatedAt` without touching `pageContents`. Throws on
+ * malformed logo payloads or missing page IDs.
+ */
+export async function updatePageLogo(
+  database: NanoboardDB,
+  pageId: string,
+  logo: PageLogo | null,
+): Promise<void> {
+  const normalizedLogo = normalizePageLogo(logo);
+  const updated = await database.pages.update(pageId, {
+    logo: normalizedLogo,
     updatedAt: Date.now(),
   });
   if (updated === 0) {

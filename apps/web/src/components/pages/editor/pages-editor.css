@@ -476,6 +476,20 @@
     display: none;
   }
 
+  /* ── Callout nested block alignment & inline emoji spacing ────────────── */
+
+  .nb-page-editor .tiptap .nb-callout-content > :first-child {
+    padding-top: 2px;
+  }
+
+  .nb-page-editor .tiptap .nb-callout-content > :last-child {
+    padding-bottom: 0;
+  }
+
+  .nb-page-editor .tiptap span[data-type="emoji"] {
+    display: inline;
+  }
+
   /* ── Left-gutter Drag Handle & Selected Block Highlight Overlay ───────── */
 
   .nb-page-editor .nb-drag-handle {

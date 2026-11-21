@@ -610,6 +610,42 @@
       "headerRow": "En-tête",
       "toggleHeaderRow": "Activer ou désactiver la ligne d'en-tête",
       "deleteTable": "Supprimer le tableau"
+    },
+    "logoPicker": {
+      "addIcon": "Icône",
+      "changeLogo": "Modifier l'icône de la page",
+      "remove": "Retirer",
+      "emojiTab": "Émojis",
+      "iconsTab": "Icônes",
+      "searchEmojis": "Rechercher un émoji…",
+      "searchIcons": "Rechercher une icône…",
+      "emptyEmojis": "Aucun émoji trouvé",
+      "emptyIcons": "Aucune icône trouvée",
+      "customColorToggle": "Couleur hexadécimale personnalisée",
+      "customColorLabel": "Couleur hexadécimale",
+      "saveError": "Échec de la mise à jour de l'icône de la page",
+      "categories": {
+        "smileys": "Émoticônes et émotions",
+        "people": "Personnes et corps",
+        "nature": "Animaux et nature",
+        "food": "Nourriture et boissons",
+        "travel": "Voyages et lieux",
+        "activities": "Activités",
+        "objects": "Objets",
+        "symbols": "Symboles",
+        "flags": "Drapeaux"
+      },
+      "inlineSuggestionAriaLabel": "Suggestions d'émojis",
+      "slashEmojiTitle": "Émoji",
+      "slashEmojiDescription": "Insérer un émoji en ligne."
+    },
+    "callout": {
+      "slashTitle": "Encadré",
+      "slashDescription": "Mettre en avant une information importante.",
+      "changeIcon": "Modifier l'icône de l'encadré",
+      "colorButton": "Couleur",
+      "colorAriaLabel": "Couleur de fond de l'encadré",
+      "resetColor": "Réinitialiser la couleur de fond"
     }
   },
   "task": {

@@ -82,7 +82,7 @@ export function PageSwitcher({
             <PageLogoIcon
               logo={currentPage.logo}
               className="size-3.5 shrink-0"
-              emojiClassName="text-xs"
+              emojiClassName="size-3.5 text-xs"
             />
             <span className="truncate">{activeTitle}</span>
             <ChevronsUpDown className="size-3 shrink-0 text-foreground/70" />
@@ -131,7 +131,7 @@ export function PageSwitcher({
                     <PageLogoIcon
                       logo={page.logo}
                       className="size-3.5 shrink-0"
-                      emojiClassName="text-xs"
+                      emojiClassName="size-3.5 text-xs"
                     />
                     <span className="min-w-0 flex-1 truncate">{label}</span>
                     {isCurrent && (
