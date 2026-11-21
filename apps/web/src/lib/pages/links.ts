@@ -42,7 +42,7 @@ function preprocessRawHref(raw: string): string {
   return withoutTabsAndNewlines.slice(start, end);
 }
 
-function isValidHttpHostname(hostname: string): boolean {
+export function isValidHttpHostname(hostname: string): boolean {
   if (!hostname) return false;
   if (hostname === "localhost") return true;
   if (hostname.startsWith(".") || hostname.endsWith(".")) return false;

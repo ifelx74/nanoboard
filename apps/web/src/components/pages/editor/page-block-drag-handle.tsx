@@ -4,9 +4,16 @@ import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { NodeSelection } from "@tiptap/pm/state";
 import type { Editor } from "@tiptap/react";
 import { Copy, GripVertical, Trash2 } from "lucide-react";
-import { useCallback, useRef, useState, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Popover, PopoverContent } from "@/components/ui/popover";
+import { usePageEditorEditable } from "./page-editor-context";
 
 const DRAG_HANDLE_POSITION_CONFIG = {
   placement: "left-start" as const,
@@ -46,6 +53,7 @@ export interface PageBlockDragHandleProps {
  */
 export function PageBlockDragHandle({ editor }: PageBlockDragHandleProps) {
   const { t } = useTranslation("pages");
+  const isEditable = usePageEditorEditable(editor);
   const handleButtonRef = useRef<HTMLButtonElement | null>(null);
   const hoveredRef = useRef<HoveredBlockTarget | null>(null);
 
@@ -66,11 +74,18 @@ export function PageBlockDragHandle({ editor }: PageBlockDragHandleProps) {
     setDragHandleLocked(false);
   }, [setDragHandleLocked]);
 
+  useEffect(() => {
+    if (!isEditable && menuOpen) {
+      closeMenu();
+    }
+  }, [isEditable, menuOpen, closeMenu]);
+
   const handleOpenBlockMenu = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
 
+      if (!isEditable) return;
       const target = hoveredRef.current;
       if (!target || editor.isDestroyed) return;
 
@@ -90,12 +105,12 @@ export function PageBlockDragHandle({ editor }: PageBlockDragHandleProps) {
       setMenuOpen(true);
       setDragHandleLocked(true);
     },
-    [editor, setDragHandleLocked],
+    [editor, isEditable, setDragHandleLocked],
   );
 
   const handleDeleteBlock = useCallback(() => {
     const target = menuTarget;
-    if (!target || editor.isDestroyed) {
+    if (!isEditable || !target || editor.isDestroyed) {
       closeMenu();
       return;
     }
@@ -115,11 +130,11 @@ export function PageBlockDragHandle({ editor }: PageBlockDragHandleProps) {
       editor.chain().focus().deleteSelection().run();
     }
     closeMenu();
-  }, [menuTarget, editor, closeMenu]);
+  }, [menuTarget, isEditable, editor, closeMenu]);
 
   const handleDuplicateBlock = useCallback(() => {
     const target = menuTarget;
-    if (!target || editor.isDestroyed) {
+    if (!isEditable || !target || editor.isDestroyed) {
       closeMenu();
       return;
     }
@@ -141,7 +156,11 @@ export function PageBlockDragHandle({ editor }: PageBlockDragHandleProps) {
       .focus(nextFocusPos, { scrollIntoView: false })
       .run();
     closeMenu();
-  }, [menuTarget, editor, closeMenu]);
+  }, [menuTarget, isEditable, editor, closeMenu]);
+
+  if (!isEditable) {
+    return null;
+  }
 
   const isDuplicateDisabled =
     menuTarget?.node.type.name === "image" ||

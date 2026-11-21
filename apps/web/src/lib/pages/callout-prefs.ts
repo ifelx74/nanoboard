@@ -7,6 +7,7 @@ import {
   isValidHexColor,
   isValidPageLogo,
 } from "./logo";
+import { getDefaultPageStorage, type PageStorageLike } from "./storage";
 
 export const DEFAULT_CALLOUT_EMOJI = "💡";
 
@@ -20,11 +21,7 @@ export const CALLOUT_PREF_KEYS = {
   backgroundColor: "nanoboard:pages:calloutBackgroundColor",
 } as const;
 
-export interface CalloutPrefsStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-}
+export type CalloutPrefsStorage = PageStorageLike;
 
 export interface CalloutPrefs {
   logo: PageLogo;
@@ -42,16 +39,6 @@ export interface CalloutNodeAttrs {
   iconName: string | null;
   iconColor: string | null;
   backgroundColor: PageColorKey | null;
-}
-
-function getDefaultStorage(): CalloutPrefsStorage | null {
-  try {
-    return typeof globalThis !== "undefined" && "localStorage" in globalThis
-      ? globalThis.localStorage
-      : null;
-  } catch {
-    return null;
-  }
 }
 
 function parseStoredCalloutLogo(raw: string | null): PageLogo {
@@ -72,7 +59,7 @@ function parseStoredCalloutLogo(raw: string | null): PageLogo {
  * `localStorage`, validating both strictly and falling back to 💡 + `null`.
  */
 export function readCalloutPrefs(
-  storage: CalloutPrefsStorage | null = getDefaultStorage(),
+  storage: CalloutPrefsStorage | null = getDefaultPageStorage(),
 ): CalloutPrefs {
   if (!storage) {
     return {
@@ -99,7 +86,7 @@ export function readCalloutPrefs(
 /** Persists the user's chosen Callout logo for subsequent Callout inserts. */
 export function writeCalloutLogoPref(
   logo: PageLogo,
-  storage: CalloutPrefsStorage | null = getDefaultStorage(),
+  storage: CalloutPrefsStorage | null = getDefaultPageStorage(),
 ): void {
   if (!storage || !isValidPageLogo(logo)) return;
   try {
@@ -115,7 +102,7 @@ export function writeCalloutLogoPref(
  */
 export function writeCalloutBackgroundColorPref(
   color: PageColorKey | null,
-  storage: CalloutPrefsStorage | null = getDefaultStorage(),
+  storage: CalloutPrefsStorage | null = getDefaultPageStorage(),
 ): void {
   if (!storage) return;
   try {
@@ -179,7 +166,7 @@ export function calloutAttrsToLogo(attrs: Partial<CalloutNodeAttrs>): PageLogo {
 
 /** Builds initial `CalloutNodeAttrs` for inserting a new Callout block. */
 export function buildInitialCalloutAttrs(
-  storage: CalloutPrefsStorage | null = getDefaultStorage(),
+  storage: CalloutPrefsStorage | null = getDefaultPageStorage(),
 ): CalloutNodeAttrs {
   const { logo, backgroundColor } = readCalloutPrefs(storage);
   return {

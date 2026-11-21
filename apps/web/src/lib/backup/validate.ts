@@ -1,9 +1,10 @@
-import { isValidBase64DataUrl } from "@/lib/data-url";
+import { isValidBase64DataUrlWithMime } from "@/lib/data-url";
 import { STICKY_COLORS, TASK_PRIORITIES } from "@/lib/db/schema";
+import { PAGE_IMAGE_ACCEPTED_MIME_TYPES } from "@/lib/pages/image-mime";
 import type { BackupDocument, BackupTableName, BackupTables } from "./types";
 import { BACKUP_MAX_RESTORABLE_VERSION } from "./types";
 
-type Check = (value: unknown) => boolean;
+type Check = (value: unknown, record?: Record<string, unknown>) => boolean;
 
 const isString: Check = (value) => typeof value === "string";
 const isNumber: Check = (value) =>
@@ -166,9 +167,15 @@ const TABLE_FIELD_SPECS: Record<BackupTableName, FieldSpec[]> = {
     spec("pageId", isString),
     spec("projectId", isString),
     spec("name", isString),
-    spec("mimeType", isString),
+    spec("mimeType", isStringArray(PAGE_IMAGE_ACCEPTED_MIME_TYPES)),
     spec("size", isNonNegativeNumber),
-    spec("dataUrl", isValidBase64DataUrl),
+    spec("dataUrl", (value, record) =>
+      isValidBase64DataUrlWithMime(
+        value,
+        PAGE_IMAGE_ACCEPTED_MIME_TYPES,
+        typeof record?.mimeType === "string" ? record.mimeType : undefined,
+      ),
+    ),
     spec("createdAt", isNumber),
   ],
 };
@@ -213,7 +220,7 @@ export function assertValidBackupTables(tables: BackupTables): void {
       for (const { field, check, optional } of fields) {
         const value = record[field];
         if (optional && value === undefined) continue;
-        if (!check(value)) {
+        if (!check(value, record)) {
           throw new Error(
             `This backup is corrupted — table "${tableName}", row ${index + 1} has an invalid "${field}" field.`,
           );

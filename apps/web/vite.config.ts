@@ -37,16 +37,18 @@ export default defineConfig(({ mode }) => {
         includeAssets: ["favicon.svg", "apple-touch-icon.png"],
         workbox: {
           globPatterns: ["**/*.{js,css,html,woff,woff2}"],
-          // Heavy lazily-loaded chunks (the whiteboard/Excalidraw subtree:
-          // 435kB–1.8MB per chunk, ~4MB total) are excluded from the
-          // install-time precache by size — every app-shell chunk is under
-          // 330kB, so a 400kB threshold cleanly separates the two without
-          // naming fragile hashed filenames. Users who never open a
-          // whiteboard never download them; the CacheFirst rule below caches
-          // them on first whiteboard visit, after which offline works. The
-          // one trade: a whiteboard opened offline *before* its first online
-          // visit can't load. Revisit the threshold if a future app-shell
-          // chunk grows past it (the build warning shows what got cut).
+          // Heavy lazily-loaded chunks — the whiteboard/Excalidraw subtree
+          // (435kB–1.8MB per chunk, ~4MB total) and the lazy Pages editor
+          // (`page-editor-workspace` + `emoji-data` chunks, >400kB each) — are
+          // excluded from the install-time precache by size. Every app-shell
+          // chunk is under 330kB, so a 400kB threshold cleanly separates them
+          // without naming fragile hashed filenames. Users who never open a
+          // whiteboard or Page editor never download them; the CacheFirst rule
+          // below caches them on first visit, after which offline works. The
+          // one trade: a whiteboard or Page editor opened offline *before* its
+          // first online visit can't load. Revisit the threshold if a future
+          // app-shell chunk grows past it (the build warning shows what got
+          // cut).
           //
           // Toggling this strategy later (either direction) is cheap for
           // existing users: the precache updates incrementally on a

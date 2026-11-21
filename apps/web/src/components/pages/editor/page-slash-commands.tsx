@@ -607,7 +607,9 @@ export function createPageSlashCommandExtension(
             > | null = null;
 
             const destroy = () => {
-              renderer?.destroy();
+              if (!renderer) return;
+              renderer.element.remove();
+              renderer.destroy();
               renderer = null;
             };
 
@@ -618,6 +620,7 @@ export function createPageSlashCommandExtension(
                   PageSlashCommandItem
                 >,
               ) => {
+                destroy();
                 renderer = new ReactRenderer(PageSlashCommandMenu, {
                   props: {
                     items: props.items,
@@ -628,6 +631,7 @@ export function createPageSlashCommandExtension(
                   },
                   editor: props.editor,
                 });
+                document.body.appendChild(renderer.element);
               },
               onUpdate: (
                 props: SuggestionProps<

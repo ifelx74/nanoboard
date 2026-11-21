@@ -277,7 +277,9 @@ export function createPageEmojiExtension() {
             forceOpenEmojiEditors.delete(activeEditor);
             activeEditor = null;
           }
-          renderer?.destroy();
+          if (!renderer) return;
+          renderer.element.remove();
+          renderer.destroy();
           renderer = null;
         };
 
@@ -285,8 +287,12 @@ export function createPageEmojiExtension() {
           onStart: (
             props: SuggestionProps<LocalEmojiItem, { name: string }>,
           ) => {
-            activeEditor = props.editor;
             const forceOpen = forceOpenEmojiEditors.has(props.editor);
+            destroy();
+            activeEditor = props.editor;
+            if (forceOpen) {
+              forceOpenEmojiEditors.add(props.editor);
+            }
             renderer = new ReactRenderer(PageEmojiSuggestionMenu, {
               props: {
                 items: props.items,
@@ -298,6 +304,7 @@ export function createPageEmojiExtension() {
               },
               editor: props.editor,
             });
+            document.body.appendChild(renderer.element);
           },
           onUpdate: (
             props: SuggestionProps<LocalEmojiItem, { name: string }>,

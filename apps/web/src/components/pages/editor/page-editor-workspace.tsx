@@ -1,10 +1,10 @@
-import type { AnyExtension, JSONContent } from "@tiptap/core";
+import type { JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import type { StarterKitOptions } from "@tiptap/starter-kit";
 import { PanelRight } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useImperativeHandle,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -12,7 +12,7 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
   type MouseEvent,
-  type ReactNode,
+  type Ref,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -26,6 +26,7 @@ import { pruneOrphanPageAssets } from "@/lib/db/page-assets";
 import { savePageContent, updatePageTitle } from "@/lib/db/pages";
 import type { Page, PageContent } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
+import { createDebouncedSaver } from "@/lib/pages/autosave-flush";
 import {
   computePageStats,
   extractHeadings,
@@ -36,16 +37,10 @@ import {
 import { createPagesEditorExtensions } from "@/lib/pages/editor-extensions";
 import type { PageImageLightboxTarget } from "@/lib/pages/extensions/image-node";
 import { insertPageTable } from "@/lib/pages/extensions/table-extension";
-import {
-  createPageAssetUrlCache,
-  type PageAssetUrlCache,
-} from "@/lib/pages/object-url-cache";
+import { createPageAssetUrlCache } from "@/lib/pages/object-url-cache";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import {
-  PageAssetUrlProvider,
-  useOptionalPageAssetUrlCache,
-} from "./page-asset-url-context";
+import { PageAssetUrlProvider } from "./page-asset-url-context";
 import { PageBlockDragHandle } from "./page-block-drag-handle";
 import { PageBubbleMenu } from "./page-bubble-menu";
 import {
@@ -70,7 +65,6 @@ import {
   type PageNavigationPaneTab,
 } from "./page-navigation-pane";
 import { scrollToPageHeading, scrollToPageImage } from "./page-outline-list";
-import type { PageSlashCommandAdditionalEntry } from "./page-slash-commands";
 import { PageStickyToolbar } from "./page-sticky-toolbar";
 import { PageTableToolbar } from "./page-table-toolbar";
 import "./pages-editor.css";
@@ -79,7 +73,13 @@ const TITLE_AUTOSAVE_DELAY_MS = 500;
 const CONTENT_AUTOSAVE_DELAY_MS = 600;
 const LIVE_DOC_SYNC_DELAY_MS = 100;
 
+export interface PageEditorWorkspaceHandle {
+  /** Flushes any pending debounced title/body saves and awaits DB commits. */
+  flushPendingSaves: () => Promise<void>;
+}
+
 export type PageEditorWorkspaceProps = {
+  ref?: Ref<PageEditorWorkspaceHandle>;
   page: Page;
   initialContent: PageContent;
   /** Called immediately as the user types in the title so header chrome stays in sync. */
@@ -88,32 +88,8 @@ export type PageEditorWorkspaceProps = {
   isFullWidth?: boolean;
   /** Whether the 52px desktop sticky formatting toolbar is shown when editable. */
   isStickyToolbarEnabled?: boolean;
-  /** Optional slot above the H1 title (reserved for Ticket 04's page header logo picker). */
-  headerTopSlot?: ReactNode;
-  /** Optional slot at the right end of the sticky toolbar / top-right corner (Ticket 07 right pane toggle). */
-  toolbarRightSlot?: ReactNode;
-  /** Optional floating overlay inside `#page-content-container` (Ticket 07 floating outline strip). */
-  floatingOverlaySlot?: ReactNode;
-  /** Optional Table insert callback wired into Sticky Toolbar (Ticket 05). */
-  onInsertTable?: (editor: Editor) => void;
-  /** Optional Image insert callback wired into Sticky Toolbar (Ticket 06). */
-  onInsertImage?: (editor: Editor) => void;
-  /** Optional extra insert buttons slot in Sticky Toolbar. */
-  extraInsertSlot?: ReactNode;
-  /** Optional StarterKit overrides for downstream extensions (e.g. `codeBlock: false` in Ticket 05). */
-  starterKitOverrides?: Partial<StarterKitOptions>;
-  /** Extra TipTap extensions contributed by downstream features (Callout, Emoji, Table, Image). */
-  extraExtensions?: readonly AnyExtension[];
-  /** Extra UniqueID node types contributed by downstream extensions. */
-  extraUniqueIdTypes?: readonly string[];
-  /** Extra slash command entries merged into General / Colors / Background colors sections. */
-  extraSlashCommands?: readonly PageSlashCommandAdditionalEntry[];
-  /** Built-in slash command keys to omit if replaced by a downstream extension. */
-  disabledSlashCommands?: readonly string[];
   /** Notifies parent consumers when the TipTap editor instance is ready or destroyed. */
   onEditorReady?: (editor: Editor | null) => void;
-  /** Optional shared per-page ObjectURL cache (e.g. reused by Ticket 07's Assets tab). */
-  assetUrlCache?: PageAssetUrlCache;
   /** Controlled active tab of the slide-in right navigation pane (`undefined` = closed). */
   activePaneTab?: PageNavigationPaneTab;
   /** Called when the user opens, switches, or closes the right navigation pane. */
@@ -126,24 +102,13 @@ export type PageEditorWorkspaceProps = {
  * debounced edits always flush under the originating page's id.
  */
 export default function PageEditorWorkspace({
+  ref,
   page,
   initialContent,
   onTitleChange,
   isFullWidth = false,
   isStickyToolbarEnabled = true,
-  headerTopSlot,
-  toolbarRightSlot,
-  floatingOverlaySlot,
-  onInsertTable,
-  onInsertImage,
-  extraInsertSlot,
-  starterKitOverrides,
-  extraExtensions,
-  extraUniqueIdTypes,
-  extraSlashCommands,
-  disabledSlashCommands,
   onEditorReady,
-  assetUrlCache,
   activePaneTab,
   onPaneTabChange,
 }: PageEditorWorkspaceProps) {
@@ -152,23 +117,13 @@ export default function PageEditorWorkspace({
   const readOnlyRef = useRef(readOnly);
   const pageId = page.id;
 
-  const inheritedAssetUrlCache = useOptionalPageAssetUrlCache();
-  const ownedAssetUrlCache = useMemo(
-    () =>
-      assetUrlCache || inheritedAssetUrlCache
-        ? null
-        : createPageAssetUrlCache(),
-    [assetUrlCache, inheritedAssetUrlCache, pageId],
-  );
-  const activeAssetUrlCache =
-    assetUrlCache ?? inheritedAssetUrlCache ?? ownedAssetUrlCache!;
+  const assetUrlCache = useMemo(() => createPageAssetUrlCache(), [pageId]);
 
   useEffect(() => {
-    if (!ownedAssetUrlCache) return;
     return () => {
-      ownedAssetUrlCache.revokeAll();
+      assetUrlCache.revokeAll();
     };
-  }, [ownedAssetUrlCache]);
+  }, [assetUrlCache]);
 
   const [lightboxTarget, setLightboxTarget] =
     useState<PageImageLightboxTarget | null>(null);
@@ -178,18 +133,16 @@ export default function PageEditorWorkspace({
       createPageImageFeature({
         pageId,
         projectId: page.projectId,
-        assetUrlCache: activeAssetUrlCache,
+        assetUrlCache,
         onOpenLightbox: setLightboxTarget,
       }),
-    [pageId, page.projectId, activeAssetUrlCache],
+    [pageId, page.projectId, assetUrlCache],
   );
 
   const [title, setTitle] = useState(page.title);
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
   const titleRef = useRef(page.title);
   const savedTitleRef = useRef(page.title);
-  const titleDirtyRef = useRef(false);
-  const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [scrollContainerEl, setScrollContainerEl] =
     useState<HTMLDivElement | null>(null);
@@ -200,9 +153,58 @@ export default function PageEditorWorkspace({
   const editorWrapperRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<Editor | null>(null);
   const isHydratedRef = useRef(false);
-  const contentDirtyRef = useRef(false);
-  const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastContentSaveRef = useRef<Promise<boolean>>(Promise.resolve(true));
+
+  const titleSaver = useMemo(
+    () =>
+      createDebouncedSaver({
+        delayMs: TITLE_AUTOSAVE_DELAY_MS,
+        save: async () => {
+          const nextTitle = titleRef.current;
+          if (nextTitle === savedTitleRef.current) return;
+          await updatePageTitle(db, pageId, nextTitle);
+          savedTitleRef.current = nextTitle;
+        },
+        onError: (error) => {
+          const fallbackError = i18n.t("pages:editor.errors.saveTitle");
+          toast.error(error instanceof Error ? error.message : fallbackError);
+        },
+      }),
+    [pageId],
+  );
+
+  const contentSaver = useMemo(
+    () =>
+      createDebouncedSaver({
+        delayMs: CONTENT_AUTOSAVE_DELAY_MS,
+        save: async () => {
+          const currentEditor = editorRef.current;
+          if (!currentEditor) return;
+          const json = currentEditor.getJSON();
+          await savePageContent(db, pageId, json);
+        },
+        onError: (error) => {
+          const fallbackError = i18n.t("pages:editor.errors.saveContent");
+          toast.error(error instanceof Error ? error.message : fallbackError);
+        },
+      }),
+    [pageId],
+  );
+
+  const flushTitle = useCallback(() => {
+    void titleSaver.flush();
+  }, [titleSaver]);
+
+  const flushPendingSaves = useCallback(async () => {
+    await Promise.all([titleSaver.flush(), contentSaver.flush()]);
+  }, [titleSaver, contentSaver]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      flushPendingSaves,
+    }),
+    [flushPendingSaves],
+  );
 
   const scheduleLiveDocSync = useCallback((currentEditor: Editor) => {
     if (liveDocTimerRef.current) {
@@ -224,86 +226,27 @@ export default function PageEditorWorkspace({
     input.setSelectionRange(len, len);
   }, []);
 
-  const flushTitle = useCallback(() => {
-    if (titleTimerRef.current) {
-      clearTimeout(titleTimerRef.current);
-      titleTimerRef.current = null;
-    }
-    if (!titleDirtyRef.current) return;
-    const nextTitle = titleRef.current;
-    titleDirtyRef.current = false;
-    if (nextTitle === savedTitleRef.current) return;
-
-    const previousSaved = savedTitleRef.current;
-    savedTitleRef.current = nextTitle;
-    void updatePageTitle(db, pageId, nextTitle).catch((error: unknown) => {
-      savedTitleRef.current = previousSaved;
-      titleDirtyRef.current = true;
-      const fallbackError = i18n.t("pages:editor.errors.saveTitle");
-      toast.error(error instanceof Error ? error.message : fallbackError);
-    });
-  }, [pageId]);
-
-  const flushContent = useCallback((): Promise<boolean> => {
-    if (contentTimerRef.current) {
-      clearTimeout(contentTimerRef.current);
-      contentTimerRef.current = null;
-    }
-    if (!contentDirtyRef.current) {
-      return lastContentSaveRef.current;
-    }
-    const currentEditor = editorRef.current;
-    if (!currentEditor) {
-      return lastContentSaveRef.current;
-    }
-    contentDirtyRef.current = false;
-
-    const json = currentEditor.getJSON();
-    const savePromise = savePageContent(db, pageId, json)
-      .then(() => true)
-      .catch((error: unknown) => {
-        contentDirtyRef.current = true;
-        const fallbackError = i18n.t("pages:editor.errors.saveContent");
-        toast.error(error instanceof Error ? error.message : fallbackError);
-        return false;
-      });
-    lastContentSaveRef.current = savePromise;
-    return savePromise;
-  }, [pageId]);
-
-  const flushAll = useCallback(() => {
-    flushTitle();
-    void flushContent();
-  }, [flushTitle, flushContent]);
-
   const editor = useEditor(
     {
       extensions: createPagesEditorExtensions({
         editable: !readOnly,
         onFocusTitleEnd: focusTitleEnd,
-        starterKitOverrides: {
-          ...PAGE_CODE_TABLE_STARTER_KIT_OVERRIDES,
-          ...starterKitOverrides,
-        },
+        starterKitOverrides: PAGE_CODE_TABLE_STARTER_KIT_OVERRIDES,
         extraExtensions: [
           ...createPageCodeTableExtensions(),
           ...createEmojiCalloutExtensions(),
           imageFeature.extension,
-          ...(extraExtensions ?? []),
         ],
         extraUniqueIdTypes: [
           ...PAGE_CODE_TABLE_UNIQUE_ID_TYPES,
           ...EMOJI_CALLOUT_UNIQUE_ID_TYPES,
           imageFeature.uniqueIdType,
-          ...(extraUniqueIdTypes ?? []),
         ],
         extraSlashCommands: [
           createPageTableSlashCommandEntry(),
           ...createEmojiCalloutSlashCommands(),
           imageFeature.slashCommand,
-          ...(extraSlashCommands ?? []),
         ],
-        disabledSlashCommands,
       }),
       content: initialContent.contentJson,
       editable: !readOnly,
@@ -313,14 +256,7 @@ export default function PageEditorWorkspace({
       onUpdate: ({ editor: updated }) => {
         scheduleLiveDocSync(updated);
         if (!isHydratedRef.current || readOnlyRef.current) return;
-        contentDirtyRef.current = true;
-        if (contentTimerRef.current) {
-          clearTimeout(contentTimerRef.current);
-        }
-        contentTimerRef.current = setTimeout(
-          flushContent,
-          CONTENT_AUTOSAVE_DELAY_MS,
-        );
+        contentSaver.schedule();
       },
     },
     [],
@@ -360,12 +296,12 @@ export default function PageEditorWorkspace({
     if (becameReadOnly) {
       // Flush edits typed immediately before locking or archiving so nothing
       // within the debounce window is lost.
-      flushAll();
+      void flushPendingSaves();
     }
     readOnlyRef.current = readOnly;
     if (!editor) return;
     editor.setEditable(!readOnly, false);
-  }, [editor, readOnly, flushAll]);
+  }, [editor, readOnly, flushPendingSaves]);
 
   // Auto-size the H1 title textarea to fit wrapped lines cleanly without scrollbars.
   const syncTitleHeight = useCallback(() => {
@@ -407,8 +343,8 @@ export default function PageEditorWorkspace({
   // then prune unreferenced pageAssets once the latest contentJson has committed.
   useEffect(() => {
     const flushAndPrune = () => {
-      flushTitle();
-      const saveResult = flushContent();
+      void titleSaver.flush();
+      const saveResult = contentSaver.flush();
       void saveResult
         .then((savedOk) => {
           if (!savedOk) return undefined;
@@ -423,7 +359,7 @@ export default function PageEditorWorkspace({
       window.removeEventListener("pagehide", flushAndPrune);
       flushAndPrune();
     };
-  }, [flushTitle, flushContent, pageId]);
+  }, [titleSaver, contentSaver, pageId]);
 
   function handleTitleChange(event: ChangeEvent<HTMLTextAreaElement>) {
     if (readOnly) return;
@@ -432,11 +368,7 @@ export default function PageEditorWorkspace({
     setTitle(nextTitle);
     titleRef.current = nextTitle;
     onTitleChange?.(nextTitle);
-    titleDirtyRef.current = true;
-    if (titleTimerRef.current) {
-      clearTimeout(titleTimerRef.current);
-    }
-    titleTimerRef.current = setTimeout(flushTitle, TITLE_AUTOSAVE_DELAY_MS);
+    titleSaver.schedule();
   }
 
   function focusBodyStart(insertParagraphIfNonEmpty: boolean) {
@@ -514,7 +446,7 @@ export default function PageEditorWorkspace({
 
   const isPaneOpen = activePaneTab !== undefined;
 
-  const builtInToolbarRightSlot =
+  const toolbarRightSlot =
     onPaneTabChange && !isPaneOpen ? (
       <TooltipProvider delay={300}>
         <Tooltip>
@@ -535,17 +467,8 @@ export default function PageEditorWorkspace({
       </TooltipProvider>
     ) : null;
 
-  const builtInFloatingOverlaySlot =
-    onPaneTabChange && !isPaneOpen ? (
-      <PageFloatingOutline
-        headings={headings}
-        onSelectHeading={handleSelectHeading}
-        onOpenOutlinePane={() => onPaneTabChange("outline")}
-      />
-    ) : null;
-
   return (
-    <PageAssetUrlProvider pageId={pageId} cache={activeAssetUrlCache}>
+    <PageAssetUrlProvider pageId={pageId} cache={assetUrlCache}>
       <div className="relative flex h-full w-full overflow-hidden bg-background">
         <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <PageStickyToolbar
@@ -553,82 +476,90 @@ export default function PageEditorWorkspace({
             isEditable={!readOnly}
             isFullWidth={isFullWidth}
             isStickyToolbarEnabled={isStickyToolbarEnabled}
-            onInsertTable={onInsertTable ?? insertPageTable}
-            onInsertImage={onInsertImage ?? imageFeature.insertImage}
-            extraInsertSlot={extraInsertSlot}
-            rightSlot={toolbarRightSlot ?? builtInToolbarRightSlot}
+            onInsertTable={insertPageTable}
+            onInsertImage={imageFeature.insertImage}
+            rightSlot={toolbarRightSlot}
           />
 
-          <div
-            ref={setScrollContainerEl}
-            id="page-content-container"
-            data-page-canvas="true"
-            className="relative min-h-0 flex-1 overflow-y-auto"
-            onClick={handleCanvasClick}
-          >
+          <div className="nb-page-canvas-shell relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <div
+              ref={setScrollContainerEl}
+              id="page-content-container"
               data-page-canvas="true"
-              className={cn(
-                "nb-page-frame pt-10 pb-64",
-                isFullWidth && "wide-layout",
-              )}
+              className="relative min-h-0 flex-1 overflow-y-auto"
+              onClick={handleCanvasClick}
             >
-              <div className="nb-page-header-container group/page-header mb-4">
-                {headerTopSlot ?? (
+              <div
+                data-page-canvas="true"
+                className={cn(
+                  "nb-page-frame pt-10 pb-64",
+                  isFullWidth && "wide-layout",
+                )}
+              >
+                <div className="nb-page-header-container group/page-header mb-4">
                   <PageHeaderLogoPicker
                     page={page}
                     isTitleEmpty={title.trim() === ""}
                     disabled={readOnly}
                   />
-                )}
-                <textarea
-                  ref={titleInputRef}
-                  rows={1}
-                  value={title}
-                  readOnly={readOnly}
-                  aria-readonly={readOnly}
-                  onChange={handleTitleChange}
-                  onKeyDown={handleTitleKeyDown}
-                  onBlur={flushTitle}
-                  placeholder={t("untitled")}
-                  aria-label={t("editor.titleAriaLabel")}
-                  className={cn(
-                    "block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50",
-                    readOnly && "cursor-default",
-                  )}
-                />
-              </div>
+                  <textarea
+                    ref={titleInputRef}
+                    rows={1}
+                    value={title}
+                    readOnly={readOnly}
+                    aria-readonly={readOnly}
+                    onChange={handleTitleChange}
+                    onKeyDown={handleTitleKeyDown}
+                    onBlur={flushTitle}
+                    placeholder={t("untitled")}
+                    aria-label={t("editor.titleAriaLabel")}
+                    className={cn(
+                      "block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50",
+                      readOnly && "cursor-default",
+                    )}
+                  />
+                </div>
 
-              <div ref={editorWrapperRef} className="nb-page-editor relative">
-                {editor && !readOnly && (
-                  <>
-                    <PageBubbleMenu
-                      editor={editor}
-                      scrollTarget={scrollContainerEl}
-                    />
-                    <PageTableToolbar
-                      editor={editor}
-                      scrollTarget={scrollContainerEl}
-                    />
-                    <PageBlockDragHandle editor={editor} />
-                  </>
-                )}
-                {editor && (
-                  <PageLinkPopover
-                    editor={editor}
-                    containerRef={editorWrapperRef}
-                  />
-                )}
                 <PageEditorEditableContext.Provider value={!readOnly}>
-                  <EditorContent
-                    editor={editor}
-                    aria-label={t("editor.bodyAriaLabel")}
-                  />
+                  <div
+                    ref={editorWrapperRef}
+                    className="nb-page-editor relative"
+                  >
+                    {editor && !readOnly && (
+                      <>
+                        <PageBubbleMenu
+                          editor={editor}
+                          scrollTarget={scrollContainerEl}
+                        />
+                        <PageTableToolbar
+                          editor={editor}
+                          scrollTarget={scrollContainerEl}
+                        />
+                        <PageBlockDragHandle editor={editor} />
+                      </>
+                    )}
+                    {editor && (
+                      <PageLinkPopover
+                        editor={editor}
+                        containerRef={editorWrapperRef}
+                      />
+                    )}
+                    <EditorContent
+                      editor={editor}
+                      aria-label={t("editor.bodyAriaLabel")}
+                    />
+                  </div>
                 </PageEditorEditableContext.Provider>
               </div>
             </div>
 
-            {floatingOverlaySlot ?? builtInFloatingOverlaySlot}
+            {onPaneTabChange && !isPaneOpen && (
+              <PageFloatingOutline
+                headings={headings}
+                onSelectHeading={handleSelectHeading}
+                onOpenOutlinePane={() => onPaneTabChange("outline")}
+              />
+            )}
           </div>
         </div>
 

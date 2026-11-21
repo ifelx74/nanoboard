@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isDangerousLinkHref,
   isSafeLinkHref,
+  isValidHttpHostname,
   normalizeLinkHref,
   truncateLinkDisplay,
 } from "./links";
@@ -72,6 +73,16 @@ describe("pages link validation and normalization", () => {
     expect(normalizeLinkHref("https://")).toBeNull();
     expect(normalizeLinkHref("mailto:")).toBeNull();
     expect(normalizeLinkHref("customproto://foo")).toBeNull();
+  });
+
+  it("validates HTTP hostnames consistently for links and external images", () => {
+    expect(isValidHttpHostname("localhost")).toBe(true);
+    expect(isValidHttpHostname("example.com")).toBe(true);
+    expect(isValidHttpHostname("cdn.example.co.uk")).toBe(true);
+    expect(isValidHttpHostname("")).toBe(false);
+    expect(isValidHttpHostname("intranet")).toBe(false);
+    expect(isValidHttpHostname(".example.com")).toBe(false);
+    expect(isValidHttpHostname("example.com.")).toBe(false);
   });
 
   it("truncates long URLs for the hover preview card", () => {

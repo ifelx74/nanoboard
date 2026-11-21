@@ -1,5 +1,5 @@
 import { isNodeSelection } from "@tiptap/core";
-import { useEditorState, type Editor } from "@tiptap/react";
+import type { Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import {
   AlignCenter,
@@ -9,21 +9,10 @@ import {
   Check,
   ChevronDown,
   Code,
-  Heading1,
-  Heading2,
-  Heading3,
-  Heading4,
-  Heading5,
-  Heading6,
   Italic,
   Link2,
-  List,
-  ListOrdered,
-  ListTodo,
-  Quote,
   Strikethrough,
   Trash2,
-  Type,
   Underline,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -39,10 +28,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { isPageColorKey, type PageColorKey } from "@/lib/pages/colors";
+import type { PageColorKey } from "@/lib/pages/colors";
 import {
   isCellSelection,
-  toggleSmartCode,
   type PageTextAlignment,
 } from "@/lib/pages/editor-commands";
 import type { PageLinkStorage } from "@/lib/pages/extensions/link-extension";
@@ -52,6 +40,11 @@ import {
   PageColorPickerPanel,
   PageColorTriggerPreview,
 } from "./page-color-picker-panel";
+import { usePageEditorEditable } from "./page-editor-context";
+import {
+  usePageBlockTypeItems,
+  usePageFormattingState,
+} from "./page-formatting-state";
 
 export interface PageBubbleMenuProps {
   editor: Editor;
@@ -104,6 +97,7 @@ function BubbleIconButton({
  */
 export function PageBubbleMenu({ editor, scrollTarget }: PageBubbleMenuProps) {
   const { t } = useTranslation("pages");
+  const isEditable = usePageEditorEditable(editor);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const isSelectingRef = useRef(false);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -112,48 +106,14 @@ export function PageBubbleMenu({ editor, scrollTarget }: PageBubbleMenuProps) {
   const [linkUrlInput, setLinkUrlInput] = useState("");
   const [linkError, setLinkError] = useState(false);
 
-  const editorState = useEditorState({
-    editor,
-    selector: ({ editor: e }) => {
-      const colorAttrs = e.getAttributes("pageColor") as {
-        color?: unknown;
-        backgroundColor?: unknown;
-      };
-      const linkAttrs = e.getAttributes("link") as { href?: string };
+  const editorState = usePageFormattingState(editor);
 
-      let headingLevel: 1 | 2 | 3 | 4 | 5 | 6 | null = null;
-      for (const level of [1, 2, 3, 4, 5, 6] as const) {
-        if (e.isActive("heading", { level })) {
-          headingLevel = level;
-          break;
-        }
-      }
-
-      return {
-        headingLevel,
-        bulletList: e.isActive("bulletList"),
-        orderedList: e.isActive("orderedList"),
-        taskList: e.isActive("taskList"),
-        blockquote: e.isActive("blockquote"),
-        code: e.isActive("code"),
-        bold: e.isActive("bold"),
-        italic: e.isActive("italic"),
-        underline: e.isActive("underline"),
-        strike: e.isActive("strike"),
-        linkActive: e.isActive("link"),
-        linkHref: linkAttrs.href ?? "",
-        alignLeft: e.isActive({ textAlign: "left" }),
-        alignCenter: e.isActive({ textAlign: "center" }),
-        alignRight: e.isActive({ textAlign: "right" }),
-        textColor: isPageColorKey(colorAttrs.color)
-          ? colorAttrs.color
-          : undefined,
-        backgroundColor: isPageColorKey(colorAttrs.backgroundColor)
-          ? colorAttrs.backgroundColor
-          : undefined,
-      };
-    },
-  });
+  useEffect(() => {
+    if (!isEditable) {
+      setLinkPopoverOpen(false);
+      setLinkError(false);
+    }
+  }, [isEditable]);
 
   // Hide the bubble menu while the user is actively dragging a text selection
   // with the mouse, then immediately reposition/reveal on mouseup.
@@ -230,98 +190,7 @@ export function PageBubbleMenu({ editor, scrollTarget }: PageBubbleMenuProps) {
     setLinkError(false);
   }, [editor, linkUrlInput]);
 
-  const nodeItems = [
-    {
-      key: "text",
-      label: t("editor.blocks.text"),
-      icon: Type,
-      active:
-        editorState.headingLevel === null &&
-        !editorState.bulletList &&
-        !editorState.orderedList &&
-        !editorState.taskList &&
-        !editorState.blockquote &&
-        !editorState.code,
-      run: () => editor.chain().focus().setParagraph().run(),
-    },
-    {
-      key: "h1",
-      label: t("editor.blocks.h1"),
-      icon: Heading1,
-      active: editorState.headingLevel === 1,
-      run: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-    },
-    {
-      key: "h2",
-      label: t("editor.blocks.h2"),
-      icon: Heading2,
-      active: editorState.headingLevel === 2,
-      run: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-    },
-    {
-      key: "h3",
-      label: t("editor.blocks.h3"),
-      icon: Heading3,
-      active: editorState.headingLevel === 3,
-      run: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-    },
-    {
-      key: "h4",
-      label: t("editor.blocks.h4"),
-      icon: Heading4,
-      active: editorState.headingLevel === 4,
-      run: () => editor.chain().focus().toggleHeading({ level: 4 }).run(),
-    },
-    {
-      key: "h5",
-      label: t("editor.blocks.h5"),
-      icon: Heading5,
-      active: editorState.headingLevel === 5,
-      run: () => editor.chain().focus().toggleHeading({ level: 5 }).run(),
-    },
-    {
-      key: "h6",
-      label: t("editor.blocks.h6"),
-      icon: Heading6,
-      active: editorState.headingLevel === 6,
-      run: () => editor.chain().focus().toggleHeading({ level: 6 }).run(),
-    },
-    {
-      key: "bulletList",
-      label: t("editor.blocks.bulletList"),
-      icon: List,
-      active: editorState.bulletList,
-      run: () => editor.chain().focus().toggleBulletList().run(),
-    },
-    {
-      key: "orderedList",
-      label: t("editor.blocks.orderedList"),
-      icon: ListOrdered,
-      active: editorState.orderedList,
-      run: () => editor.chain().focus().toggleOrderedList().run(),
-    },
-    {
-      key: "taskList",
-      label: t("editor.blocks.taskList"),
-      icon: ListTodo,
-      active: editorState.taskList,
-      run: () => editor.chain().focus().toggleTaskList().run(),
-    },
-    {
-      key: "quote",
-      label: t("editor.blocks.quote"),
-      icon: Quote,
-      active: editorState.blockquote,
-      run: () => editor.chain().focus().toggleBlockquote().run(),
-    },
-    {
-      key: "code",
-      label: t("editor.blocks.code"),
-      icon: Code,
-      active: editorState.code,
-      run: () => toggleSmartCode(editor),
-    },
-  ];
+  const nodeItems = usePageBlockTypeItems(editor, editorState);
 
   const activeNodeItem = nodeItems.filter((item) => item.active).pop() ?? {
     key: "multiple",
@@ -342,6 +211,7 @@ export function PageBubbleMenu({ editor, scrollTarget }: PageBubbleMenuProps) {
       shouldShow={({ editor: e, state }) => {
         const { selection } = state;
         if (
+          !isEditable ||
           selection.empty ||
           !e.isEditable ||
           isSelectingRef.current ||
@@ -373,7 +243,7 @@ export function PageBubbleMenu({ editor, scrollTarget }: PageBubbleMenuProps) {
         },
       }}
     >
-      {!isSelecting && (
+      {isEditable && !isSelecting && (
         <div
           ref={menuRef}
           role="toolbar"

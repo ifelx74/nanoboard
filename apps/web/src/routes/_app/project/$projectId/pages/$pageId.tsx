@@ -11,6 +11,7 @@ import {
 import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ProjectLayout } from "@/components/common/project-layout";
+import type { PageEditorWorkspaceHandle } from "@/components/pages/editor/page-editor-workspace";
 import { PageDetailHeaderActions } from "@/components/pages/page-detail-header-actions";
 import { PageEditorSkeleton } from "@/components/pages/page-editor-skeleton";
 import { PageSwitcher } from "@/components/pages/page-switcher";
@@ -31,6 +32,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { usePageDisplayPrefs } from "@/hooks/use-page-display-prefs";
 import { db } from "@/lib/db/db";
+import { getPageMeta } from "@/lib/db/page-loader";
 import {
   getPageWithContent,
   isPageArchived,
@@ -53,13 +55,13 @@ type PagePaneTab = "outline" | "info" | "assets";
 
 export const Route = createFileRoute("/_app/project/$projectId/pages/$pageId")({
   component: RouteComponent,
-  // Read `db.pages` directly in the loader so TanStack Router's route-tree
-  // entry never pulls `@/lib/db/pages` (and future lifecycle/duplication code)
-  // into the initial app-shell bundle.
+  // Read via the dedicated tiny `page-loader` module (ADR 0001) so TanStack
+  // Router's route-tree entry never pulls `@/lib/db/pages` into the initial
+  // app-shell bundle.
   loader: async ({ params }) => {
     const [project, page] = await Promise.all([
       getProject(params.projectId).catch(() => undefined),
-      db.pages.get(params.pageId).catch(() => undefined),
+      getPageMeta(params.pageId).catch(() => undefined),
     ]);
     const scopedPage =
       page && page.projectId === params.projectId ? page : undefined;
@@ -99,6 +101,11 @@ function RouteComponent() {
     null,
   );
   const editorRef = useRef<{ pageId: string; editor: Editor } | null>(null);
+  const workspaceRef = useRef<PageEditorWorkspaceHandle | null>(null);
+
+  const flushPendingSaves = useCallback(async () => {
+    await workspaceRef.current?.flushPendingSaves();
+  }, []);
 
   const handleEditorReady = useCallback(
     (editor: Editor | null) => {
@@ -242,6 +249,7 @@ function RouteComponent() {
       projectId={projectId}
       page={pageResult.page}
       displayTitle={displayTitle}
+      onFlushPendingSaves={flushPendingSaves}
       optionsTopSlot={optionsTopSlot}
       optionsBeforeCopySlot={optionsBeforeCopySlot}
       optionsBottomSlot={optionsBottomSlot}
@@ -271,6 +279,7 @@ function RouteComponent() {
             page's id before the next page hydrates. */}
         <PageEditorWorkspace
           key={pageId}
+          ref={workspaceRef}
           page={pageResult.page}
           initialContent={pageResult.content}
           isFullWidth={isFullWidth}

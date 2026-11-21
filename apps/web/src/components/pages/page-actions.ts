@@ -45,8 +45,10 @@ export async function copyPageLink(
 
 export async function duplicatePageWithToast(
   page: Page,
+  options?: { title?: string },
 ): Promise<string | undefined> {
-  const sourceTitle = page.title.trim() || i18n.t("pages:untitled");
+  const sourceTitle =
+    (options?.title ?? page.title).trim() || i18n.t("pages:untitled");
   const copyTitle = i18n.t("pages:actions.copyTitle", { title: sourceTitle });
   try {
     const nextId = await duplicatePage(db, page.id, { title: copyTitle });

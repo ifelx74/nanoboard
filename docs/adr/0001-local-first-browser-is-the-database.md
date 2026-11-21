@@ -4,9 +4,9 @@
 
 ## Context
 
-nanoboard is a personal productivity app: kanban board, whiteboard, calendar,
-and sticky notes. The requirements are privacy (data never leaves the
-device), offline operation, zero-friction first run, and no accounts or
+nanoboard is a personal productivity app: kanban board, pages, whiteboard,
+calendar, and sticky notes. The requirements are privacy (data never leaves
+the device), offline operation, zero-friction first run, and no accounts or
 sync infrastructure to build or maintain.
 
 ## Decision
@@ -14,8 +14,9 @@ sync infrastructure to build or maintain.
 There is no server. All persistence lives in the browser's IndexedDB via
 Dexie, accessed exclusively through the data layer in
 `apps/web/src/lib/db/`. No network calls, no server state, no accounts.
-The PWA precaches the app shell so it works fully offline (with the one
-documented exception for the whiteboard subtree — see 0005).
+The PWA precaches the app shell so it works fully offline (with the
+documented >400 kB lazy-chunk exception for the whiteboard subtree and the
+lazy Pages editor / `emoji-data` chunks — see 0005).
 
 ## Consequences
 

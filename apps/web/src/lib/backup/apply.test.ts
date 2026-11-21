@@ -375,6 +375,56 @@ describe("applyBackupDocument", () => {
     await target.close();
   });
 
+  it.each([
+    [
+      "image/svg+xml payload with matching mimeType",
+      "image/svg+xml",
+      "data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+PC9zdmc+",
+    ],
+    [
+      "text/html payload with matching mimeType",
+      "text/html",
+      "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==",
+    ],
+    [
+      "image/svg+xml dataUrl disguised under image/png mimeType",
+      "image/png",
+      "data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+PC9zdmc+",
+    ],
+    [
+      "text/html dataUrl disguised under image/png mimeType",
+      "image/png",
+      "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==",
+    ],
+  ])(
+    "rejects unsafe %s in pageAssets before any database write",
+    async (_label, mimeType, dataUrl) => {
+      const source = createTestDb();
+      await seedTestDb(source);
+      const document = await createBackupDocument(source);
+      document.tables.pageAssets[0] = {
+        ...document.tables.pageAssets[0]!,
+        mimeType,
+        dataUrl,
+      };
+
+      const target = createTestDb();
+      const original = buildOtherContents();
+      await seedTestDb(target, original);
+
+      await expect(applyBackupDocument(target, document)).rejects.toThrow(
+        /corrupted[\s\S]*"pageAssets", row 1/,
+      );
+
+      expect(await readAllTables(target)).toEqual(
+        await normalizeContents(original),
+      );
+
+      await source.close();
+      await target.close();
+    },
+  );
+
   it("restores over a populated app, removing rows the backup doesn't contain", async () => {
     const source = createTestDb();
     const contents = buildTestContents();

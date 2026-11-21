@@ -46,8 +46,10 @@ const COPY_FEEDBACK_MS = 1_000;
 export type PageDetailHeaderActionsProps = {
   projectId: string;
   page: Page;
-  /** Live title override while editing so delete confirmation reflects unsaved edits. */
+  /** Live title override while editing so delete/duplicate reflect unsaved edits. */
   displayTitle?: string;
+  /** Flushes pending debounced title/body saves before duplicating, locking, or archiving. */
+  onFlushPendingSaves?: () => Promise<void>;
   /**
    * Optional slot rendered at the top of the `...` Options dropdown (separated
    * from action items by a divider) — reserved for layout switches such as
@@ -76,6 +78,7 @@ export function PageDetailHeaderActions({
   projectId,
   page,
   displayTitle,
+  onFlushPendingSaves,
   optionsTopSlot,
   optionsBeforeCopySlot,
   optionsBottomSlot,
@@ -114,6 +117,9 @@ export function PageDetailHeaderActions({
 
   async function handleToggleLock() {
     const wasLocked = page.isLocked;
+    if (!wasLocked) {
+      await onFlushPendingSaves?.();
+    }
     const ok = await togglePageLockedWithToast(page, { silent: true });
     if (!ok) return;
 
@@ -145,7 +151,10 @@ export function PageDetailHeaderActions({
   }
 
   async function handleDuplicate() {
-    const newPageId = await duplicatePageWithToast(page);
+    await onFlushPendingSaves?.();
+    const newPageId = await duplicatePageWithToast(page, {
+      title: displayTitle,
+    });
     if (!newPageId) return;
     void navigate({
       to: "/project/$projectId/pages/$pageId",
@@ -157,6 +166,7 @@ export function PageDetailHeaderActions({
     if (archived) {
       await restorePageWithToast(page.id);
     } else {
+      await onFlushPendingSaves?.();
       await archivePageWithToast(page.id);
     }
   }

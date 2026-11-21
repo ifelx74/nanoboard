@@ -109,8 +109,13 @@
     }
   }
 
-  @container page-content-container (max-width: 930px) {
-    #page-content-container .page-summary-container {
+  .nb-page-canvas-shell {
+    container-name: page-canvas-shell;
+    container-type: inline-size;
+  }
+
+  @container page-canvas-shell (max-width: 930px) {
+    .nb-page-canvas-shell .page-summary-container {
       display: none;
     }
   }
@@ -254,16 +259,11 @@
     font-family: var(--font-mono);
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--color-orange-600);
-  }
-
-  .dark .nb-page-editor .tiptap :not(pre) > code,
-  .dark .nb-page-editor .tiptap .nb-inline-code {
-    color: var(--color-orange-400);
+    color: var(--editor-inline-code);
   }
 
   .nb-page-editor .tiptap a {
-    color: var(--color-brand-800);
+    color: var(--editor-link);
     text-decoration: underline;
     text-underline-offset: 3px;
     cursor: pointer;
@@ -271,15 +271,7 @@
   }
 
   .nb-page-editor .tiptap a:hover {
-    color: var(--color-brand-900);
-  }
-
-  .dark .nb-page-editor .tiptap a {
-    color: var(--color-brand-600);
-  }
-
-  .dark .nb-page-editor .tiptap a:hover {
-    color: var(--color-brand-400);
+    color: var(--editor-link-hover);
   }
 
   /* ── Semantic 8-color text & theme-adaptive background highlights ─────── */
@@ -431,7 +423,7 @@
     height: 0.55rem;
     transform: scale(0);
     transition: transform 120ms ease-in-out;
-    background-color: #ffffff;
+    background-color: var(--editor-checkbox-checkmark);
     clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
   }
 

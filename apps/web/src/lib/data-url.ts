@@ -34,6 +34,26 @@ export function isValidBase64DataUrl(value: unknown): value is string {
 }
 
 /**
+ * Returns true if `value` is a valid `data:<mime>;base64,<data>` URL whose
+ * exact `<mime>` token (with no parameters) is present in `allowedMimeTypes`
+ * and matches `expectedMimeType` when supplied.
+ */
+export function isValidBase64DataUrlWithMime(
+  value: unknown,
+  allowedMimeTypes: readonly string[],
+  expectedMimeType?: string,
+): value is string {
+  if (typeof value !== "string") return false;
+  const parsed = parseBase64DataUrl(value);
+  if (!parsed) return false;
+  if (!allowedMimeTypes.includes(parsed.mimeType)) return false;
+  if (expectedMimeType !== undefined && parsed.mimeType !== expectedMimeType) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Converts a binary `Blob` to a `data:<mime>;base64,...` URL using Web-standard
  * `Blob.arrayBuffer()` + `btoa()` so it works identically in browsers and plain
  * Node test environments.

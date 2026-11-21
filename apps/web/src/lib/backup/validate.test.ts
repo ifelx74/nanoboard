@@ -221,6 +221,54 @@ describe("assertValidBackupTables", () => {
         createdAt: Number.POSITIVE_INFINITY,
       },
     ],
+    [
+      "pageAssets",
+      {
+        ...buildValidBackupTables().pageAssets[0],
+        mimeType: "image/svg+xml",
+        dataUrl: "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=",
+      },
+    ],
+    [
+      "pageAssets",
+      {
+        ...buildValidBackupTables().pageAssets[0],
+        mimeType: "text/html",
+        dataUrl: "data:text/html;base64,PHNjcmlwdD48L3NjcmlwdD4=",
+      },
+    ],
+    [
+      "pageAssets",
+      {
+        ...buildValidBackupTables().pageAssets[0],
+        mimeType: "image/png",
+        dataUrl: "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=",
+      },
+    ],
+    [
+      "pageAssets",
+      {
+        ...buildValidBackupTables().pageAssets[0],
+        mimeType: "image/png",
+        dataUrl: "data:text/html;base64,PHNjcmlwdD48L3NjcmlwdD4=",
+      },
+    ],
+    [
+      "pageAssets",
+      {
+        ...buildValidBackupTables().pageAssets[0],
+        mimeType: "image/png",
+        dataUrl: "data:image/jpeg;base64,AQID",
+      },
+    ],
+    [
+      "pageAssets",
+      {
+        ...buildValidBackupTables().pageAssets[0],
+        mimeType: "image/png",
+        dataUrl: "data:image/png;charset=utf-8;base64,AQID",
+      },
+    ],
   ])("rejects a structurally broken %s row", (tableName, row) => {
     const tables = buildValidBackupTables();
     (tables as unknown as Record<string, unknown[]>)[tableName] = [row];

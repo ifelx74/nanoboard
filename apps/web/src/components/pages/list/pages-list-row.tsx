@@ -11,7 +11,9 @@ import {
   MoreHorizontal,
   Star,
   Trash2,
+  type LucideIcon,
 } from "lucide-react";
+import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { PageLogoIcon } from "@/components/pages/page-logo";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,58 @@ type PagesListRowProps = {
   onRequestDelete: (page: Page) => void;
 };
 
+type RowMenuAction = {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+};
+
+type MenuItemComponent = ComponentType<{
+  onClick?: () => void;
+  variant?: "default" | "destructive";
+  children?: ReactNode;
+}>;
+
+function PageRowMenuItems({
+  actions,
+  archived,
+  deleteLabel,
+  onDelete,
+  Item,
+  Separator,
+}: {
+  actions: readonly RowMenuAction[];
+  archived: boolean;
+  deleteLabel: string;
+  onDelete: () => void;
+  Item: MenuItemComponent;
+  Separator: ComponentType;
+}) {
+  return (
+    <>
+      {actions.map((action) => {
+        const Icon = action.icon;
+        return (
+          <Item key={action.key} onClick={action.onClick}>
+            <Icon aria-hidden="true" />
+            {action.label}
+          </Item>
+        );
+      })}
+      {archived && (
+        <>
+          <Separator />
+          <Item variant="destructive" onClick={onDelete}>
+            <Trash2 aria-hidden="true" />
+            {deleteLabel}
+          </Item>
+        </>
+      )}
+    </>
+  );
+}
+
 /**
  * Single row in the Pages list matching Plane's layout and ergonomics:
  * logo/icon, title ("Untitled" fallback), lock badge, created-date info
@@ -70,29 +124,50 @@ export function PagesListRow({
   const displayTitle = page.title.trim() || t("untitled");
   const createdDate = formatMediumDate(new Date(page.createdAt));
 
-  function handleOpenInNewTab() {
-    openPageInNewTab(projectId, page.id);
-  }
-
-  function handleCopyLink() {
-    void copyPageLink(projectId, page.id);
-  }
-
-  function handleDuplicate() {
-    void duplicatePageWithToast(page);
-  }
-
-  function handleToggleLock() {
-    void togglePageLockedWithToast(page);
-  }
-
-  function handleArchiveToggle() {
-    if (archived) {
-      void restorePageWithToast(page.id);
-    } else {
-      void archivePageWithToast(page.id);
-    }
-  }
+  const rowActions: RowMenuAction[] = [
+    {
+      key: "openInNewTab",
+      label: t("actions.openInNewTab"),
+      icon: ExternalLink,
+      onClick: () => openPageInNewTab(projectId, page.id),
+    },
+    {
+      key: "copyLink",
+      label: t("actions.copyLink"),
+      icon: Link2,
+      onClick: () => {
+        void copyPageLink(projectId, page.id);
+      },
+    },
+    {
+      key: "duplicate",
+      label: t("actions.makeCopy"),
+      icon: Copy,
+      onClick: () => {
+        void duplicatePageWithToast(page);
+      },
+    },
+    {
+      key: "lock",
+      label: page.isLocked ? t("actions.unlock") : t("actions.lock"),
+      icon: page.isLocked ? LockOpen : Lock,
+      onClick: () => {
+        void togglePageLockedWithToast(page);
+      },
+    },
+    {
+      key: "archive",
+      label: archived ? t("actions.restore") : t("actions.archive"),
+      icon: archived ? ArchiveRestore : Archive,
+      onClick: () => {
+        if (archived) {
+          void restorePageWithToast(page.id);
+        } else {
+          void archivePageWithToast(page.id);
+        }
+      },
+    },
+  ];
 
   return (
     <ContextMenu>
@@ -198,92 +273,28 @@ export function PagesListRow({
               }
             />
             <DropdownMenuContent align="end" side="bottom" className="w-48">
-              <DropdownMenuItem onClick={handleOpenInNewTab}>
-                <ExternalLink aria-hidden="true" />
-                {t("actions.openInNewTab")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleCopyLink}>
-                <Link2 aria-hidden="true" />
-                {t("actions.copyLink")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDuplicate}>
-                <Copy aria-hidden="true" />
-                {t("actions.makeCopy")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleToggleLock}>
-                {page.isLocked ? (
-                  <LockOpen aria-hidden="true" />
-                ) : (
-                  <Lock aria-hidden="true" />
-                )}
-                {page.isLocked ? t("actions.unlock") : t("actions.lock")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleArchiveToggle}>
-                {archived ? (
-                  <ArchiveRestore aria-hidden="true" />
-                ) : (
-                  <Archive aria-hidden="true" />
-                )}
-                {archived ? t("actions.restore") : t("actions.archive")}
-              </DropdownMenuItem>
-              {archived && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => onRequestDelete(page)}
-                  >
-                    <Trash2 aria-hidden="true" />
-                    {t("actions.delete")}
-                  </DropdownMenuItem>
-                </>
-              )}
+              <PageRowMenuItems
+                actions={rowActions}
+                archived={archived}
+                deleteLabel={t("actions.delete")}
+                onDelete={() => onRequestDelete(page)}
+                Item={DropdownMenuItem}
+                Separator={DropdownMenuSeparator}
+              />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </ContextMenuTrigger>
 
       <ContextMenuContent className="w-48">
-        <ContextMenuItem onClick={handleOpenInNewTab}>
-          <ExternalLink aria-hidden="true" />
-          {t("actions.openInNewTab")}
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleCopyLink}>
-          <Link2 aria-hidden="true" />
-          {t("actions.copyLink")}
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleDuplicate}>
-          <Copy aria-hidden="true" />
-          {t("actions.makeCopy")}
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleToggleLock}>
-          {page.isLocked ? (
-            <LockOpen aria-hidden="true" />
-          ) : (
-            <Lock aria-hidden="true" />
-          )}
-          {page.isLocked ? t("actions.unlock") : t("actions.lock")}
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleArchiveToggle}>
-          {archived ? (
-            <ArchiveRestore aria-hidden="true" />
-          ) : (
-            <Archive aria-hidden="true" />
-          )}
-          {archived ? t("actions.restore") : t("actions.archive")}
-        </ContextMenuItem>
-        {archived && (
-          <>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              variant="destructive"
-              onClick={() => onRequestDelete(page)}
-            >
-              <Trash2 aria-hidden="true" />
-              {t("actions.delete")}
-            </ContextMenuItem>
-          </>
-        )}
+        <PageRowMenuItems
+          actions={rowActions}
+          archived={archived}
+          deleteLabel={t("actions.delete")}
+          onDelete={() => onRequestDelete(page)}
+          Item={ContextMenuItem}
+          Separator={ContextMenuSeparator}
+        />
       </ContextMenuContent>
     </ContextMenu>
   );

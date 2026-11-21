@@ -23,6 +23,7 @@ import {
   hasActiveTableHeaderRow,
 } from "@/lib/pages/extensions/table-extension";
 import { cn } from "@/lib/utils";
+import { usePageEditorEditable } from "./page-editor-context";
 import "./pages-table.css";
 
 const TABLE_TOOLBAR_PLUGIN_KEY = "pagesTableToolbar";
@@ -89,6 +90,7 @@ export function PageTableToolbar({
   scrollTarget,
 }: PageTableToolbarProps) {
   const { t } = useTranslation("pages");
+  const isEditable = usePageEditorEditable(editor);
 
   const tableState = useEditorState({
     editor,
@@ -130,7 +132,7 @@ export function PageTableToolbar({
       pluginKey={TABLE_TOOLBAR_PLUGIN_KEY}
       updateDelay={80}
       shouldShow={({ editor: e, state }) => {
-        if (!e.isEditable || !e.isActive("table")) return false;
+        if (!isEditable || !e.isEditable || !e.isActive("table")) return false;
         const { selection } = state;
         // Let PageBubbleMenu take over during non-empty text selections so two
         // floating bars never collide over the same cell.
@@ -164,7 +166,7 @@ export function PageTableToolbar({
         scrollTarget: scrollTarget ?? undefined,
       }}
     >
-      {tableState.inTable && (
+      {isEditable && tableState.inTable && (
         <TooltipProvider delay={300}>
           <div
             role="toolbar"

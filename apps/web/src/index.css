@@ -140,7 +140,7 @@
   --code-foreground: var(--foreground);
   --code-highlight: color-mix(in srgb, var(--color-black) 4%, transparent);
 
-  /* Editor semantic text colors */
+  /* Editor semantic text colors (Light) */
   --editor-colors-gray-text: #5c5e63;
   --editor-colors-peach-text: #ff5b59;
   --editor-colors-pink-text: #f65385;
@@ -159,6 +159,12 @@
   --editor-colors-light-blue-background: #c5eff9;
   --editor-colors-dark-blue-background: #c9dafb;
   --editor-colors-purple-background: #e3d8fd;
+
+  /* Page editor surface tokens (Light) */
+  --editor-inline-code: var(--color-orange-600);
+  --editor-link: var(--color-brand-800);
+  --editor-link-hover: var(--color-brand-900);
+  --editor-checkbox-checkmark: var(--color-white);
 }
 
 .dark {
@@ -221,7 +227,17 @@
   --code-foreground: var(--foreground);
   --code-highlight: color-mix(in srgb, var(--color-white) 4%, transparent);
 
-  /* Sticky editor colors (Dark) */
+  /* Editor semantic text colors (Dark) */
+  --editor-colors-gray-text: #a8aab0;
+  --editor-colors-peach-text: #ff7a78;
+  --editor-colors-pink-text: #ff7ba5;
+  --editor-colors-orange-text: #ffa95c;
+  --editor-colors-green-text: #34d996;
+  --editor-colors-light-blue-text: #4dd4f7;
+  --editor-colors-dark-blue-text: #6ea0ff;
+  --editor-colors-purple-text: #b490ff;
+
+  /* Sticky & page editor background colors (Dark) */
   --editor-colors-gray-background: #404144;
   --editor-colors-peach-background: #593032;
   --editor-colors-pink-background: #562e3d;
@@ -230,6 +246,11 @@
   --editor-colors-light-blue-background: #1f495c;
   --editor-colors-dark-blue-background: #223558;
   --editor-colors-purple-background: #3d325a;
+
+  /* Page editor surface tokens (Dark) */
+  --editor-inline-code: var(--color-orange-400);
+  --editor-link: var(--color-brand-600);
+  --editor-link-hover: var(--color-brand-400);
 }
 
 @layer base {

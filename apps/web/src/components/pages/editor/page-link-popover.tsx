@@ -20,6 +20,7 @@ import {
   truncateLinkDisplay,
 } from "@/lib/pages/links";
 import { cn } from "@/lib/utils";
+import { usePageEditorEditable } from "./page-editor-context";
 
 type LinkPopoverMode = "preview" | "edit";
 
@@ -53,6 +54,7 @@ export function PageLinkPopover({
   containerRef,
 }: PageLinkPopoverProps) {
   const { t } = useTranslation("pages");
+  const isEditable = usePageEditorEditable(editor);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<LinkPopoverMode>("preview");
   const [activeLink, setActiveLink] = useState<ActiveLinkState | null>(null);
@@ -99,6 +101,14 @@ export function PageLinkPopover({
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, [clearCloseTimer]);
+
+  // Immediately exit link edit mode if the page becomes locked/archived.
+  useEffect(() => {
+    if (!isEditable && mode === "edit") {
+      setMode("preview");
+      setUrlError(false);
+    }
+  }, [isEditable, mode]);
 
   // Close hover preview if user selects text (bubble menu opens) or document updates.
   useEffect(() => {
@@ -187,7 +197,7 @@ export function PageLinkPopover({
   }, [activeLink]);
 
   const handleUnlink = useCallback(() => {
-    if (!activeLink || !editor.isEditable) return;
+    if (!activeLink || !isEditable) return;
     const linkType = editor.state.schema.marks.link;
     if (!linkType) return;
 
@@ -196,19 +206,19 @@ export function PageLinkPopover({
     const to = Math.max(from, Math.min(activeLink.to, docSize));
     editor.view.dispatch(editor.state.tr.removeMark(from, to, linkType));
     closePopover();
-  }, [activeLink, editor, closePopover]);
+  }, [activeLink, isEditable, editor, closePopover]);
 
   const handleEnterEdit = useCallback(() => {
-    if (!activeLink || !editor.isEditable) return;
+    if (!activeLink || !isEditable) return;
     clearCloseTimer();
     setEditUrl(activeLink.url);
     setEditText(activeLink.text);
     setUrlError(false);
     setMode("edit");
-  }, [activeLink, editor, clearCloseTimer]);
+  }, [activeLink, isEditable, clearCloseTimer]);
 
   const handleSaveEdit = useCallback(() => {
-    if (!activeLink || !editor.isEditable) return;
+    if (!activeLink || !isEditable) return;
     const normalized = normalizeLinkHref(editUrl);
     if (!normalized) {
       setUrlError(true);
@@ -227,11 +237,12 @@ export function PageLinkPopover({
     }
 
     closePopover();
-  }, [activeLink, editor, editUrl, editText, closePopover]);
+  }, [activeLink, isEditable, editor, editUrl, editText, closePopover]);
 
   if (!activeLink) return null;
 
-  const canEdit = editor.isEditable;
+  const canEdit = isEditable;
+  const effectiveMode: LinkPopoverMode = canEdit ? mode : "preview";
 
   return (
     <Popover
@@ -251,7 +262,7 @@ export function PageLinkPopover({
         onMouseLeave={scheduleClose}
         className="w-auto p-0"
       >
-        {mode === "preview" ? (
+        {effectiveMode === "preview" ? (
           <div className="flex items-center gap-2.5 px-2.5 py-2 text-xs text-muted-foreground">
             <Globe className="size-3.5 shrink-0" aria-hidden="true" />
             <a

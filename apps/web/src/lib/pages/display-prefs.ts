@@ -1,3 +1,5 @@
+import { getDefaultPageStorage } from "./storage";
+
 export interface PageDisplayPrefs {
   isFullWidth: boolean;
   isStickyToolbarEnabled: boolean;
@@ -18,16 +20,6 @@ export const DEFAULT_PAGE_DISPLAY_PREFS: PageDisplayPrefs = {
   isStickyToolbarEnabled: true,
 };
 
-function getDefaultStorage(): PagePrefsStorage | null {
-  try {
-    return typeof globalThis !== "undefined" && "localStorage" in globalThis
-      ? globalThis.localStorage
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 function parseBooleanPref(raw: string | null, fallback: boolean): boolean {
   if (raw === "true") return true;
   if (raw === "false") return false;
@@ -35,7 +27,7 @@ function parseBooleanPref(raw: string | null, fallback: boolean): boolean {
 }
 
 export function readPageDisplayPrefs(
-  storage: PagePrefsStorage | null = getDefaultStorage(),
+  storage: PagePrefsStorage | null = getDefaultPageStorage(),
 ): PageDisplayPrefs {
   if (!storage) return { ...DEFAULT_PAGE_DISPLAY_PREFS };
   try {
@@ -56,7 +48,7 @@ export function readPageDisplayPrefs(
 
 export function writePageDisplayPrefs(
   patch: Partial<PageDisplayPrefs>,
-  storage: PagePrefsStorage | null = getDefaultStorage(),
+  storage: PagePrefsStorage | null = getDefaultPageStorage(),
 ): void {
   if (!storage) return;
   try {

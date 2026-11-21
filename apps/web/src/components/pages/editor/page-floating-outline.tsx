@@ -17,10 +17,12 @@ export interface PageFloatingOutlineProps {
 
 /**
  * Plane's floating right-edge horizontal-bar Outline strip (`20px`/`18px`/`14px`
- * bars for H1/H2/H3). Rendered inside `#page-content-container` when the right
- * navigation pane is closed and auto-hidden below `930px` container width via
- * CSS `@container` queries. Hovering expands a `w-52` clickable preview card,
- * and clicking the bar strip opens the slide-in right pane on the Outline tab.
+ * bars for H1/H2/H3). Rendered inside the non-scrolling `.nb-page-canvas-shell`
+ * wrapper around `#page-content-container` so it stays pinned at the viewport
+ * right edge across arbitrarily long pages, hides below `930px` container width
+ * via CSS `@container` queries, and never overlaps the `294px` right pane.
+ * Hovering expands a `w-52` clickable preview card, and clicking the bar strip
+ * opens the slide-in right pane on the Outline tab.
  */
 export function PageFloatingOutline({
   headings,
@@ -34,8 +36,8 @@ export function PageFloatingOutline({
   }
 
   return (
-    <div className="page-summary-container pointer-events-none absolute top-[64px] right-0 z-[5] h-[calc(100%-64px)]">
-      <div className="group/page-toc pointer-events-auto sticky top-[72px] px-4">
+    <div className="page-summary-container pointer-events-none absolute top-[64px] right-2 z-[5]">
+      <div className="group/page-toc pointer-events-auto relative px-2">
         <button
           type="button"
           aria-label={t("outline.openPane")}

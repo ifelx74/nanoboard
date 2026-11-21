@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { blobToDataUrl, dataUrlToBlob, isValidBase64DataUrl } from "./data-url";
+import {
+  blobToDataUrl,
+  dataUrlToBlob,
+  isValidBase64DataUrl,
+  isValidBase64DataUrlWithMime,
+} from "./data-url";
 
 describe("data-url helpers", () => {
   it("round-trips binary bytes (0x00..0xFF) byte-for-byte through Blob ↔ dataUrl", async () => {
@@ -64,5 +69,42 @@ describe("data-url helpers", () => {
     if (typeof value === "string") {
       expect(() => dataUrlToBlob(value)).toThrow(/invalid base64 data url/i);
     }
+  });
+
+  it("enforces MIME whitelist and exact expected MIME match", () => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    expect(
+      isValidBase64DataUrlWithMime(
+        "data:image/png;base64,AQID",
+        allowed,
+        "image/png",
+      ),
+    ).toBe(true);
+    expect(
+      isValidBase64DataUrlWithMime(
+        "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=",
+        allowed,
+      ),
+    ).toBe(false);
+    expect(
+      isValidBase64DataUrlWithMime(
+        "data:text/html;base64,PHNjcmlwdD48L3NjcmlwdD4=",
+        allowed,
+      ),
+    ).toBe(false);
+    expect(
+      isValidBase64DataUrlWithMime(
+        "data:image/png;charset=utf-8;base64,AQID",
+        allowed,
+        "image/png",
+      ),
+    ).toBe(false);
+    expect(
+      isValidBase64DataUrlWithMime(
+        "data:image/jpeg;base64,AQID",
+        allowed,
+        "image/png",
+      ),
+    ).toBe(false);
   });
 });

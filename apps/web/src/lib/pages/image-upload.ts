@@ -1,11 +1,10 @@
-export const PAGE_IMAGE_ACCEPTED_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-] as const;
+import {
+  PAGE_IMAGE_ACCEPTED_MIME_TYPES,
+  type PageImageMimeType,
+} from "./image-mime";
+import { isValidHttpHostname } from "./links";
 
-export type PageImageMimeType = (typeof PAGE_IMAGE_ACCEPTED_MIME_TYPES)[number];
+export { PAGE_IMAGE_ACCEPTED_MIME_TYPES, type PageImageMimeType };
 
 export const PAGE_IMAGE_ACCEPT_ATTRIBUTE =
   PAGE_IMAGE_ACCEPTED_MIME_TYPES.join(",");
@@ -67,13 +66,6 @@ export function validatePageImageUpload(file: {
     return { ok: false, code: "file-too-large" };
   }
   return { ok: true, mimeType: normalized as PageImageMimeType };
-}
-
-function isValidHttpHostname(hostname: string): boolean {
-  if (!hostname) return false;
-  if (hostname === "localhost") return true;
-  if (hostname.startsWith(".") || hostname.endsWith(".")) return false;
-  return hostname.includes(".");
 }
 
 function hasControlOrWhitespace(value: string): boolean {

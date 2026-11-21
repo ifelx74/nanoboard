@@ -1,8 +1,4 @@
-import {
-  NodeViewWrapper,
-  useEditorState,
-  type NodeViewProps,
-} from "@tiptap/react";
+import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import {
   AlignCenter,
   AlignLeft,
@@ -53,6 +49,7 @@ import {
   useOptionalPageAssetUrlCache,
   usePageAssetUrl,
 } from "./page-asset-url-context";
+import { usePageEditorEditable } from "./page-editor-context";
 
 type PlaceholderMode = "upload" | "url";
 
@@ -89,10 +86,7 @@ export function PageImageNodeView({
   deleteNode,
 }: NodeViewProps) {
   const { t } = useTranslation("pages");
-  const isEditable = useEditorState({
-    editor,
-    selector: ({ editor: e }) => e.isEditable,
-  });
+  const isEditable = usePageEditorEditable(editor);
   const cache = useOptionalPageAssetUrlCache();
   const options = extension.options as PageImageExtensionOptions;
 
@@ -158,6 +152,20 @@ export function PageImageNodeView({
       resizeCleanupRef.current = null;
     };
   }, []);
+
+  // Immediately close alignment dropdown and cancel any active drag-resize when
+  // the page transitions to locked/archived read-only mode.
+  useEffect(() => {
+    if (isEditable) return;
+    setAlignMenuOpen(false);
+    setIsDragOver(false);
+    if (resizeCleanupRef.current) {
+      resizeCleanupRef.current();
+      resizeCleanupRef.current = null;
+      setIsResizing(false);
+      setLiveWidth(null);
+    }
+  }, [isEditable]);
 
   const handleUploadLocalFile = useCallback(
     async (file: File) => {

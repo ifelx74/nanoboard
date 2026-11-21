@@ -1,4 +1,4 @@
-import { useEditorState, type Editor } from "@tiptap/react";
+import type { Editor } from "@tiptap/react";
 import {
   AlignCenter,
   AlignLeft,
@@ -7,12 +7,6 @@ import {
   Check,
   ChevronDown,
   Code,
-  Heading1,
-  Heading2,
-  Heading3,
-  Heading4,
-  Heading5,
-  Heading6,
   Image as ImageIcon,
   Italic,
   List,
@@ -21,7 +15,6 @@ import {
   Quote,
   Strikethrough,
   Table2,
-  Type,
   Underline,
 } from "lucide-react";
 import { type ReactNode } from "react";
@@ -43,7 +36,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { isPageColorKey, type PageColorKey } from "@/lib/pages/colors";
 import {
   toggleSmartCode,
   type PageTextAlignment,
@@ -53,23 +45,22 @@ import {
   PageColorPickerPanel,
   PageColorTriggerPreview,
 } from "./page-color-picker-panel";
+import {
+  usePageFormattingState,
+  usePageTypographyItems,
+} from "./page-formatting-state";
 
 export interface PageStickyToolbarProps {
   editor: Editor | null;
   isEditable: boolean;
   isFullWidth: boolean;
   isStickyToolbarEnabled: boolean;
-  /** Optional insert callback wired by Ticket 05 (3x3 Table). */
-  onInsertTable?: (editor: Editor) => void;
-  /** Optional insert callback wired by Ticket 06 (Image block). */
-  onInsertImage?: (editor: Editor) => void;
-  /** Optional extra insert buttons slot for downstream extensions. */
-  extraInsertSlot?: ReactNode;
+  onInsertTable: (editor: Editor) => void;
+  onInsertImage: (editor: Editor) => void;
   /**
-   * Optional right-side slot reserved for Ticket 07's right navigation pane
-   * toggle. Renders inline at the right end of the sticky toolbar when visible,
-   * and floats at top-right (`h-[52px]`) whenever the toolbar is hidden or
-   * the page is read-only.
+   * Right-side slot for the right navigation pane toggle. Renders inline at
+   * the right end of the sticky toolbar when visible, and floats at top-right
+   * (`h-[52px]`) whenever the toolbar is hidden or the page is read-only.
    */
   rightSlot?: ReactNode;
 }
@@ -140,113 +131,16 @@ function PageStickyToolbarInner({
   editor,
   onInsertTable,
   onInsertImage,
-  extraInsertSlot,
 }: {
   editor: Editor;
-  onInsertTable?: (editor: Editor) => void;
-  onInsertImage?: (editor: Editor) => void;
-  extraInsertSlot?: ReactNode;
+  onInsertTable: (editor: Editor) => void;
+  onInsertImage: (editor: Editor) => void;
 }) {
   const { t } = useTranslation("pages");
   const mod = isApplePlatform() ? "⌘" : "Ctrl+";
 
-  const state = useEditorState({
-    editor,
-    selector: ({ editor: e }) => {
-      const colorAttrs = e.getAttributes("pageColor") as {
-        color?: unknown;
-        backgroundColor?: unknown;
-      };
-      const activeTextColor: PageColorKey | undefined = isPageColorKey(
-        colorAttrs.color,
-      )
-        ? colorAttrs.color
-        : undefined;
-      const activeBackgroundColor: PageColorKey | undefined = isPageColorKey(
-        colorAttrs.backgroundColor,
-      )
-        ? colorAttrs.backgroundColor
-        : undefined;
-
-      let headingLevel: 1 | 2 | 3 | 4 | 5 | 6 | null = null;
-      for (const level of [1, 2, 3, 4, 5, 6] as const) {
-        if (e.isActive("heading", { level })) {
-          headingLevel = level;
-          break;
-        }
-      }
-
-      return {
-        headingLevel,
-        activeTextColor,
-        activeBackgroundColor,
-        bold: e.isActive("bold"),
-        italic: e.isActive("italic"),
-        underline: e.isActive("underline"),
-        strike: e.isActive("strike"),
-        alignLeft: e.isActive({ textAlign: "left" }),
-        alignCenter: e.isActive({ textAlign: "center" }),
-        alignRight: e.isActive({ textAlign: "right" }),
-        bulletList: e.isActive("bulletList"),
-        orderedList: e.isActive("orderedList"),
-        taskList: e.isActive("taskList"),
-        blockquote: e.isActive("blockquote"),
-        code: e.isActive("code") || e.isActive("codeBlock"),
-      };
-    },
-  });
-
-  const typographyItems = [
-    {
-      key: "text",
-      label: t("editor.blocks.text"),
-      icon: Type,
-      active: state.headingLevel === null,
-      run: () => editor.chain().focus().setParagraph().run(),
-    },
-    {
-      key: "h1",
-      label: t("editor.blocks.h1"),
-      icon: Heading1,
-      active: state.headingLevel === 1,
-      run: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-    },
-    {
-      key: "h2",
-      label: t("editor.blocks.h2"),
-      icon: Heading2,
-      active: state.headingLevel === 2,
-      run: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-    },
-    {
-      key: "h3",
-      label: t("editor.blocks.h3"),
-      icon: Heading3,
-      active: state.headingLevel === 3,
-      run: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-    },
-    {
-      key: "h4",
-      label: t("editor.blocks.h4"),
-      icon: Heading4,
-      active: state.headingLevel === 4,
-      run: () => editor.chain().focus().toggleHeading({ level: 4 }).run(),
-    },
-    {
-      key: "h5",
-      label: t("editor.blocks.h5"),
-      icon: Heading5,
-      active: state.headingLevel === 5,
-      run: () => editor.chain().focus().toggleHeading({ level: 5 }).run(),
-    },
-    {
-      key: "h6",
-      label: t("editor.blocks.h6"),
-      icon: Heading6,
-      active: state.headingLevel === 6,
-      run: () => editor.chain().focus().toggleHeading({ level: 6 }).run(),
-    },
-  ];
+  const state = usePageFormattingState(editor);
+  const typographyItems = usePageTypographyItems(editor, state);
 
   const activeTypography =
     typographyItems.find((item) => item.active) ?? typographyItems[0];
@@ -255,9 +149,6 @@ function PageStickyToolbarInner({
     editor.chain().focus().setTextAlign(alignment).run();
   };
 
-  const hasInsertControls = Boolean(
-    onInsertTable || onInsertImage || extraInsertSlot,
-  );
   const iconClass = "size-3.5";
 
   return (
@@ -326,8 +217,8 @@ function PageStickyToolbarInner({
               >
                 <span>{t("editor.colors.trigger")}</span>
                 <PageColorTriggerPreview
-                  activeTextColor={state.activeTextColor}
-                  activeBackgroundColor={state.activeBackgroundColor}
+                  activeTextColor={state.textColor}
+                  activeBackgroundColor={state.backgroundColor}
                 />
                 <ChevronDown className="size-3 shrink-0" aria-hidden="true" />
               </button>
@@ -335,8 +226,8 @@ function PageStickyToolbarInner({
           />
           <PopoverContent align="start" side="bottom" className="w-auto p-0">
             <PageColorPickerPanel
-              activeTextColor={state.activeTextColor}
-              activeBackgroundColor={state.activeBackgroundColor}
+              activeTextColor={state.textColor}
+              activeBackgroundColor={state.backgroundColor}
               onSelectTextColor={(color) => {
                 if (color) {
                   editor.chain().focus().setTextColor(color).run();
@@ -468,40 +359,31 @@ function PageStickyToolbarInner({
           <ToolbarIconButton
             label={t("editor.blocks.code")}
             shortcut={`${mod}E`}
-            active={state.code}
+            active={state.code || state.codeBlock}
             onClick={() => toggleSmartCode(editor)}
           >
             <Code className={iconClass} aria-hidden="true" />
           </ToolbarIconButton>
         </div>
 
-        {/* 7. Inserts (hooks for Table & Image from Tickets 05 & 06) */}
-        {hasInsertControls && (
-          <>
-            <ToolbarDivider />
-            <div className="flex items-center gap-0.5">
-              {onInsertTable && (
-                <ToolbarIconButton
-                  label={t("editor.toolbar.insertTable")}
-                  isToggle={false}
-                  onClick={() => onInsertTable(editor)}
-                >
-                  <Table2 className={iconClass} aria-hidden="true" />
-                </ToolbarIconButton>
-              )}
-              {onInsertImage && (
-                <ToolbarIconButton
-                  label={t("editor.toolbar.insertImage")}
-                  isToggle={false}
-                  onClick={() => onInsertImage(editor)}
-                >
-                  <ImageIcon className={iconClass} aria-hidden="true" />
-                </ToolbarIconButton>
-              )}
-              {extraInsertSlot}
-            </div>
-          </>
-        )}
+        {/* 7. Inserts: Table & Image */}
+        <ToolbarDivider />
+        <div className="flex items-center gap-0.5">
+          <ToolbarIconButton
+            label={t("editor.toolbar.insertTable")}
+            isToggle={false}
+            onClick={() => onInsertTable(editor)}
+          >
+            <Table2 className={iconClass} aria-hidden="true" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            label={t("editor.toolbar.insertImage")}
+            isToggle={false}
+            onClick={() => onInsertImage(editor)}
+          >
+            <ImageIcon className={iconClass} aria-hidden="true" />
+          </ToolbarIconButton>
+        </div>
       </div>
     </TooltipProvider>
   );
@@ -518,7 +400,6 @@ export function PageStickyToolbar({
   isStickyToolbarEnabled,
   onInsertTable,
   onInsertImage,
-  extraInsertSlot,
   rightSlot,
 }: PageStickyToolbarProps) {
   const shouldHideToolbar = !isStickyToolbarEnabled || !isEditable;
@@ -547,7 +428,6 @@ export function PageStickyToolbar({
                 editor={editor}
                 onInsertTable={onInsertTable}
                 onInsertImage={onInsertImage}
-                extraInsertSlot={extraInsertSlot}
               />
             )}
           </div>
