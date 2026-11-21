@@ -1,7 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { Editor } from "@tiptap/react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { FileQuestion, MoveHorizontal, PanelTop } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import {
+  Clipboard,
+  Download,
+  FileQuestion,
+  MoveHorizontal,
+  PanelTop,
+} from "lucide-react";
+import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ProjectLayout } from "@/components/common/project-layout";
 import { PageDetailHeaderActions } from "@/components/pages/page-detail-header-actions";
@@ -38,6 +45,10 @@ const PageEditorWorkspace = lazy(
   () => import("@/components/pages/editor/page-editor-workspace"),
 );
 
+const ExportPageModal = lazy(
+  () => import("@/components/pages/export-page-modal"),
+);
+
 export const Route = createFileRoute("/_app/project/$projectId/pages/$pageId")({
   component: RouteComponent,
   // Read `db.pages` directly in the loader so TanStack Router's route-tree
@@ -68,6 +79,17 @@ function RouteComponent() {
     pageId: string;
     title: string;
   } | null>(null);
+  const [exportModalPageId, setExportModalPageId] = useState<string | null>(
+    null,
+  );
+  const editorRef = useRef<{ pageId: string; editor: Editor } | null>(null);
+
+  const handleEditorReady = useCallback(
+    (editor: Editor | null) => {
+      editorRef.current = editor ? { pageId, editor } : null;
+    },
+    [pageId],
+  );
 
   const pages = useLiveQuery(
     () => listProjectPages(db, projectId),
@@ -116,6 +138,21 @@ function RouteComponent() {
   const readOnly = pageResult.page.isLocked || isPageArchived(pageResult.page);
   const displayTitle =
     liveTitle?.pageId === pageId ? liveTitle.title : pageResult.page.title;
+  const exportModalOpen = exportModalPageId === pageId;
+
+  const getCurrentContentJson = () => {
+    const active = editorRef.current;
+    if (active && active.pageId === pageId && !active.editor.isDestroyed) {
+      return active.editor.getJSON();
+    }
+    return pageResult.content.contentJson;
+  };
+
+  async function handleCopyMarkdown() {
+    const { copyPageMarkdownToClipboard } =
+      await import("@/lib/pages/export-page");
+    await copyPageMarkdownToClipboard(db, pageId, getCurrentContentJson());
+  }
 
   const breadcrumbExtra = (
     <>
@@ -170,12 +207,28 @@ function RouteComponent() {
     </>
   );
 
+  const optionsBeforeCopySlot = (
+    <DropdownMenuItem onClick={() => void handleCopyMarkdown()}>
+      <Clipboard aria-hidden="true" />
+      {t("detail.copyMarkdown")}
+    </DropdownMenuItem>
+  );
+
+  const optionsBottomSlot = (
+    <DropdownMenuItem onClick={() => setExportModalPageId(pageId)}>
+      <Download aria-hidden="true" />
+      {t("detail.export")}
+    </DropdownMenuItem>
+  );
+
   const headerActions = (
     <PageDetailHeaderActions
       projectId={projectId}
       page={pageResult.page}
       displayTitle={displayTitle}
       optionsTopSlot={optionsTopSlot}
+      optionsBeforeCopySlot={optionsBeforeCopySlot}
+      optionsBottomSlot={optionsBottomSlot}
     />
   );
 
@@ -199,8 +252,20 @@ function RouteComponent() {
           onTitleChange={(nextTitle) =>
             setLiveTitle({ pageId, title: nextTitle })
           }
+          onEditorReady={handleEditorReady}
         />
       </Suspense>
+      {exportModalOpen && (
+        <Suspense fallback={null}>
+          <ExportPageModal
+            open={exportModalOpen}
+            onOpenChange={(open) => setExportModalPageId(open ? pageId : null)}
+            pageId={pageId}
+            pageTitle={displayTitle}
+            getContentJson={getCurrentContentJson}
+          />
+        </Suspense>
+      )}
     </ProjectLayout>
   );
 }

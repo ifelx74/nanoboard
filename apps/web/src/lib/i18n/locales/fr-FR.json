@@ -465,6 +465,10 @@
       "unlocked": "Déverrouillée",
       "copied": "Copié !",
       "options": "Options de la page",
+      "copyMarkdown": "Copier en Markdown",
+      "copyMarkdownSuccess": "Markdown copié dans le presse-papiers",
+      "copyMarkdownFailed": "Échec de la copie en Markdown",
+      "export": "Exporter",
       "display": {
         "fullWidth": "Pleine largeur",
         "stickyToolbar": "Barre d'outils fixe"
@@ -679,6 +683,19 @@
       "colorButton": "Couleur",
       "colorAriaLabel": "Couleur de fond de l'encadré",
       "resetColor": "Réinitialiser la couleur de fond"
+    },
+    "export": {
+      "title": "Exporter la page",
+      "description": "Téléchargez cette page au format Markdown (.md).",
+      "includeContent": "Contenu à inclure",
+      "scopeEverything": "Tout inclure",
+      "scopeNoImages": "Sans images",
+      "fileNameLabel": "Fichier",
+      "cancel": "Annuler",
+      "submit": "Exporter",
+      "exporting": "Export en cours…",
+      "success": "{{fileName}} exporté",
+      "failed": "Échec de l'export de la page"
     }
   },
   "task": {

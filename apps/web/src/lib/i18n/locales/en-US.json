@@ -465,6 +465,10 @@
       "unlocked": "Unlocked",
       "copied": "Copied!",
       "options": "Page options",
+      "copyMarkdown": "Copy markdown",
+      "copyMarkdownSuccess": "Markdown copied to clipboard",
+      "copyMarkdownFailed": "Failed to copy markdown",
+      "export": "Export",
       "display": {
         "fullWidth": "Full width",
         "stickyToolbar": "Sticky toolbar"
@@ -679,6 +683,19 @@
       "colorButton": "Color",
       "colorAriaLabel": "Callout background color",
       "resetColor": "Reset background color"
+    },
+    "export": {
+      "title": "Export page",
+      "description": "Download this page as a Markdown (.md) file.",
+      "includeContent": "Include content",
+      "scopeEverything": "Everything",
+      "scopeNoImages": "No images",
+      "fileNameLabel": "File",
+      "cancel": "Cancel",
+      "submit": "Export",
+      "exporting": "Exporting…",
+      "success": "Exported {{fileName}}",
+      "failed": "Failed to export page"
     }
   },
   "task": {
