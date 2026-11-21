@@ -1,4 +1,6 @@
+import type { AnyExtension } from "@tiptap/core";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import type { StarterKitOptions } from "@tiptap/starter-kit";
 import {
   useCallback,
   useEffect,
@@ -8,6 +10,7 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
 import { db } from "@/lib/db/db";
@@ -16,6 +19,12 @@ import type { Page, PageContent } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { createPagesEditorExtensions } from "@/lib/pages/editor-extensions";
 import { toast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
+import { PageBlockDragHandle } from "./page-block-drag-handle";
+import { PageBubbleMenu } from "./page-bubble-menu";
+import { PageLinkPopover } from "./page-link-popover";
+import type { PageSlashCommandAdditionalEntry } from "./page-slash-commands";
+import { PageStickyToolbar } from "./page-sticky-toolbar";
 import "./pages-editor.css";
 
 const TITLE_AUTOSAVE_DELAY_MS = 500;
@@ -26,6 +35,34 @@ export type PageEditorWorkspaceProps = {
   initialContent: PageContent;
   /** Called immediately as the user types in the title so header chrome stays in sync. */
   onTitleChange?: (nextTitle: string) => void;
+  /** Wide (`1152px`) vs normal (`720px`) document column layout. */
+  isFullWidth?: boolean;
+  /** Whether the 52px desktop sticky formatting toolbar is shown when editable. */
+  isStickyToolbarEnabled?: boolean;
+  /** Optional slot above the H1 title (reserved for Ticket 04's page header logo picker). */
+  headerTopSlot?: ReactNode;
+  /** Optional slot at the right end of the sticky toolbar / top-right corner (Ticket 07 right pane toggle). */
+  toolbarRightSlot?: ReactNode;
+  /** Optional floating overlay inside `#page-content-container` (Ticket 07 floating outline strip). */
+  floatingOverlaySlot?: ReactNode;
+  /** Optional Table insert callback wired into Sticky Toolbar (Ticket 05). */
+  onInsertTable?: (editor: Editor) => void;
+  /** Optional Image insert callback wired into Sticky Toolbar (Ticket 06). */
+  onInsertImage?: (editor: Editor) => void;
+  /** Optional extra insert buttons slot in Sticky Toolbar. */
+  extraInsertSlot?: ReactNode;
+  /** Optional StarterKit overrides for downstream extensions (e.g. `codeBlock: false` in Ticket 05). */
+  starterKitOverrides?: Partial<StarterKitOptions>;
+  /** Extra TipTap extensions contributed by downstream features (Callout, Emoji, Table, Image). */
+  extraExtensions?: readonly AnyExtension[];
+  /** Extra UniqueID node types contributed by downstream extensions. */
+  extraUniqueIdTypes?: readonly string[];
+  /** Extra slash command entries merged into General / Colors / Background colors sections. */
+  extraSlashCommands?: readonly PageSlashCommandAdditionalEntry[];
+  /** Built-in slash command keys to omit if replaced by a downstream extension. */
+  disabledSlashCommands?: readonly string[];
+  /** Notifies parent consumers when the TipTap editor instance is ready or destroyed. */
+  onEditorReady?: (editor: Editor | null) => void;
 };
 
 /**
@@ -37,6 +74,20 @@ export default function PageEditorWorkspace({
   page,
   initialContent,
   onTitleChange,
+  isFullWidth = false,
+  isStickyToolbarEnabled = true,
+  headerTopSlot,
+  toolbarRightSlot,
+  floatingOverlaySlot,
+  onInsertTable,
+  onInsertImage,
+  extraInsertSlot,
+  starterKitOverrides,
+  extraExtensions,
+  extraUniqueIdTypes,
+  extraSlashCommands,
+  disabledSlashCommands,
+  onEditorReady,
 }: PageEditorWorkspaceProps) {
   const { t } = useTranslation("pages");
   const readOnly = page.isLocked || page.archivedAt !== undefined;
@@ -50,6 +101,9 @@ export default function PageEditorWorkspace({
   const titleDirtyRef = useRef(false);
   const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [scrollContainerEl, setScrollContainerEl] =
+    useState<HTMLDivElement | null>(null);
+  const editorWrapperRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<Editor | null>(null);
   const isHydratedRef = useRef(false);
   const contentDirtyRef = useRef(false);
@@ -78,11 +132,8 @@ export default function PageEditorWorkspace({
     void updatePageTitle(db, pageId, nextTitle).catch((error: unknown) => {
       savedTitleRef.current = previousSaved;
       titleDirtyRef.current = true;
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : i18n.t("pages:editor.errors.saveTitle"),
-      );
+      const fallbackError = i18n.t("pages:editor.errors.saveTitle");
+      toast.error(error instanceof Error ? error.message : fallbackError);
     });
   }, [pageId]);
 
@@ -99,11 +150,8 @@ export default function PageEditorWorkspace({
     const json = currentEditor.getJSON();
     void savePageContent(db, pageId, json).catch((error: unknown) => {
       contentDirtyRef.current = true;
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : i18n.t("pages:editor.errors.saveContent"),
-      );
+      const fallbackError = i18n.t("pages:editor.errors.saveContent");
+      toast.error(error instanceof Error ? error.message : fallbackError);
     });
   }, [pageId]);
 
@@ -117,6 +165,11 @@ export default function PageEditorWorkspace({
       extensions: createPagesEditorExtensions({
         editable: !readOnly,
         onFocusTitleEnd: focusTitleEnd,
+        starterKitOverrides,
+        extraExtensions,
+        extraUniqueIdTypes,
+        extraSlashCommands,
+        disabledSlashCommands,
       }),
       content: initialContent.contentJson,
       editable: !readOnly,
@@ -145,7 +198,11 @@ export default function PageEditorWorkspace({
       // simply opening an existing page never triggers a spurious write.
       isHydratedRef.current = true;
     }
-  }, [editor]);
+    onEditorReady?.(editor ?? null);
+    return () => {
+      onEditorReady?.(null);
+    };
+  }, [editor, onEditorReady]);
 
   useEffect(() => {
     const becameReadOnly = readOnly && !readOnlyRef.current;
@@ -169,7 +226,7 @@ export default function PageEditorWorkspace({
 
   useLayoutEffect(() => {
     syncTitleHeight();
-  }, [title, syncTitleHeight]);
+  }, [title, isFullWidth, syncTitleHeight]);
 
   // Focus the title automatically on newly created untitled empty pages.
   useEffect(() => {
@@ -258,39 +315,84 @@ export default function PageEditorWorkspace({
   }
 
   function handleCanvasClick(event: MouseEvent<HTMLDivElement>) {
-    if (event.target !== event.currentTarget || !editor || readOnly) return;
+    const target = event.target as HTMLElement;
+    const clickedBlankCanvas =
+      target === event.currentTarget || target.dataset.pageCanvas === "true";
+    if (!clickedBlankCanvas || !editor || readOnly) return;
     editor.commands.focus("end");
   }
 
   return (
-    <div
-      id="page-content-container"
-      className="h-full overflow-y-auto bg-background"
-      onClick={handleCanvasClick}
-    >
-      <div className="mx-auto max-w-[720px] px-5 pt-10 pb-64 sm:px-8">
-        <div className="mb-4">
-          <textarea
-            ref={titleInputRef}
-            rows={1}
-            value={title}
-            readOnly={readOnly}
-            aria-readonly={readOnly}
-            onChange={handleTitleChange}
-            onKeyDown={handleTitleKeyDown}
-            onBlur={flushTitle}
-            placeholder={t("untitled")}
-            aria-label={t("editor.titleAriaLabel")}
-            className={`block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50${readOnly ? " cursor-default" : ""}`}
-          />
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
+      <PageStickyToolbar
+        editor={editor}
+        isEditable={!readOnly}
+        isFullWidth={isFullWidth}
+        isStickyToolbarEnabled={isStickyToolbarEnabled}
+        onInsertTable={onInsertTable}
+        onInsertImage={onInsertImage}
+        extraInsertSlot={extraInsertSlot}
+        rightSlot={toolbarRightSlot}
+      />
+
+      <div
+        ref={setScrollContainerEl}
+        id="page-content-container"
+        data-page-canvas="true"
+        className="relative min-h-0 flex-1 overflow-y-auto"
+        onClick={handleCanvasClick}
+      >
+        <div
+          data-page-canvas="true"
+          className={cn(
+            "nb-page-frame pt-10 pb-64",
+            isFullWidth && "wide-layout",
+          )}
+        >
+          <div className="nb-page-header-container mb-4">
+            {headerTopSlot}
+            <textarea
+              ref={titleInputRef}
+              rows={1}
+              value={title}
+              readOnly={readOnly}
+              aria-readonly={readOnly}
+              onChange={handleTitleChange}
+              onKeyDown={handleTitleKeyDown}
+              onBlur={flushTitle}
+              placeholder={t("untitled")}
+              aria-label={t("editor.titleAriaLabel")}
+              className={cn(
+                "block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50",
+                readOnly && "cursor-default",
+              )}
+            />
+          </div>
+
+          <div ref={editorWrapperRef} className="nb-page-editor relative">
+            {editor && !readOnly && (
+              <>
+                <PageBubbleMenu
+                  editor={editor}
+                  scrollTarget={scrollContainerEl}
+                />
+                <PageBlockDragHandle editor={editor} />
+              </>
+            )}
+            {editor && (
+              <PageLinkPopover
+                editor={editor}
+                containerRef={editorWrapperRef}
+              />
+            )}
+            <EditorContent
+              editor={editor}
+              aria-label={t("editor.bodyAriaLabel")}
+            />
+          </div>
         </div>
 
-        <div className="nb-page-editor">
-          <EditorContent
-            editor={editor}
-            aria-label={t("editor.bodyAriaLabel")}
-          />
-        </div>
+        {floatingOverlaySlot}
       </div>
     </div>
   );

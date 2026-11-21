@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, MoveHorizontal, PanelTop } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ProjectLayout } from "@/components/common/project-layout";
@@ -12,6 +12,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { buttonVariants } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyContent,
@@ -20,8 +21,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Switch } from "@/components/ui/switch";
+import { usePageDisplayPrefs } from "@/hooks/use-page-display-prefs";
 import { db } from "@/lib/db/db";
-import { getPageWithContent, listProjectPages } from "@/lib/db/pages";
+import {
+  getPageWithContent,
+  isPageArchived,
+  listProjectPages,
+} from "@/lib/db/pages";
 import { getProject } from "@/lib/db/queries";
 import { projectPageDetailRouteHead } from "@/lib/seo";
 
@@ -51,6 +58,12 @@ export const Route = createFileRoute("/_app/project/$projectId/pages/$pageId")({
 function RouteComponent() {
   const { projectId, pageId } = Route.useParams();
   const { t } = useTranslation("pages");
+  const {
+    isFullWidth,
+    isStickyToolbarEnabled,
+    setIsFullWidth,
+    setIsStickyToolbarEnabled,
+  } = usePageDisplayPrefs();
   const [liveTitle, setLiveTitle] = useState<{
     pageId: string;
     title: string;
@@ -100,6 +113,7 @@ function RouteComponent() {
     );
   }
 
+  const readOnly = pageResult.page.isLocked || isPageArchived(pageResult.page);
   const displayTitle =
     liveTitle?.pageId === pageId ? liveTitle.title : pageResult.page.title;
 
@@ -117,11 +131,51 @@ function RouteComponent() {
     </>
   );
 
+  const optionsTopSlot = (
+    <>
+      <DropdownMenuItem
+        closeOnClick={false}
+        onClick={() => setIsFullWidth(!isFullWidth)}
+        className="justify-between"
+      >
+        <span className="flex items-center gap-1.5">
+          <MoveHorizontal className="size-4" aria-hidden="true" />
+          <span>{t("detail.display.fullWidth")}</span>
+        </span>
+        <Switch
+          checked={isFullWidth}
+          tabIndex={-1}
+          aria-hidden="true"
+          className="pointer-events-none"
+        />
+      </DropdownMenuItem>
+      {!readOnly && (
+        <DropdownMenuItem
+          closeOnClick={false}
+          onClick={() => setIsStickyToolbarEnabled(!isStickyToolbarEnabled)}
+          className="justify-between"
+        >
+          <span className="flex items-center gap-1.5">
+            <PanelTop className="size-4" aria-hidden="true" />
+            <span>{t("detail.display.stickyToolbar")}</span>
+          </span>
+          <Switch
+            checked={isStickyToolbarEnabled}
+            tabIndex={-1}
+            aria-hidden="true"
+            className="pointer-events-none"
+          />
+        </DropdownMenuItem>
+      )}
+    </>
+  );
+
   const headerActions = (
     <PageDetailHeaderActions
       projectId={projectId}
       page={pageResult.page}
       displayTitle={displayTitle}
+      optionsTopSlot={optionsTopSlot}
     />
   );
 
@@ -140,6 +194,8 @@ function RouteComponent() {
           key={pageId}
           page={pageResult.page}
           initialContent={pageResult.content}
+          isFullWidth={isFullWidth}
+          isStickyToolbarEnabled={isStickyToolbarEnabled}
           onTitleChange={(nextTitle) =>
             setLiveTitle({ pageId, title: nextTitle })
           }

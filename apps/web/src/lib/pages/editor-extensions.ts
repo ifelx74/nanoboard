@@ -3,14 +3,22 @@ import { Extension, type AnyExtension } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
+import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
 import UniqueID from "@tiptap/extension-unique-id";
 import { CharacterCount } from "@tiptap/extensions";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { canJoin } from "@tiptap/pm/transform";
-import StarterKit from "@tiptap/starter-kit";
+import StarterKit, { type StarterKitOptions } from "@tiptap/starter-kit";
+import {
+  createPageSlashCommandExtension,
+  type PageSlashCommandAdditionalEntry,
+} from "@/components/pages/editor/page-slash-commands";
 import { i18n } from "@/lib/i18n";
+import { PageColorMark } from "./extensions/color-mark";
+import { PageInlineCodeMark } from "./extensions/inline-code-mark";
+import { PageLinkExtension } from "./extensions/link-extension";
 
 const UNIQUE_ID_NODE_TYPES = [
   "heading",
@@ -228,20 +236,49 @@ function createTitleBodyNavigationExtension(
 export interface PagesEditorExtensionsOptions {
   editable: boolean;
   onFocusTitleEnd: () => void;
+  /** Optional overrides merged into StarterKit (e.g. `codeBlock: false` for CodeBlockLowlight). */
+  starterKitOverrides?: Partial<StarterKitOptions>;
+  /** Extra TipTap extensions supplied by downstream features (Callout, Emoji, Table, Image, etc.). */
+  extraExtensions?: readonly AnyExtension[];
+  /** Additional node type names that should receive a UniqueID `id` attribute. */
+  extraUniqueIdTypes?: readonly string[];
+  /** Extra slash command entries merged into General / Colors / Background colors sections. */
+  extraSlashCommands?: readonly PageSlashCommandAdditionalEntry[];
+  /** Built-in slash command keys to omit if replaced by a downstream extension. */
+  disabledSlashCommands?: readonly string[];
 }
 
 /**
- * Dedicated TipTap v3 starter extension set for Pages, completely isolated
- * from Task Description and Stickies editors. Loaded strictly inside the lazy
- * Page editor chunk.
+ * Dedicated TipTap v3 extension set for Pages, completely isolated from Task
+ * Description and Stickies editors. Loaded strictly inside the lazy Page editor
+ * chunk.
  */
 export function createPagesEditorExtensions({
   editable,
   onFocusTitleEnd,
+  starterKitOverrides,
+  extraExtensions = [],
+  extraUniqueIdTypes = [],
+  extraSlashCommands,
+  disabledSlashCommands,
 }: PagesEditorExtensionsOptions): AnyExtension[] {
+  const uniqueIdTypes = Array.from(
+    new Set([...UNIQUE_ID_NODE_TYPES, ...extraUniqueIdTypes]),
+  );
+
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3, 4, 5, 6] },
+      code: false,
+      link: false,
+      ...starterKitOverrides,
+    }),
+    PageInlineCodeMark,
+    PageLinkExtension,
+    PageColorMark,
+    TextAlign.configure({
+      types: ["heading", "paragraph"],
+      alignments: ["left", "center", "right"],
     }),
     TaskList,
     TaskItem.configure({ nested: true }),
@@ -260,12 +297,17 @@ export function createPagesEditorExtensions({
     CharacterCount,
     UniqueID.configure({
       attributeName: "id",
-      types: UNIQUE_ID_NODE_TYPES,
+      types: uniqueIdTypes,
       generateID: () => createId(),
       updateDocument: editable,
     }),
     BlockquoteExitExtension,
     PagesListBehaviorExtension,
     createTitleBodyNavigationExtension(onFocusTitleEnd),
+    createPageSlashCommandExtension({
+      additionalItems: extraSlashCommands,
+      disabledKeys: disabledSlashCommands,
+    }),
+    ...extraExtensions,
   ];
 }

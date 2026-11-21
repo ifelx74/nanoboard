@@ -464,7 +464,11 @@
       "locked": "Verrouillée",
       "unlocked": "Déverrouillée",
       "copied": "Copié !",
-      "options": "Options de la page"
+      "options": "Options de la page",
+      "display": {
+        "fullWidth": "Pleine largeur",
+        "stickyToolbar": "Barre d'outils fixe"
+      }
     },
     "switcher": {
       "searchPlaceholder": "Rechercher des pages",
@@ -481,6 +485,101 @@
       "bodyAriaLabel": "Contenu de la page",
       "placeholder": "Écrivez quelque chose…",
       "headingPlaceholder": "Titre {{level}}",
+      "blocks": {
+        "text": "Texte",
+        "h1": "Titre 1",
+        "h2": "Titre 2",
+        "h3": "Titre 3",
+        "h4": "Titre 4",
+        "h5": "Titre 5",
+        "h6": "Titre 6",
+        "bulletList": "Liste à puces",
+        "orderedList": "Liste numérotée",
+        "taskList": "Liste de tâches",
+        "quote": "Citation",
+        "code": "Code",
+        "divider": "Séparateur"
+      },
+      "marks": {
+        "bold": "Gras",
+        "italic": "Italique",
+        "underline": "Souligné",
+        "strikethrough": "Barré",
+        "inlineCode": "Code en ligne"
+      },
+      "align": {
+        "left": "Aligner à gauche",
+        "center": "Centrer",
+        "right": "Aligner à droite"
+      },
+      "colors": {
+        "trigger": "Couleur",
+        "textColors": "Couleurs du texte",
+        "backgroundColors": "Couleurs de fond",
+        "default": "Par défaut",
+        "defaultBackground": "Fond par défaut",
+        "resetText": "Réinitialiser la couleur du texte",
+        "resetBackground": "Réinitialiser la couleur de fond",
+        "gray": "Gris",
+        "peach": "Pêche",
+        "pink": "Rose",
+        "orange": "Orange",
+        "green": "Vert",
+        "lightBlue": "Bleu clair",
+        "darkBlue": "Bleu foncé",
+        "purple": "Violet"
+      },
+      "toolbar": {
+        "ariaLabel": "Barre de mise en forme",
+        "typography": "Typographie",
+        "insertTable": "Insérer un tableau",
+        "insertImage": "Insérer une image"
+      },
+      "bubble": {
+        "ariaLabel": "Mise en forme de la sélection",
+        "nodeType": "Transformer en",
+        "multiple": "Multiple"
+      },
+      "link": {
+        "trigger": "Lien",
+        "urlLabel": "URL",
+        "urlPlaceholder": "Saisir ou coller une URL",
+        "textLabel": "Texte",
+        "textPlaceholder": "Saisir le texte à afficher",
+        "apply": "Appliquer",
+        "copy": "Copier le lien",
+        "edit": "Modifier le lien",
+        "unlink": "Retirer le lien",
+        "remove": "Supprimer le lien",
+        "invalidUrl": "Saisissez une URL http, https ou mailto valide"
+      },
+      "slash": {
+        "ariaLabel": "Insérer un bloc",
+        "colorsSection": "Couleurs",
+        "backgroundColorsSection": "Couleurs de fond",
+        "textDesc": "Commencez simplement à écrire en texte brut.",
+        "h1Desc": "Grand titre de section.",
+        "h2Desc": "Titre de section moyen.",
+        "h3Desc": "Petit titre de section.",
+        "h4Desc": "Petit titre de section.",
+        "h5Desc": "Petit titre de section.",
+        "h6Desc": "Petit titre de section.",
+        "orderedListDesc": "Créer une liste numérotée.",
+        "bulletListDesc": "Créer une liste à puces.",
+        "taskListDesc": "Créer une liste de tâches.",
+        "quoteDesc": "Insérer une citation.",
+        "codeDesc": "Insérer un extrait de code.",
+        "dividerDesc": "Séparer visuellement des blocs.",
+        "textColorDesc": "Modifier la couleur du texte.",
+        "backgroundColorDesc": "Modifier la couleur de fond."
+      },
+      "blockMenu": {
+        "handleAriaLabel": "Glisser pour réorganiser ou cliquer pour les actions du bloc",
+        "handleTooltip": "Glisser pour déplacer · Cliquer pour les options",
+        "ariaLabel": "Actions du bloc",
+        "delete": "Supprimer",
+        "duplicate": "Dupliquer"
+      },
       "errors": {
         "saveTitle": "Échec de l'enregistrement du titre",
         "saveContent": "Échec de l'enregistrement du contenu"

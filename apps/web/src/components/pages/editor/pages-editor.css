@@ -1,9 +1,124 @@
 @layer components {
-  /* Dedicated Pages TipTap v3 prose styles — strictly scoped to .nb-page-editor
-     and imported only inside the lazy Page editor chunk so initial CSS stays
-     within budget. Typography scale matches Plane CE's document body. */
+  /* Dedicated Pages TipTap v3 layout & prose styles — strictly scoped and
+     imported only inside the lazy Page editor chunk so initial CSS stays
+     within the 30 kB gzip budget. Matches Plane CE's @container layout,
+     typography scale, semantic 8-color tokens, and block drag-handle UX. */
+
+  #page-toolbar-container,
+  #page-content-container {
+    --normal-content-width: 720px;
+    --wide-content-width: 1152px;
+    --normal-content-margin: 20px;
+    --wide-content-margin: 96px;
+  }
+
+  /* ── Container-query aligned sticky toolbar ───────────────────────────── */
+
+  #page-toolbar-container {
+    container-name: page-toolbar-container;
+    container-type: inline-size;
+  }
+
+  #page-toolbar-container .page-toolbar-content {
+    --header-width: var(--normal-content-width);
+    padding-left: max(
+      var(--normal-content-margin),
+      calc(((100% - var(--header-width)) / 2) - 8px)
+    );
+  }
+
+  #page-toolbar-container .page-toolbar-content.wide-layout {
+    --header-width: var(--wide-content-width);
+  }
+
+  @container page-toolbar-container (min-width: 912px) and (max-width: 1344px) {
+    #page-toolbar-container .page-toolbar-content.wide-layout {
+      padding-left: var(--wide-content-margin);
+    }
+  }
+
+  @container page-toolbar-container (max-width: 912px) {
+    #page-toolbar-container .page-toolbar-content.wide-layout {
+      padding-left: var(--normal-content-margin);
+    }
+  }
+
+  @container page-toolbar-container (max-width: 760px) {
+    #page-toolbar-container .page-toolbar-content {
+      padding-left: var(--normal-content-margin);
+    }
+  }
+
+  /* ── Container-query aligned document column & breakout blocks ────────── */
+
+  #page-content-container {
+    container-name: page-content-container;
+    container-type: inline-size;
+  }
+
+  #page-content-container .nb-page-frame {
+    --editor-content-width: var(--normal-content-width);
+    --page-gutter: var(--normal-content-margin);
+  }
+
+  #page-content-container .nb-page-frame.wide-layout {
+    --editor-content-width: var(--wide-content-width);
+    --page-gutter: var(--wide-content-margin);
+  }
+
+  #page-content-container .nb-page-header-container,
+  #page-content-container
+    .nb-page-editor
+    .tiptap
+    > *:not(.editor-full-width-block):not(.tableWrapper) {
+    max-width: min(
+      var(--editor-content-width),
+      calc(100% - (var(--page-gutter) * 2))
+    );
+    margin-inline: auto;
+    transition: max-width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Horizontal breakout for wide blocks (e.g. tables) */
+  #page-content-container .nb-page-editor .tiptap > .editor-full-width-block,
+  #page-content-container .nb-page-editor .tiptap > .tableWrapper {
+    max-width: 100%;
+    padding-inline-start: max(
+      var(--page-gutter),
+      calc((100% - var(--editor-content-width)) / 2)
+    );
+    padding-inline-end: var(--page-gutter);
+    overflow-x: auto;
+  }
+
+  @container page-content-container (min-width: 912px) and (max-width: 1344px) {
+    #page-content-container .nb-page-frame.wide-layout {
+      --page-gutter: var(--wide-content-margin);
+    }
+  }
+
+  @container page-content-container (max-width: 912px) {
+    #page-content-container .nb-page-frame.wide-layout {
+      --page-gutter: var(--normal-content-margin);
+    }
+  }
+
+  @container page-content-container (max-width: 760px) {
+    #page-content-container .nb-page-frame {
+      --page-gutter: var(--normal-content-margin);
+    }
+  }
+
+  @container page-content-container (max-width: 930px) {
+    #page-content-container .page-summary-container {
+      display: none;
+    }
+  }
+
+  /* ── Base prose typography ────────────────────────────────────────────── */
 
   .nb-page-editor .tiptap {
+    position: relative;
     min-height: 16rem;
     font-size: 1rem;
     line-height: 1.5rem;
@@ -90,7 +205,8 @@
 
   .nb-page-editor .tiptap blockquote {
     margin: 0.5rem 0;
-    border-left: 3px solid color-mix(in srgb, var(--color-foreground) 28%, transparent);
+    border-left: 3px solid
+      color-mix(in srgb, var(--color-foreground) 28%, transparent);
     padding-left: 1rem;
     font-style: normal;
     font-weight: 400;
@@ -122,7 +238,9 @@
     color: inherit;
   }
 
-  .nb-page-editor .tiptap :not(pre) > code {
+  /* Plane orange monospace inline code chip */
+  .nb-page-editor .tiptap :not(pre) > code,
+  .nb-page-editor .tiptap .nb-inline-code {
     border-radius: var(--radius-sm);
     border: 0.5px solid var(--color-border);
     background-color: var(--color-muted);
@@ -133,16 +251,89 @@
     color: var(--color-orange-600);
   }
 
-  .dark .nb-page-editor .tiptap :not(pre) > code {
+  .dark .nb-page-editor .tiptap :not(pre) > code,
+  .dark .nb-page-editor .tiptap .nb-inline-code {
     color: var(--color-orange-400);
   }
 
   .nb-page-editor .tiptap a {
     color: var(--color-brand-800);
     text-decoration: underline;
-    text-underline-offset: 2px;
+    text-underline-offset: 3px;
     cursor: pointer;
+    transition: color 0.15s ease;
   }
+
+  .nb-page-editor .tiptap a:hover {
+    color: var(--color-brand-900);
+  }
+
+  .dark .nb-page-editor .tiptap a {
+    color: var(--color-brand-600);
+  }
+
+  .dark .nb-page-editor .tiptap a:hover {
+    color: var(--color-brand-400);
+  }
+
+  /* ── Semantic 8-color text & theme-adaptive background highlights ─────── */
+
+  .nb-page-editor .tiptap [data-text-color="gray"] {
+    color: var(--editor-colors-gray-text);
+  }
+  .nb-page-editor .tiptap [data-text-color="peach"] {
+    color: var(--editor-colors-peach-text);
+  }
+  .nb-page-editor .tiptap [data-text-color="pink"] {
+    color: var(--editor-colors-pink-text);
+  }
+  .nb-page-editor .tiptap [data-text-color="orange"] {
+    color: var(--editor-colors-orange-text);
+  }
+  .nb-page-editor .tiptap [data-text-color="green"] {
+    color: var(--editor-colors-green-text);
+  }
+  .nb-page-editor .tiptap [data-text-color="light-blue"] {
+    color: var(--editor-colors-light-blue-text);
+  }
+  .nb-page-editor .tiptap [data-text-color="dark-blue"] {
+    color: var(--editor-colors-dark-blue-text);
+  }
+  .nb-page-editor .tiptap [data-text-color="purple"] {
+    color: var(--editor-colors-purple-text);
+  }
+
+  .nb-page-editor .tiptap [data-background-color] {
+    border-radius: 2px;
+    padding-inline: 2px;
+  }
+
+  .nb-page-editor .tiptap [data-background-color="gray"] {
+    background-color: var(--editor-colors-gray-background);
+  }
+  .nb-page-editor .tiptap [data-background-color="peach"] {
+    background-color: var(--editor-colors-peach-background);
+  }
+  .nb-page-editor .tiptap [data-background-color="pink"] {
+    background-color: var(--editor-colors-pink-background);
+  }
+  .nb-page-editor .tiptap [data-background-color="orange"] {
+    background-color: var(--editor-colors-orange-background);
+  }
+  .nb-page-editor .tiptap [data-background-color="green"] {
+    background-color: var(--editor-colors-green-background);
+  }
+  .nb-page-editor .tiptap [data-background-color="light-blue"] {
+    background-color: var(--editor-colors-light-blue-background);
+  }
+  .nb-page-editor .tiptap [data-background-color="dark-blue"] {
+    background-color: var(--editor-colors-dark-blue-background);
+  }
+  .nb-page-editor .tiptap [data-background-color="purple"] {
+    background-color: var(--editor-colors-purple-background);
+  }
+
+  /* ── Lists & Plane task list checkboxes ───────────────────────────────── */
 
   .nb-page-editor .tiptap ul:not([data-type="taskList"]),
   .nb-page-editor .tiptap ol {
@@ -154,11 +345,18 @@
     list-style-type: disc;
   }
 
-  .nb-page-editor .tiptap ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) {
+  .nb-page-editor
+    .tiptap
+    ul:not([data-type="taskList"])
+    ul:not([data-type="taskList"]) {
     list-style-type: circle;
   }
 
-  .nb-page-editor .tiptap ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) {
+  .nb-page-editor
+    .tiptap
+    ul:not([data-type="taskList"])
+    ul:not([data-type="taskList"])
+    ul:not([data-type="taskList"]) {
     list-style-type: square;
   }
 
@@ -171,7 +369,6 @@
     padding-bottom: 2px;
   }
 
-  /* Plane-styled task list checkboxes */
   .nb-page-editor .tiptap ul[data-type="taskList"] {
     list-style: none;
     margin: 0.25rem 0;
@@ -208,15 +405,21 @@
     width: 0.85rem;
     height: 0.85rem;
     border-radius: 3px;
-    border: 1.5px solid color-mix(in srgb, var(--color-foreground) 35%, transparent);
+    border: 1.5px solid
+      color-mix(in srgb, var(--color-foreground) 35%, transparent);
     background-color: transparent;
     cursor: pointer;
     display: grid;
     place-content: center;
-    transition: background-color 120ms ease, border-color 120ms ease;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
   }
 
-  .nb-page-editor .tiptap ul[data-type="taskList"] input[type="checkbox"]::before {
+  .nb-page-editor
+    .tiptap
+    ul[data-type="taskList"]
+    input[type="checkbox"]::before {
     content: "";
     width: 0.55rem;
     height: 0.55rem;
@@ -226,19 +429,42 @@
     clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
   }
 
-  .nb-page-editor .tiptap ul[data-type="taskList"] input[type="checkbox"]:checked {
+  .nb-page-editor
+    .tiptap
+    ul[data-type="taskList"]
+    input[type="checkbox"]:checked {
     border-color: var(--color-brand-800);
     background-color: var(--color-brand-800);
   }
 
-  .nb-page-editor .tiptap ul[data-type="taskList"] input[type="checkbox"]:checked::before {
+  .nb-page-editor
+    .tiptap
+    ul[data-type="taskList"]
+    input[type="checkbox"]:checked::before {
     transform: scale(1);
   }
 
-  .nb-page-editor .tiptap ul[data-type="taskList"] li[data-checked="true"] > div > p {
+  .nb-page-editor
+    .tiptap
+    ul[data-type="taskList"]
+    li[data-checked="true"]
+    > div
+    > p {
     color: var(--color-muted-foreground);
     text-decoration: line-through;
-    text-decoration-color: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
+    text-decoration-color: color-mix(
+      in srgb,
+      var(--color-muted-foreground) 50%,
+      transparent
+    );
+  }
+
+  .nb-page-editor
+    .tiptap
+    ul[data-type="taskList"]
+    li[data-checked="true"]
+    [data-text-color] {
+    opacity: 0.6;
   }
 
   .nb-page-editor .tiptap[contenteditable="false"] input[type="checkbox"] {
@@ -248,5 +474,44 @@
   .nb-page-editor .tiptap[contenteditable="false"] .is-editor-empty::before,
   .nb-page-editor .tiptap[contenteditable="false"] .is-empty::before {
     display: none;
+  }
+
+  /* ── Left-gutter Drag Handle & Selected Block Highlight Overlay ───────── */
+
+  .nb-page-editor .nb-drag-handle {
+    display: flex;
+    align-items: center;
+    transition: opacity 0.15s ease;
+  }
+
+  .nb-page-editor
+    .tiptap:not(.dragging)
+    .ProseMirror-selectednode:not(.node-image):not(.node-pageImage):not(
+      .tableWrapper
+    ) {
+    position: relative;
+    cursor: grab;
+    outline: none;
+    box-shadow: none;
+  }
+
+  .nb-page-editor
+    .tiptap:not(.dragging)
+    .ProseMirror-selectednode:not(.node-image):not(.node-pageImage):not(
+      .tableWrapper
+    )::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -5px;
+    width: calc(100% + 10px);
+    height: 100%;
+    border-radius: 4px;
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-800) 18%,
+      transparent
+    );
+    pointer-events: none;
   }
 }

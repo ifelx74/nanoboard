@@ -140,7 +140,17 @@
   --code-foreground: var(--foreground);
   --code-highlight: color-mix(in srgb, var(--color-black) 4%, transparent);
 
-  /* Sticky editor colors (Light) */
+  /* Editor semantic text colors */
+  --editor-colors-gray-text: #5c5e63;
+  --editor-colors-peach-text: #ff5b59;
+  --editor-colors-pink-text: #f65385;
+  --editor-colors-orange-text: #fd9038;
+  --editor-colors-green-text: #0fc27b;
+  --editor-colors-light-blue-text: #17bee9;
+  --editor-colors-dark-blue-text: #266df0;
+  --editor-colors-purple-text: #9162f9;
+
+  /* Sticky & page editor background colors (Light) */
   --editor-colors-gray-background: #d6d6d8;
   --editor-colors-peach-background: #ffd5d7;
   --editor-colors-pink-background: #fdd4e3;
