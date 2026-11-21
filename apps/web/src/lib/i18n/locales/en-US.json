@@ -584,6 +584,32 @@
         "saveTitle": "Failed to save page title",
         "saveContent": "Failed to save page content"
       }
+    },
+    "codeBlock": {
+      "auto": "Auto",
+      "plainText": "Plain text",
+      "selectLanguage": "Select code language",
+      "searchLanguage": "Search language…",
+      "noLanguages": "No matching language",
+      "copy": "Copy code",
+      "copied": "Copied!",
+      "copyError": "Failed to copy code"
+    },
+    "table": {
+      "toolbarAriaLabel": "Table controls",
+      "slashTitle": "Table",
+      "slashDesc": "Insert a 3×3 table.",
+      "rowGroup": "Row",
+      "columnGroup": "Col",
+      "addRowBefore": "Add row above",
+      "addRowAfter": "Add row below",
+      "deleteRow": "Delete row",
+      "addColumnBefore": "Add column before",
+      "addColumnAfter": "Add column after",
+      "deleteColumn": "Delete column",
+      "headerRow": "Header",
+      "toggleHeaderRow": "Toggle header row",
+      "deleteTable": "Delete table"
     }
   },
   "task": {
