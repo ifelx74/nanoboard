@@ -584,6 +584,39 @@
         "saveTitle": "Échec de l'enregistrement du titre",
         "saveContent": "Échec de l'enregistrement du contenu"
       }
+    },
+    "image": {
+      "slashTitle": "Image",
+      "slashDesc": "Importer ou intégrer une image.",
+      "sourceTabsAriaLabel": "Source de l'image",
+      "uploadTab": "Importer",
+      "embedUrlTab": "Lien externe",
+      "removePlaceholder": "Retirer le bloc d'image",
+      "addPrompt": "Cliquez pour importer ou déposez une image",
+      "dropHere": "Déposez l'image ici",
+      "uploading": "Importation de l'image…",
+      "uploadHint": "JPEG, PNG, WebP ou GIF · 10 Mo max",
+      "urlInputLabel": "URL de l'image",
+      "urlPlaceholder": "https://exemple.com/image.png",
+      "embedButton": "Intégrer l'image",
+      "download": "Télécharger l'image",
+      "alignment": "Alignement de l'image",
+      "alignLeft": "Gauche",
+      "alignCenter": "Centré",
+      "alignRight": "Droite",
+      "fullscreen": "Afficher en plein écran",
+      "lightboxTitle": "Aperçu de l'image",
+      "closeLightbox": "Fermer l'aperçu de l'image",
+      "resizeHandle": "Glisser pour redimensionner l'image",
+      "missing": "Image indisponible",
+      "errors": {
+        "unsupportedType": "Format d'image non pris en charge. Utilisez JPEG, PNG, WebP ou GIF.",
+        "fileTooLarge": "L'image dépasse la limite de 10 Mo.",
+        "emptyFile": "Le fichier image sélectionné est vide.",
+        "uploadFailed": "Échec de l'enregistrement de l'image.",
+        "invalidUrl": "Saisissez une URL d'image http ou https valide.",
+        "downloadFailed": "Échec du téléchargement de l'image."
+      }
     }
   },
   "task": {
