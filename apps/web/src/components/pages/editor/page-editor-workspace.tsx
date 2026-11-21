@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -14,13 +15,23 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { db } from "@/lib/db/db";
+import { pruneOrphanPageAssets } from "@/lib/db/page-assets";
 import { savePageContent, updatePageTitle } from "@/lib/db/pages";
 import type { Page, PageContent } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { createPagesEditorExtensions } from "@/lib/pages/editor-extensions";
+import type { PageImageLightboxTarget } from "@/lib/pages/extensions/image-node";
 import { insertPageTable } from "@/lib/pages/extensions/table-extension";
+import {
+  createPageAssetUrlCache,
+  type PageAssetUrlCache,
+} from "@/lib/pages/object-url-cache";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import {
+  PageAssetUrlProvider,
+  useOptionalPageAssetUrlCache,
+} from "./page-asset-url-context";
 import { PageBlockDragHandle } from "./page-block-drag-handle";
 import { PageBubbleMenu } from "./page-bubble-menu";
 import {
@@ -36,6 +47,8 @@ import {
   EMOJI_CALLOUT_UNIQUE_ID_TYPES,
 } from "./page-emoji-callout-feature";
 import { PageHeaderLogoPicker } from "./page-header-logo-picker";
+import { createPageImageFeature } from "./page-image-feature";
+import { PageImageLightbox } from "./page-image-lightbox";
 import { PageLinkPopover } from "./page-link-popover";
 import type { PageSlashCommandAdditionalEntry } from "./page-slash-commands";
 import { PageStickyToolbar } from "./page-sticky-toolbar";
@@ -78,6 +91,8 @@ export type PageEditorWorkspaceProps = {
   disabledSlashCommands?: readonly string[];
   /** Notifies parent consumers when the TipTap editor instance is ready or destroyed. */
   onEditorReady?: (editor: Editor | null) => void;
+  /** Optional shared per-page ObjectURL cache (e.g. reused by Ticket 07's Assets tab). */
+  assetUrlCache?: PageAssetUrlCache;
 };
 
 /**
@@ -103,11 +118,44 @@ export default function PageEditorWorkspace({
   extraSlashCommands,
   disabledSlashCommands,
   onEditorReady,
+  assetUrlCache,
 }: PageEditorWorkspaceProps) {
   const { t } = useTranslation("pages");
   const readOnly = page.isLocked || page.archivedAt !== undefined;
   const readOnlyRef = useRef(readOnly);
   const pageId = page.id;
+
+  const inheritedAssetUrlCache = useOptionalPageAssetUrlCache();
+  const ownedAssetUrlCache = useMemo(
+    () =>
+      assetUrlCache || inheritedAssetUrlCache
+        ? null
+        : createPageAssetUrlCache(),
+    [assetUrlCache, inheritedAssetUrlCache, pageId],
+  );
+  const activeAssetUrlCache =
+    assetUrlCache ?? inheritedAssetUrlCache ?? ownedAssetUrlCache!;
+
+  useEffect(() => {
+    if (!ownedAssetUrlCache) return;
+    return () => {
+      ownedAssetUrlCache.revokeAll();
+    };
+  }, [ownedAssetUrlCache]);
+
+  const [lightboxTarget, setLightboxTarget] =
+    useState<PageImageLightboxTarget | null>(null);
+
+  const imageFeature = useMemo(
+    () =>
+      createPageImageFeature({
+        pageId,
+        projectId: page.projectId,
+        assetUrlCache: activeAssetUrlCache,
+        onOpenLightbox: setLightboxTarget,
+      }),
+    [pageId, page.projectId, activeAssetUrlCache],
+  );
 
   const [title, setTitle] = useState(page.title);
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -123,6 +171,7 @@ export default function PageEditorWorkspace({
   const isHydratedRef = useRef(false);
   const contentDirtyRef = useRef(false);
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastContentSaveRef = useRef<Promise<boolean>>(Promise.resolve(true));
 
   const focusTitleEnd = useCallback(() => {
     const input = titleInputRef.current;
@@ -152,27 +201,36 @@ export default function PageEditorWorkspace({
     });
   }, [pageId]);
 
-  const flushContent = useCallback(() => {
+  const flushContent = useCallback((): Promise<boolean> => {
     if (contentTimerRef.current) {
       clearTimeout(contentTimerRef.current);
       contentTimerRef.current = null;
     }
-    if (!contentDirtyRef.current) return;
+    if (!contentDirtyRef.current) {
+      return lastContentSaveRef.current;
+    }
     const currentEditor = editorRef.current;
-    if (!currentEditor) return;
+    if (!currentEditor) {
+      return lastContentSaveRef.current;
+    }
     contentDirtyRef.current = false;
 
     const json = currentEditor.getJSON();
-    void savePageContent(db, pageId, json).catch((error: unknown) => {
-      contentDirtyRef.current = true;
-      const fallbackError = i18n.t("pages:editor.errors.saveContent");
-      toast.error(error instanceof Error ? error.message : fallbackError);
-    });
+    const savePromise = savePageContent(db, pageId, json)
+      .then(() => true)
+      .catch((error: unknown) => {
+        contentDirtyRef.current = true;
+        const fallbackError = i18n.t("pages:editor.errors.saveContent");
+        toast.error(error instanceof Error ? error.message : fallbackError);
+        return false;
+      });
+    lastContentSaveRef.current = savePromise;
+    return savePromise;
   }, [pageId]);
 
   const flushAll = useCallback(() => {
     flushTitle();
-    flushContent();
+    void flushContent();
   }, [flushTitle, flushContent]);
 
   const editor = useEditor(
@@ -187,16 +245,19 @@ export default function PageEditorWorkspace({
         extraExtensions: [
           ...createPageCodeTableExtensions(),
           ...createEmojiCalloutExtensions(),
+          imageFeature.extension,
           ...(extraExtensions ?? []),
         ],
         extraUniqueIdTypes: [
           ...PAGE_CODE_TABLE_UNIQUE_ID_TYPES,
           ...EMOJI_CALLOUT_UNIQUE_ID_TYPES,
+          imageFeature.uniqueIdType,
           ...(extraUniqueIdTypes ?? []),
         ],
         extraSlashCommands: [
           createPageTableSlashCommandEntry(),
           ...createEmojiCalloutSlashCommands(),
+          imageFeature.slashCommand,
           ...(extraSlashCommands ?? []),
         ],
         disabledSlashCommands,
@@ -271,17 +332,38 @@ export default function PageEditorWorkspace({
     // Mount-only check: keyed by pageId.
   }, []);
 
-  // Flush pending debounced writes on unmount, route/page switch, and pagehide.
+  // Defensively prune orphan pageAssets left behind by prior crashed sessions
+  // without ever racing with fresh uploads created during this session.
   useEffect(() => {
-    const handlePageHide = () => {
-      flushAll();
+    const mountTimestamp = Date.now();
+    void pruneOrphanPageAssets(db, pageId, { olderThan: mountTimestamp }).catch(
+      () => {
+        // Best-effort defensive hygiene on page load.
+      },
+    );
+  }, [pageId]);
+
+  // Flush pending debounced writes on unmount, route/page switch, and pagehide,
+  // then prune unreferenced pageAssets once the latest contentJson has committed.
+  useEffect(() => {
+    const flushAndPrune = () => {
+      flushTitle();
+      const saveResult = flushContent();
+      void saveResult
+        .then((savedOk) => {
+          if (!savedOk) return undefined;
+          return pruneOrphanPageAssets(db, pageId);
+        })
+        .catch(() => {
+          // Best-effort cleanup on unmount/pagehide.
+        });
     };
-    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pagehide", flushAndPrune);
     return () => {
-      window.removeEventListener("pagehide", handlePageHide);
-      flushAll();
+      window.removeEventListener("pagehide", flushAndPrune);
+      flushAndPrune();
     };
-  }, [flushAll]);
+  }, [flushTitle, flushContent, pageId]);
 
   function handleTitleChange(event: ChangeEvent<HTMLTextAreaElement>) {
     if (readOnly) return;
@@ -353,89 +435,96 @@ export default function PageEditorWorkspace({
   }
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
-      <PageStickyToolbar
-        editor={editor}
-        isEditable={!readOnly}
-        isFullWidth={isFullWidth}
-        isStickyToolbarEnabled={isStickyToolbarEnabled}
-        onInsertTable={onInsertTable ?? insertPageTable}
-        onInsertImage={onInsertImage}
-        extraInsertSlot={extraInsertSlot}
-        rightSlot={toolbarRightSlot}
-      />
+    <PageAssetUrlProvider pageId={pageId} cache={activeAssetUrlCache}>
+      <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
+        <PageStickyToolbar
+          editor={editor}
+          isEditable={!readOnly}
+          isFullWidth={isFullWidth}
+          isStickyToolbarEnabled={isStickyToolbarEnabled}
+          onInsertTable={onInsertTable ?? insertPageTable}
+          onInsertImage={onInsertImage ?? imageFeature.insertImage}
+          extraInsertSlot={extraInsertSlot}
+          rightSlot={toolbarRightSlot}
+        />
 
-      <div
-        ref={setScrollContainerEl}
-        id="page-content-container"
-        data-page-canvas="true"
-        className="relative min-h-0 flex-1 overflow-y-auto"
-        onClick={handleCanvasClick}
-      >
         <div
+          ref={setScrollContainerEl}
+          id="page-content-container"
           data-page-canvas="true"
-          className={cn(
-            "nb-page-frame pt-10 pb-64",
-            isFullWidth && "wide-layout",
-          )}
+          className="relative min-h-0 flex-1 overflow-y-auto"
+          onClick={handleCanvasClick}
         >
-          <div className="nb-page-header-container group/page-header mb-4">
-            {headerTopSlot ?? (
-              <PageHeaderLogoPicker
-                page={page}
-                isTitleEmpty={title.trim() === ""}
-                disabled={readOnly}
-              />
+          <div
+            data-page-canvas="true"
+            className={cn(
+              "nb-page-frame pt-10 pb-64",
+              isFullWidth && "wide-layout",
             )}
-            <textarea
-              ref={titleInputRef}
-              rows={1}
-              value={title}
-              readOnly={readOnly}
-              aria-readonly={readOnly}
-              onChange={handleTitleChange}
-              onKeyDown={handleTitleKeyDown}
-              onBlur={flushTitle}
-              placeholder={t("untitled")}
-              aria-label={t("editor.titleAriaLabel")}
-              className={cn(
-                "block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50",
-                readOnly && "cursor-default",
+          >
+            <div className="nb-page-header-container group/page-header mb-4">
+              {headerTopSlot ?? (
+                <PageHeaderLogoPicker
+                  page={page}
+                  isTitleEmpty={title.trim() === ""}
+                  disabled={readOnly}
+                />
               )}
-            />
+              <textarea
+                ref={titleInputRef}
+                rows={1}
+                value={title}
+                readOnly={readOnly}
+                aria-readonly={readOnly}
+                onChange={handleTitleChange}
+                onKeyDown={handleTitleKeyDown}
+                onBlur={flushTitle}
+                placeholder={t("untitled")}
+                aria-label={t("editor.titleAriaLabel")}
+                className={cn(
+                  "block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50",
+                  readOnly && "cursor-default",
+                )}
+              />
+            </div>
+
+            <div ref={editorWrapperRef} className="nb-page-editor relative">
+              {editor && !readOnly && (
+                <>
+                  <PageBubbleMenu
+                    editor={editor}
+                    scrollTarget={scrollContainerEl}
+                  />
+                  <PageTableToolbar
+                    editor={editor}
+                    scrollTarget={scrollContainerEl}
+                  />
+                  <PageBlockDragHandle editor={editor} />
+                </>
+              )}
+              {editor && (
+                <PageLinkPopover
+                  editor={editor}
+                  containerRef={editorWrapperRef}
+                />
+              )}
+              <PageEditorEditableContext.Provider value={!readOnly}>
+                <EditorContent
+                  editor={editor}
+                  aria-label={t("editor.bodyAriaLabel")}
+                />
+              </PageEditorEditableContext.Provider>
+            </div>
           </div>
 
-          <div ref={editorWrapperRef} className="nb-page-editor relative">
-            {editor && !readOnly && (
-              <>
-                <PageBubbleMenu
-                  editor={editor}
-                  scrollTarget={scrollContainerEl}
-                />
-                <PageTableToolbar
-                  editor={editor}
-                  scrollTarget={scrollContainerEl}
-                />
-                <PageBlockDragHandle editor={editor} />
-              </>
-            )}
-            {editor && (
-              <PageLinkPopover
-                editor={editor}
-                containerRef={editorWrapperRef}
-              />
-            )}
-            <PageEditorEditableContext.Provider value={!readOnly}>
-              <EditorContent
-                editor={editor}
-                aria-label={t("editor.bodyAriaLabel")}
-              />
-            </PageEditorEditableContext.Provider>
-          </div>
+          {floatingOverlaySlot}
         </div>
-
-        {floatingOverlaySlot}
       </div>
-    </div>
+
+      <PageImageLightbox
+        target={lightboxTarget}
+        onClose={() => setLightboxTarget(null)}
+      />
+    </PageAssetUrlProvider>
   );
 }

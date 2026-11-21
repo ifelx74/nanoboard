@@ -528,4 +528,14 @@
     );
     pointer-events: none;
   }
+
+  /* ── Custom Image Block ───────────────────────────────────────────────── */
+
+  .nb-page-editor .nb-page-image-block {
+    scroll-margin-top: 2rem;
+  }
+
+  .nb-page-editor .tiptap .ProseMirror-selectednode.node-image {
+    outline: none;
+  }
 }
