@@ -1,0 +1,247 @@
+@layer components {
+  /* Dedicated Pages TipTap v3 prose styles — strictly scoped to .nb-page-editor
+     and imported only inside the lazy Page editor chunk so initial CSS stays
+     within budget. Typography scale matches Plane CE's document body. */
+
+  .nb-page-editor .tiptap {
+    min-height: 16rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 400;
+    color: var(--color-foreground);
+    outline: none;
+  }
+
+  .nb-page-editor .tiptap p {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .nb-page-editor .tiptap p + p {
+    padding-top: 8px;
+  }
+
+  .nb-page-editor .tiptap p.is-editor-empty:first-child::before,
+  .nb-page-editor .tiptap h1.is-empty::before,
+  .nb-page-editor .tiptap h2.is-empty::before,
+  .nb-page-editor .tiptap h3.is-empty::before,
+  .nb-page-editor .tiptap h4.is-empty::before,
+  .nb-page-editor .tiptap h5.is-empty::before,
+  .nb-page-editor .tiptap h6.is-empty::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: color-mix(in srgb, var(--color-muted-foreground) 65%, transparent);
+  }
+
+  .nb-page-editor .tiptap h1,
+  .nb-page-editor .tiptap h2,
+  .nb-page-editor .tiptap h3,
+  .nb-page-editor .tiptap h4,
+  .nb-page-editor .tiptap h5,
+  .nb-page-editor .tiptap h6 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    padding-bottom: 4px;
+  }
+
+  .nb-page-editor .tiptap h1:not(:first-child),
+  .nb-page-editor .tiptap h2:not(:first-child),
+  .nb-page-editor .tiptap h3:not(:first-child),
+  .nb-page-editor .tiptap h4:not(:first-child) {
+    padding-top: 28px;
+  }
+
+  .nb-page-editor .tiptap h5:not(:first-child),
+  .nb-page-editor .tiptap h6:not(:first-child) {
+    padding-top: 20px;
+  }
+
+  .nb-page-editor .tiptap h1 {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+
+  .nb-page-editor .tiptap h2 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .nb-page-editor .tiptap h3 {
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+  }
+
+  .nb-page-editor .tiptap h4 {
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+  }
+
+  .nb-page-editor .tiptap h5 {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+
+  .nb-page-editor .tiptap h6 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .nb-page-editor .tiptap blockquote {
+    margin: 0.5rem 0;
+    border-left: 3px solid color-mix(in srgb, var(--color-foreground) 28%, transparent);
+    padding-left: 1rem;
+    font-style: normal;
+    font-weight: 400;
+    color: var(--color-muted-foreground);
+  }
+
+  .nb-page-editor .tiptap hr {
+    margin: 1rem 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .nb-page-editor .tiptap pre {
+    margin: 0.5rem 0;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-muted);
+    padding: 0.875rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.5rem;
+    tab-size: 2;
+    overflow-x: auto;
+  }
+
+  .nb-page-editor .tiptap pre code {
+    background: none;
+    padding: 0;
+    border: 0;
+    color: inherit;
+  }
+
+  .nb-page-editor .tiptap :not(pre) > code {
+    border-radius: var(--radius-sm);
+    border: 0.5px solid var(--color-border);
+    background-color: var(--color-muted);
+    padding: 1.5px 6px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-orange-600);
+  }
+
+  .dark .nb-page-editor .tiptap :not(pre) > code {
+    color: var(--color-orange-400);
+  }
+
+  .nb-page-editor .tiptap a {
+    color: var(--color-brand-800);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  .nb-page-editor .tiptap ul:not([data-type="taskList"]),
+  .nb-page-editor .tiptap ol {
+    margin: 0.25rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .nb-page-editor .tiptap ul:not([data-type="taskList"]) {
+    list-style-type: disc;
+  }
+
+  .nb-page-editor .tiptap ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) {
+    list-style-type: circle;
+  }
+
+  .nb-page-editor .tiptap ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) {
+    list-style-type: square;
+  }
+
+  .nb-page-editor .tiptap ol {
+    list-style-type: decimal;
+  }
+
+  .nb-page-editor .tiptap li > p {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  /* Plane-styled task list checkboxes */
+  .nb-page-editor .tiptap ul[data-type="taskList"] {
+    list-style: none;
+    margin: 0.25rem 0;
+    padding-left: 0;
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] ul[data-type="taskList"] {
+    padding-left: 1.5rem;
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] li > label {
+    margin-top: 0.35rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] li > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 3px;
+    border: 1.5px solid color-mix(in srgb, var(--color-foreground) 35%, transparent);
+    background-color: transparent;
+    cursor: pointer;
+    display: grid;
+    place-content: center;
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] input[type="checkbox"]::before {
+    content: "";
+    width: 0.55rem;
+    height: 0.55rem;
+    transform: scale(0);
+    transition: transform 120ms ease-in-out;
+    background-color: #ffffff;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] input[type="checkbox"]:checked {
+    border-color: var(--color-brand-800);
+    background-color: var(--color-brand-800);
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] input[type="checkbox"]:checked::before {
+    transform: scale(1);
+  }
+
+  .nb-page-editor .tiptap ul[data-type="taskList"] li[data-checked="true"] > div > p {
+    color: var(--color-muted-foreground);
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
+  }
+
+  .nb-page-editor .tiptap[contenteditable="false"] input[type="checkbox"] {
+    pointer-events: none;
+  }
+}

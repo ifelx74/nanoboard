@@ -3,11 +3,12 @@
 // milliseconds; start/due dates stay `yyyy-mm-dd` strings so board/list/calendar
 // grouping works unchanged.
 //
-// Excalidraw types arrive through type-only subpath imports: they are erased at
-// build time, so the editor stays out of every bundle that only needs the row
-// shape (only the lazy whiteboard chunk imports the library at runtime).
+// Excalidraw and TipTap types arrive through type-only imports: they are erased
+// at build time, so heavy editors stay out of every bundle that only needs the
+// row shape (only lazy editor chunks import the libraries at runtime).
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
+import type { JSONContent } from "@tiptap/core";
 
 export const TASK_PRIORITIES = [
   "no-priority",
@@ -205,4 +206,57 @@ export interface WhiteboardPreview {
   dataUrl: string;
   /** Epoch ms of the last content-ful save; gallery ordering + staleness. */
   updatedAt: number;
+}
+
+/** Discriminated logo chosen for a page header and list row. */
+export type PageLogo =
+  | { type: "emoji"; value: string }
+  | { type: "icon"; name: string; color: string };
+
+/**
+ * Lightweight per-project page metadata (~200 bytes). Deliberately kept apart
+ * from `PageContent` and `PageAsset` so list views and breadcrumb switchers
+ * never structured-clone document ASTs or image blobs.
+ */
+export interface Page {
+  id: string;
+  projectId: string;
+  /** Empty string for untitled pages; UI renders a localized "Untitled" fallback. */
+  title: string;
+  logo: PageLogo | null;
+  isFavorite: boolean;
+  isLocked: boolean;
+  /** Soft-archive stamp (epoch ms); absent means active. */
+  archivedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * Document payload for a Page, keyed 1-to-1 by `pageId`. Loaded only for the
+ * mounted editor and scanned by `projectId` only when list search is active.
+ */
+export interface PageContent {
+  /** Primary key; 1-to-1 with Page.id. */
+  pageId: string;
+  projectId: string;
+  /** Lossless TipTap JSONContent document AST. */
+  contentJson: JSONContent;
+  /** Normalized plain text derived from contentJson for search and stats. */
+  contentText: string;
+}
+
+/**
+ * Binary image asset owned by a Page. Stored as a raw Blob and referenced by
+ * `assetId` inside `PageContent.contentJson` rather than inlined as base64.
+ */
+export interface PageAsset {
+  id: string;
+  pageId: string;
+  projectId: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  blob: Blob;
+  createdAt: number;
 }

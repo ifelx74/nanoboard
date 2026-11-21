@@ -10,9 +10,9 @@ here rather than to invent new language.
 ## Core concepts
 
 - **Project** — the top-level unit of organization. Owns columns, tasks,
-  labels, and at most one whiteboard. Identified in the UI by its **project
-  key** (the `slug` field, branded `ProjectKey`); tasks are addressed as
-  `WR-1` (see **task key**).
+  labels, pages, and at most one whiteboard. Identified in the UI by its
+  **project key** (the `slug` field, branded `ProjectKey`); tasks are addressed
+  as `WR-1` (see **task key**).
 - **Project key** — 1–5 uppercase letters/digits, first char a letter,
   globally unique (case-insensitive). Code and UI both use this term; "key"
   and "slug" refer to the same field (`WR` in `WR-1`).
@@ -54,6 +54,19 @@ here rather than to invent new language.
   render. A work surface, not a reading surface: the Timeline edits dates
   only — never text, titles, labels, or positions. Dates change by
   dragging bars to reschedule or resize them, or through the task drawer.
+- **Page** — a per-project rich document (`/project/$projectId/pages/$pageId`,
+  listed at `/project/$projectId/pages`). Stored as a lightweight metadata row
+  in **`pages`** (`title`, `logo`, `isFavorite`, `isLocked`, optional
+  `archivedAt`, timestamps) so list views and breadcrumb switchers stay fast
+  without loading document bodies.
+- **Page content** — a **`pageContents`** row keyed 1-to-1 by `pageId`,
+  holding the lossless TipTap `JSONContent` document AST (`contentJson`) and
+  derived normalized plain text (`contentText`) for document stats and
+  on-demand body search.
+- **Page asset** — a **`pageAssets`** row storing a local binary image `Blob`
+  owned by a page (`pageId`, `projectId`, `name`, `mimeType`, `size`,
+  `createdAt`). Referenced from `contentJson` by `assetId`, never inlined into
+  `pages` or `pageContents`.
 
 ## Task lifecycle
 

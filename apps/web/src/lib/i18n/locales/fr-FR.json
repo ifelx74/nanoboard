@@ -369,8 +369,41 @@
       "calendar": "Calendrier",
       "fallbackProject": "Projet",
       "list": "Liste",
+      "pages": "Pages",
       "timeline": "Chronologie",
       "whiteboard": "Tableau blanc"
+    }
+  },
+  "pages": {
+    "untitled": "Sans titre",
+    "list": {
+      "addPage": "Ajouter une page",
+      "emptyTitle": "Aucune page pour le moment",
+      "emptyDescription": "Créez une page pour rédiger vos spécifications, notes de réunion et documents de ce projet.",
+      "updatedOn": "Modifiée le {{date}}",
+      "errors": {
+        "create": "Échec de la création de la page"
+      }
+    },
+    "switcher": {
+      "searchPlaceholder": "Rechercher des pages",
+      "empty": "Aucune page trouvée",
+      "ariaLabel": "Changer de page"
+    },
+    "notFound": {
+      "title": "Page introuvable",
+      "description": "Cette page n'existe pas ou n'appartient pas à ce projet.",
+      "backToPages": "Retour aux pages"
+    },
+    "editor": {
+      "titleAriaLabel": "Titre de la page",
+      "bodyAriaLabel": "Contenu de la page",
+      "placeholder": "Écrivez quelque chose…",
+      "headingPlaceholder": "Titre {{level}}",
+      "errors": {
+        "saveTitle": "Échec de l'enregistrement du titre",
+        "saveContent": "Échec de l'enregistrement du contenu"
+      }
     }
   },
   "task": {
@@ -707,6 +740,9 @@
     "listDescription": "Liste des tâches de {{project}} — regroupées par colonne, 100 % en local.",
     "listTitle": "Liste — {{project}} · Nanoboard",
     "notFoundTitle": "Page introuvable · Nanoboard",
+    "pageDetailTitle": "{{page}} — {{project}} · Nanoboard",
+    "pagesDescription": "Pages et documents de {{project}} — notes structurées, stockées localement dans votre navigateur.",
+    "pagesTitle": "Pages — {{project}} · Nanoboard",
     "projectWhiteboardDescription": "Tableau blanc de {{project}} — esquissez librement, stocké localement dans votre navigateur.",
     "projectWhiteboardTitle": "Tableau blanc — {{project}} · Nanoboard",
     "stickiesDescription": "Consignez et parcourez vos post-it — rapide, privé, 100 % dans votre navigateur.",

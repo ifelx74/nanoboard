@@ -369,8 +369,41 @@
       "calendar": "Calendar",
       "fallbackProject": "Project",
       "list": "List",
+      "pages": "Pages",
       "timeline": "Timeline",
       "whiteboard": "Whiteboard"
+    }
+  },
+  "pages": {
+    "untitled": "Untitled",
+    "list": {
+      "addPage": "Add page",
+      "emptyTitle": "No pages yet",
+      "emptyDescription": "Create a page to capture specs, meeting notes, and docs for this project.",
+      "updatedOn": "Updated on {{date}}",
+      "errors": {
+        "create": "Failed to create page"
+      }
+    },
+    "switcher": {
+      "searchPlaceholder": "Search pages",
+      "empty": "No pages found",
+      "ariaLabel": "Switch page"
+    },
+    "notFound": {
+      "title": "Page not found",
+      "description": "This page doesn't exist or doesn't belong to this project.",
+      "backToPages": "Back to pages"
+    },
+    "editor": {
+      "titleAriaLabel": "Page title",
+      "bodyAriaLabel": "Page content",
+      "placeholder": "Write something…",
+      "headingPlaceholder": "Heading {{level}}",
+      "errors": {
+        "saveTitle": "Failed to save page title",
+        "saveContent": "Failed to save page content"
+      }
     }
   },
   "task": {
@@ -707,6 +740,9 @@
     "listDescription": "Task list for {{project}} — grouped by column, all local-first.",
     "listTitle": "List — {{project}} · Nanoboard",
     "notFoundTitle": "Page Not Found · Nanoboard",
+    "pageDetailTitle": "{{page}} — {{project}} · Nanoboard",
+    "pagesDescription": "Project pages and docs for {{project}} — rich notes, stored locally in your browser.",
+    "pagesTitle": "Pages — {{project}} · Nanoboard",
     "projectWhiteboardDescription": "Whiteboard for {{project}} — sketch freely, stored locally in your browser.",
     "projectWhiteboardTitle": "Whiteboard — {{project}} · Nanoboard",
     "stickiesDescription": "Capture and browse sticky notes — fast, private, 100% in your browser.",

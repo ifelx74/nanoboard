@@ -27,6 +27,9 @@ import {
   type Column,
   type DueDateString,
   type Label,
+  type Page,
+  type PageAsset,
+  type PageContent,
   type Project,
   type Sticky,
   type Task,
@@ -35,6 +38,7 @@ import {
   type Whiteboard,
   type WhiteboardPreview,
 } from "./schema";
+import { createEmptyPageContent } from "../pages/document";
 
 // Dexie snapshots the browser globals into `Dexie.dependencies` when the
 // dexie module is evaluated, which may happen *before* this module installs
@@ -222,6 +226,47 @@ export function makeWhiteboardPreview(
   };
 }
 
+export function makePage(overrides: Partial<Page> & { id: string }): Page {
+  return {
+    projectId: "project-1",
+    title: "Test page",
+    logo: null,
+    isFavorite: false,
+    isLocked: false,
+    createdAt: TEST_NOW,
+    updatedAt: TEST_NOW,
+    ...overrides,
+  };
+}
+
+export function makePageContent(
+  overrides: Partial<PageContent> & { pageId: string },
+): PageContent {
+  return {
+    projectId: "project-1",
+    contentJson: createEmptyPageContent(),
+    contentText: "",
+    ...overrides,
+  };
+}
+
+export function makePageAsset(
+  overrides: Partial<PageAsset> & { id: string },
+): PageAsset {
+  const blob =
+    overrides.blob ?? new Blob(["fake-image-bytes"], { type: "image/png" });
+  return {
+    pageId: "page-1",
+    projectId: "project-1",
+    name: "diagram.png",
+    mimeType: blob.type || "image/png",
+    size: blob.size,
+    blob,
+    createdAt: TEST_NOW,
+    ...overrides,
+  };
+}
+
 /** Representative rows of every table, with a consistent reference graph. */
 export interface TestDbContents {
   projects: Project[];
@@ -233,6 +278,9 @@ export interface TestDbContents {
   stickies: Sticky[];
   whiteboards: Whiteboard[];
   whiteboardPreviews: WhiteboardPreview[];
+  pages?: Page[];
+  pageContents?: PageContent[];
+  pageAssets?: PageAsset[];
 }
 
 /**
@@ -333,6 +381,9 @@ export async function seedTestDb(
       db.stickies,
       db.whiteboards,
       db.whiteboardPreviews,
+      db.pages,
+      db.pageContents,
+      db.pageAssets,
     ],
     async () => {
       await db.projects.clear();
@@ -344,6 +395,9 @@ export async function seedTestDb(
       await db.stickies.clear();
       await db.whiteboards.clear();
       await db.whiteboardPreviews.clear();
+      await db.pages.clear();
+      await db.pageContents.clear();
+      await db.pageAssets.clear();
 
       await db.projects.bulkAdd(contents.projects);
       await db.columns.bulkAdd(contents.columns);
@@ -354,6 +408,9 @@ export async function seedTestDb(
       await db.stickies.bulkAdd(contents.stickies);
       await db.whiteboards.bulkAdd(contents.whiteboards);
       await db.whiteboardPreviews.bulkAdd(contents.whiteboardPreviews);
+      await db.pages.bulkAdd(contents.pages ?? []);
+      await db.pageContents.bulkAdd(contents.pageContents ?? []);
+      await db.pageAssets.bulkAdd(contents.pageAssets ?? []);
     },
   );
 }
