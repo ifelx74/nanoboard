@@ -148,10 +148,16 @@ export default function PageEditorWorkspace({
   }, [editor]);
 
   useEffect(() => {
+    const becameReadOnly = readOnly && !readOnlyRef.current;
+    if (becameReadOnly) {
+      // Flush edits typed immediately before locking or archiving so nothing
+      // within the debounce window is lost.
+      flushAll();
+    }
     readOnlyRef.current = readOnly;
     if (!editor) return;
     editor.setEditable(!readOnly, false);
-  }, [editor, readOnly]);
+  }, [editor, readOnly, flushAll]);
 
   // Auto-size the H1 title textarea to fit wrapped lines cleanly without scrollbars.
   const syncTitleHeight = useCallback(() => {
@@ -211,11 +217,7 @@ export default function PageEditorWorkspace({
       firstChild?.type.name === "paragraph" && firstChild.content.size === 0;
 
     if (insertParagraphIfNonEmpty && !firstIsEmptyParagraph && !readOnly) {
-      editor
-        .chain()
-        .insertContentAt(0, { type: "paragraph" })
-        .focus(1)
-        .run();
+      editor.chain().insertContentAt(0, { type: "paragraph" }).focus(1).run();
       return;
     }
     editor.commands.focus("start");
@@ -242,7 +244,8 @@ export default function PageEditorWorkspace({
     }
 
     if (event.key === "ArrowDown") {
-      const lineHeight = Number.parseFloat(getComputedStyle(el).lineHeight) || 38;
+      const lineHeight =
+        Number.parseFloat(getComputedStyle(el).lineHeight) || 38;
       const isSingleLine = el.scrollHeight <= lineHeight * 1.5;
       const atEnd =
         el.selectionStart === el.value.length &&
@@ -272,12 +275,13 @@ export default function PageEditorWorkspace({
             rows={1}
             value={title}
             readOnly={readOnly}
+            aria-readonly={readOnly}
             onChange={handleTitleChange}
             onKeyDown={handleTitleKeyDown}
             onBlur={flushTitle}
             placeholder={t("untitled")}
             aria-label={t("editor.titleAriaLabel")}
-            className="block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50"
+            className={`block w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[2.375rem] font-bold tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground/50${readOnly ? " cursor-default" : ""}`}
           />
         </div>
 

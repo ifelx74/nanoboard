@@ -380,10 +380,91 @@
       "addPage": "Ajouter une page",
       "emptyTitle": "Aucune page pour le moment",
       "emptyDescription": "Créez une page pour rédiger vos spécifications, notes de réunion et documents de ce projet.",
-      "updatedOn": "Modifiée le {{date}}",
+      "archivedEmptyTitle": "Aucune page archivée",
+      "archivedEmptyDescription": "Les pages que vous archivez apparaîtront ici en lecture seule.",
+      "noMatchesTitle": "Aucune page correspondante",
+      "noMatchesDescription": "Essayez d'ajuster votre recherche ou vos filtres.",
+      "createdOn": "Créée le {{date}}",
+      "rowActions": "Actions de la page",
+      "tabs": {
+        "ariaLabel": "Vues des pages",
+        "all": "Toutes",
+        "archived": "Archivées"
+      },
+      "search": {
+        "open": "Rechercher des pages",
+        "placeholder": "Rechercher des pages",
+        "clear": "Effacer la recherche"
+      },
+      "sort": {
+        "ariaLabel": "Trier les pages",
+        "name": "Nom",
+        "createdAt": "Date de création",
+        "updatedAt": "Date de modification",
+        "asc": "Croissant",
+        "desc": "Décroissant"
+      },
+      "filters": {
+        "button": "Filtres",
+        "searchPlaceholder": "Filtrer les options…",
+        "empty": "Aucun filtre correspondant",
+        "favorites": "Favoris",
+        "createdDate": "Date de création",
+        "ranges": {
+          "today": "Aujourd'hui",
+          "last7Days": "7 derniers jours",
+          "last14Days": "14 derniers jours",
+          "last30Days": "30 derniers jours"
+        },
+        "removeFilter": "Retirer le filtre",
+        "clearAll": "Tout effacer"
+      },
       "errors": {
         "create": "Échec de la création de la page"
       }
+    },
+    "actions": {
+      "openInNewTab": "Ouvrir dans un nouvel onglet",
+      "copyLink": "Copier le lien",
+      "makeCopy": "Créer une copie",
+      "copyTitle": "{{title}} (copie)",
+      "lock": "Verrouiller",
+      "unlock": "Déverrouiller",
+      "archive": "Archiver",
+      "restore": "Restaurer",
+      "delete": "Supprimer",
+      "addFavorite": "Ajouter aux favoris",
+      "removeFavorite": "Retirer des favoris",
+      "linkCopied": "Lien de la page copié",
+      "duplicated": "Page dupliquée",
+      "locked": "Page verrouillée",
+      "unlocked": "Page déverrouillée",
+      "archived": "Page archivée",
+      "restored": "Page restaurée",
+      "deleted": "Page supprimée",
+      "errors": {
+        "copyLink": "Échec de la copie du lien",
+        "duplicate": "Échec de la duplication de la page",
+        "lock": "Échec de la mise à jour du verrouillage",
+        "favorite": "Échec de la mise à jour des favoris",
+        "archive": "Échec de l'archivage de la page",
+        "restore": "Échec de la restauration de la page",
+        "delete": "Échec de la suppression de la page"
+      }
+    },
+    "deleteDialog": {
+      "title": "Supprimer la page",
+      "description": "Supprimer définitivement « {{title}} » ? Cette action est irréversible et supprime son contenu et ses images.",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "deleting": "Suppression…"
+    },
+    "detail": {
+      "archivedAt": "Archivée le {{date}}",
+      "locked": "Verrouillée",
+      "unlocked": "Déverrouillée",
+      "copied": "Copié !",
+      "options": "Options de la page"
     },
     "switcher": {
       "searchPlaceholder": "Rechercher des pages",

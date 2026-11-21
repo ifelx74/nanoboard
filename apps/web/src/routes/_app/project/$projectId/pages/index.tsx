@@ -1,10 +1,15 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { FileText, Plus } from "lucide-react";
-import { useState } from "react";
+import { Archive, FileText, Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ProjectLayout } from "@/components/common/project-layout";
-import { PageLogoIcon } from "@/components/pages/page-logo";
+import { PagesAppliedFiltersBar } from "@/components/pages/list/pages-applied-filters-bar";
+import { PagesFiltersPopover } from "@/components/pages/list/pages-filters-popover";
+import { PagesListRow } from "@/components/pages/list/pages-list-row";
+import { PagesSearchInput } from "@/components/pages/list/pages-search-input";
+import { PagesSortDropdown } from "@/components/pages/list/pages-sort-dropdown";
+import { PageDeleteDialog } from "@/components/pages/page-delete-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -15,17 +20,45 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { db } from "@/lib/db/db";
-import { createPage, listProjectPages } from "@/lib/db/pages";
+import {
+  createPage,
+  listProjectPageContentTexts,
+  listProjectPages,
+} from "@/lib/db/pages";
 import { getProject } from "@/lib/db/queries";
-import { formatMediumDate } from "@/lib/format";
+import type { Page } from "@/lib/db/schema";
+import { getActiveLocale } from "@/lib/format";
 import { i18n } from "@/lib/i18n";
+import {
+  DEFAULT_PAGE_LIST_FILTERS,
+  DEFAULT_PAGE_SORT,
+  filterAndSortPages,
+  hasActivePageFilters,
+  parsePagesTab,
+  type PageListFilters,
+  type PageListSort,
+  type PagesListTab,
+} from "@/lib/pages/list-model";
 import { projectRouteHead } from "@/lib/seo";
 import { toast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/pages/")({
   component: RouteComponent,
   loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
   head: projectRouteHead("pages"),
+  // Keep validateSearch inline so the route tree never pulls `list-model.ts`
+  // into the initial app-shell bundle.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: PagesListTab } => ({
+    tab:
+      search.tab === "archived"
+        ? "archived"
+        : search.tab === "all"
+          ? "all"
+          : undefined,
+  }),
 });
 
 function PagesListSkeleton() {
@@ -47,14 +80,71 @@ function PagesListSkeleton() {
 
 function RouteComponent() {
   const { projectId } = Route.useParams();
+  const { tab: rawTab } = Route.useSearch();
   const navigate = useNavigate();
   const { t } = useTranslation("pages");
+
+  const activeTab = parsePagesTab(rawTab);
   const [isCreating, setIsCreating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sort, setSort] = useState<PageListSort>(DEFAULT_PAGE_SORT);
+  const [filters, setFilters] = useState<PageListFilters>(
+    DEFAULT_PAGE_LIST_FILTERS,
+  );
+  const [deleteTarget, setDeleteTarget] = useState<Page | null>(null);
+
+  useEffect(() => {
+    setSearchQuery("");
+    setFilters(DEFAULT_PAGE_LIST_FILTERS);
+    setDeleteTarget(null);
+  }, [projectId]);
 
   const pages = useLiveQuery(
     () => listProjectPages(db, projectId),
     [projectId],
   );
+
+  // Scan `pageContents` on demand ONLY while a non-empty search query is entered
+  // so idle list loads never structured-clone document bodies.
+  const isSearchActive = searchQuery.trim().length > 0;
+  const contentTextByPageId = useLiveQuery(async () => {
+    if (!isSearchActive) return undefined;
+    return listProjectPageContentTexts(db, projectId);
+  }, [projectId, isSearchActive]);
+
+  const untitledLabel = t("untitled");
+  const activeLocale = getActiveLocale();
+
+  const visiblePages = useMemo(() => {
+    if (!pages) return [];
+    return filterAndSortPages(pages, {
+      tab: activeTab,
+      searchQuery,
+      contentTextByPageId,
+      sort,
+      filters,
+      untitledLabel,
+      locale: activeLocale,
+    });
+  }, [
+    pages,
+    activeTab,
+    searchQuery,
+    contentTextByPageId,
+    sort,
+    filters,
+    untitledLabel,
+    activeLocale,
+  ]);
+
+  function handleTabChange(nextTab: PagesListTab) {
+    if (nextTab === activeTab) return;
+    void navigate({
+      to: "/project/$projectId/pages",
+      params: { projectId },
+      search: { tab: nextTab },
+    });
+  }
 
   async function handleCreatePage() {
     if (isCreating) return;
@@ -86,6 +176,8 @@ function RouteComponent() {
       {t("list.addPage")}
     </Button>
   );
+
+  const hasSearchOrFilters = isSearchActive || hasActivePageFilters(filters);
 
   return (
     <ProjectLayout
@@ -119,34 +211,131 @@ function RouteComponent() {
         </div>
       ) : (
         <div className="flex h-full w-full flex-col overflow-hidden bg-background">
-          <div className="flex-1 overflow-y-auto">
-            {pages.map((page) => {
-              const displayTitle = page.title.trim() || t("untitled");
-              const updatedDate = formatMediumDate(new Date(page.updatedAt));
-              return (
-                <Link
-                  key={page.id}
-                  to="/project/$projectId/pages/$pageId"
-                  params={{ projectId, pageId: page.id }}
-                  className="flex min-h-[52px] items-center justify-between gap-4 border-b border-border/60 px-4 py-2 text-[13px] transition-colors hover:bg-accent/50"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <PageLogoIcon logo={page.logo} />
-                    <span className="truncate font-medium text-foreground">
-                      {displayTitle}
-                    </span>
-                  </div>
-                  <span
-                    title={t("list.updatedOn", { date: updatedDate })}
-                    className="shrink-0 text-xs text-muted-foreground"
+          <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+            <div
+              role="tablist"
+              aria-label={t("list.tabs.ariaLabel")}
+              className="flex h-full items-center gap-1"
+            >
+              {(["all", "archived"] as const).map((tabKey) => {
+                const isSelected = activeTab === tabKey;
+                const label =
+                  tabKey === "all"
+                    ? t("list.tabs.all")
+                    : t("list.tabs.archived");
+                return (
+                  <button
+                    key={tabKey}
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                    onClick={() => handleTabChange(tabKey)}
+                    className={cn(
+                      "relative flex h-full cursor-pointer items-center px-3 text-[13px] font-medium transition-colors outline-none focus-visible:text-foreground",
+                      isSelected
+                        ? "text-brand-800 dark:text-brand-300"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
                   >
-                    {updatedDate}
-                  </span>
-                </Link>
-              );
-            })}
+                    <span>{label}</span>
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "absolute inset-x-0 bottom-0 h-0.5 rounded-t transition-colors",
+                        isSelected
+                          ? "bg-brand-800 dark:bg-brand-400"
+                          : "bg-transparent",
+                      )}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <PagesSearchInput value={searchQuery} onChange={setSearchQuery} />
+              <PagesSortDropdown sort={sort} onChange={setSort} />
+              <PagesFiltersPopover filters={filters} onChange={setFilters} />
+            </div>
           </div>
+
+          <PagesAppliedFiltersBar filters={filters} onChange={setFilters} />
+
+          {visiblePages.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center p-6">
+              {hasSearchOrFilters ? (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon" className="size-12">
+                      <Search className="size-6" aria-hidden="true" />
+                    </EmptyMedia>
+                    <EmptyTitle>{t("list.noMatchesTitle")}</EmptyTitle>
+                    <EmptyDescription>
+                      {t("list.noMatchesDescription")}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : activeTab === "archived" ? (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon" className="size-12">
+                      <Archive className="size-6" aria-hidden="true" />
+                    </EmptyMedia>
+                    <EmptyTitle>{t("list.archivedEmptyTitle")}</EmptyTitle>
+                    <EmptyDescription>
+                      {t("list.archivedEmptyDescription")}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon" className="size-12">
+                      <FileText className="size-6" aria-hidden="true" />
+                    </EmptyMedia>
+                    <EmptyTitle>{t("list.emptyTitle")}</EmptyTitle>
+                    <EmptyDescription>
+                      {t("list.emptyDescription")}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <Button
+                      size="sm"
+                      disabled={isCreating}
+                      onClick={() => void handleCreatePage()}
+                    >
+                      <Plus className="size-3.5" aria-hidden="true" />
+                      {t("list.addPage")}
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              {visiblePages.map((page) => (
+                <PagesListRow
+                  key={page.id}
+                  projectId={projectId}
+                  page={page}
+                  onRequestDelete={setDeleteTarget}
+                />
+              ))}
+            </div>
+          )}
         </div>
+      )}
+
+      {deleteTarget && (
+        <PageDeleteDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+          pageId={deleteTarget.id}
+          pageTitle={deleteTarget.title}
+          onDeleted={() => setDeleteTarget(null)}
+        />
       )}
     </ProjectLayout>
   );

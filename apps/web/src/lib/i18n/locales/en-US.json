@@ -380,10 +380,91 @@
       "addPage": "Add page",
       "emptyTitle": "No pages yet",
       "emptyDescription": "Create a page to capture specs, meeting notes, and docs for this project.",
-      "updatedOn": "Updated on {{date}}",
+      "archivedEmptyTitle": "No archived pages",
+      "archivedEmptyDescription": "Pages you archive will appear here in read-only mode.",
+      "noMatchesTitle": "No matching pages",
+      "noMatchesDescription": "Try adjusting your search query or filters.",
+      "createdOn": "Created on {{date}}",
+      "rowActions": "Page actions",
+      "tabs": {
+        "ariaLabel": "Page views",
+        "all": "All",
+        "archived": "Archived"
+      },
+      "search": {
+        "open": "Search pages",
+        "placeholder": "Search pages",
+        "clear": "Clear search"
+      },
+      "sort": {
+        "ariaLabel": "Sort pages",
+        "name": "Name",
+        "createdAt": "Date created",
+        "updatedAt": "Date modified",
+        "asc": "Ascending",
+        "desc": "Descending"
+      },
+      "filters": {
+        "button": "Filters",
+        "searchPlaceholder": "Filter options…",
+        "empty": "No matching filters",
+        "favorites": "Favorites",
+        "createdDate": "Created date",
+        "ranges": {
+          "today": "Today",
+          "last7Days": "Last 7 days",
+          "last14Days": "Last 14 days",
+          "last30Days": "Last 30 days"
+        },
+        "removeFilter": "Remove filter",
+        "clearAll": "Clear all"
+      },
       "errors": {
         "create": "Failed to create page"
       }
+    },
+    "actions": {
+      "openInNewTab": "Open in new tab",
+      "copyLink": "Copy link",
+      "makeCopy": "Make a copy",
+      "copyTitle": "{{title}} (Copy)",
+      "lock": "Lock",
+      "unlock": "Unlock",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete",
+      "addFavorite": "Add to favorites",
+      "removeFavorite": "Remove from favorites",
+      "linkCopied": "Page link copied",
+      "duplicated": "Page duplicated",
+      "locked": "Page locked",
+      "unlocked": "Page unlocked",
+      "archived": "Page archived",
+      "restored": "Page restored",
+      "deleted": "Page deleted",
+      "errors": {
+        "copyLink": "Failed to copy link",
+        "duplicate": "Failed to duplicate page",
+        "lock": "Failed to update lock state",
+        "favorite": "Failed to update favorite state",
+        "archive": "Failed to archive page",
+        "restore": "Failed to restore page",
+        "delete": "Failed to delete page"
+      }
+    },
+    "deleteDialog": {
+      "title": "Delete page",
+      "description": "Permanently delete “{{title}}”? This cannot be undone and removes its content and images.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting…"
+    },
+    "detail": {
+      "archivedAt": "Archived at {{date}}",
+      "locked": "Locked",
+      "unlocked": "Unlocked",
+      "copied": "Copied!",
+      "options": "Page options"
     },
     "switcher": {
       "searchPlaceholder": "Search pages",

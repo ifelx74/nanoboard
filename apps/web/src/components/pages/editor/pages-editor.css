@@ -244,4 +244,9 @@
   .nb-page-editor .tiptap[contenteditable="false"] input[type="checkbox"] {
     pointer-events: none;
   }
+
+  .nb-page-editor .tiptap[contenteditable="false"] .is-editor-empty::before,
+  .nb-page-editor .tiptap[contenteditable="false"] .is-empty::before {
+    display: none;
+  }
 }

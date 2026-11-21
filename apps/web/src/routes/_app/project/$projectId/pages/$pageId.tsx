@@ -4,9 +4,13 @@ import { FileQuestion } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ProjectLayout } from "@/components/common/project-layout";
+import { PageDetailHeaderActions } from "@/components/pages/page-detail-header-actions";
 import { PageEditorSkeleton } from "@/components/pages/page-editor-skeleton";
 import { PageSwitcher } from "@/components/pages/page-switcher";
-import { BreadcrumbItem, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import {
+  BreadcrumbItem,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Empty,
@@ -113,11 +117,20 @@ function RouteComponent() {
     </>
   );
 
+  const headerActions = (
+    <PageDetailHeaderActions
+      projectId={projectId}
+      page={pageResult.page}
+      displayTitle={displayTitle}
+    />
+  );
+
   return (
     <ProjectLayout
       projectId={projectId}
       activeView="pages"
       breadcrumbExtra={breadcrumbExtra}
+      headerActions={headerActions}
     >
       <Suspense fallback={<PageEditorSkeleton />}>
         {/* Remount per pageId: TanStack Router reuses the component across param

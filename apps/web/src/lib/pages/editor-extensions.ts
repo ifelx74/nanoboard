@@ -196,6 +196,7 @@ function createTitleBodyNavigationExtension(
           return false;
         },
         Backspace: () => {
+          if (!this.editor.isEditable) return false;
           const { state, view } = this.editor;
           const { selection, doc } = state;
           if (!selection.empty || selection.from !== 1) return false;

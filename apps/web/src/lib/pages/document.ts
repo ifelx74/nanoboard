@@ -65,9 +65,92 @@ function collectBlocks(node: JSONContent, out: string[]): void {
  * Used to populate `pageContents.contentText` for body search and document
  * statistics without hydrating a ProseMirror instance.
  */
-export function extractContentText(doc: JSONContent | null | undefined): string {
+export function extractContentText(
+  doc: JSONContent | null | undefined,
+): string {
   if (!doc) return "";
   const blocks: string[] = [];
   collectBlocks(doc, blocks);
   return blocks.join("\n");
+}
+
+function collectAssetIds(node: JSONContent, out: Set<string>): void {
+  const assetId = node.attrs?.assetId;
+  if (typeof assetId === "string" && assetId.length > 0) {
+    out.add(assetId);
+  }
+  if (!Array.isArray(node.content)) return;
+  for (const child of node.content) {
+    collectAssetIds(child, out);
+  }
+}
+
+/**
+ * Collects every unique local `assetId` referenced anywhere inside a TipTap
+ * JSONContent document tree. External images (`src` only) and empty/null
+ * attributes are ignored.
+ */
+export function extractAssetIds(
+  doc: JSONContent | null | undefined,
+): Set<string> {
+  const out = new Set<string>();
+  if (!doc) return out;
+  collectAssetIds(doc, out);
+  return out;
+}
+
+function lookupAssetId(
+  idMap: ReadonlyMap<string, string> | Readonly<Record<string, string>>,
+  assetId: string,
+): string | undefined {
+  if (idMap instanceof Map) {
+    return idMap.get(assetId);
+  }
+  const record = idMap as Readonly<Record<string, string>>;
+  return Object.prototype.hasOwnProperty.call(record, assetId)
+    ? record[assetId]
+    : undefined;
+}
+
+function cloneAndRewriteNode(
+  node: JSONContent,
+  idMap: ReadonlyMap<string, string> | Readonly<Record<string, string>>,
+): JSONContent {
+  const cloned: JSONContent = { ...node };
+
+  if (node.attrs !== undefined) {
+    const nextAttrs = structuredClone(node.attrs);
+    const assetId = nextAttrs.assetId;
+    if (typeof assetId === "string" && assetId.length > 0) {
+      const replacement = lookupAssetId(idMap, assetId);
+      if (replacement !== undefined) {
+        nextAttrs.assetId = replacement;
+      }
+    }
+    cloned.attrs = nextAttrs;
+  }
+
+  if (node.marks !== undefined) {
+    cloned.marks = structuredClone(node.marks);
+  }
+
+  if (Array.isArray(node.content)) {
+    cloned.content = node.content.map((child) =>
+      cloneAndRewriteNode(child, idMap),
+    );
+  }
+
+  return cloned;
+}
+
+/**
+ * Returns a deeply cloned TipTap JSONContent tree with every mapped local
+ * `attrs.assetId` replaced by its new ID. Unmapped asset IDs, external image
+ * URLs, and all other attributes/marks are preserved without mutating `doc`.
+ */
+export function rewriteAssetIds(
+  doc: JSONContent,
+  idMap: ReadonlyMap<string, string> | Readonly<Record<string, string>>,
+): JSONContent {
+  return cloneAndRewriteNode(doc, idMap);
 }
