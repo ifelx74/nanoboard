@@ -1,7 +1,11 @@
+import { dataUrlToBlob } from "@/lib/data-url";
 import type { NanoboardDB } from "@/lib/db/db";
 import type {
   Column,
   Label,
+  Page,
+  PageAsset,
+  PageContent,
   Project,
   Sticky,
   Task,
@@ -14,6 +18,7 @@ import {
   BACKUP_FORMAT,
   BACKUP_TABLES,
   type BackupDocument,
+  type BackupPageAsset,
   type BackupTableName,
 } from "./types";
 import { assertValidBackupDocument } from "./validate";
@@ -85,6 +90,9 @@ export function parseBackupDocument(text: string): BackupDocument {
         "whiteboardPreviews",
         rawTables,
       ),
+      pages: asRows<Page>("pages", rawTables),
+      pageContents: asRows<PageContent>("pageContents", rawTables),
+      pageAssets: asRows<BackupPageAsset>("pageAssets", rawTables),
     },
   };
 
@@ -156,6 +164,24 @@ export async function applyBackupDocument(
   document: BackupDocument,
 ): Promise<void> {
   assertValidBackupDocument(document);
+
+  // Decode all `pageAssets` data URLs into binary `Blob`s *before* opening the
+  // IndexedDB transaction so malformed assets fail cleanly without touching
+  // the database and the `"rw"` transaction stays purely synchronous-IDB.
+  const restoredPageAssets: PageAsset[] = document.tables.pageAssets.map(
+    (asset, index) => {
+      const { dataUrl, ...rest } = asset;
+      try {
+        const blob = dataUrlToBlob(dataUrl, asset.mimeType);
+        return { ...rest, blob };
+      } catch {
+        throw new Error(
+          `This backup is corrupted — table "pageAssets", row ${index + 1} has an invalid "dataUrl" field.`,
+        );
+      }
+    },
+  );
+
   await db.transaction(
     "rw",
     BACKUP_TABLES.map((name) => db.table(name)),
@@ -164,7 +190,11 @@ export async function applyBackupDocument(
         await db.table(name).clear();
       }
       for (const name of BACKUP_TABLES) {
-        await db.table(name).bulkAdd(document.tables[name]);
+        if (name === "pageAssets") {
+          await db.pageAssets.bulkAdd(restoredPageAssets);
+        } else {
+          await db.table(name).bulkAdd(document.tables[name]);
+        }
       }
     },
   );

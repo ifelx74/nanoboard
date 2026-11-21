@@ -44,6 +44,17 @@ function buildOtherContents(): TestDbContents {
   return contents;
 }
 
+async function normalizeAssets(assets: TestDbContents["pageAssets"]) {
+  return Promise.all(
+    assets.map(async ({ blob, ...rest }) => ({
+      ...rest,
+      blobType: blob.type,
+      blobSize: blob.size,
+      bytes: Array.from(new Uint8Array(await blob.arrayBuffer())),
+    })),
+  );
+}
+
 async function readAllTables(db: Parameters<typeof applyBackupDocument>[0]) {
   return {
     projects: await db.projects.toArray(),
@@ -55,6 +66,26 @@ async function readAllTables(db: Parameters<typeof applyBackupDocument>[0]) {
     stickies: await db.stickies.toArray(),
     whiteboards: await db.whiteboards.toArray(),
     whiteboardPreviews: await db.whiteboardPreviews.toArray(),
+    pages: await db.pages.toArray(),
+    pageContents: await db.pageContents.toArray(),
+    pageAssets: await normalizeAssets(await db.pageAssets.toArray()),
+  };
+}
+
+async function normalizeContents(contents: TestDbContents) {
+  return {
+    projects: contents.projects,
+    columns: contents.columns,
+    tasks: contents.tasks,
+    labels: contents.labels,
+    taskLabels: contents.taskLabels,
+    taskResources: contents.taskResources,
+    stickies: contents.stickies,
+    whiteboards: contents.whiteboards,
+    whiteboardPreviews: contents.whiteboardPreviews,
+    pages: contents.pages,
+    pageContents: contents.pageContents,
+    pageAssets: await normalizeAssets(contents.pageAssets),
   };
 }
 
@@ -197,7 +228,9 @@ describe("openBackupDocument", () => {
     const restored = await openBackupDocument(text, PASSPHRASE);
     await applyBackupDocument(target, restored);
 
-    expect(await readAllTables(target)).toEqual(contents);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(contents),
+    );
 
     await source.close();
     await target.close();
@@ -236,7 +269,9 @@ describe("openBackupDocument", () => {
     await expect(
       openBackupDocument(text, "not the passphrase"),
     ).rejects.toThrow(BackupDecryptError);
-    expect(await readAllTables(target)).toEqual(original);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
@@ -265,7 +300,9 @@ describe("openBackupDocument", () => {
     await expect(openBackupDocument(tampered, PASSPHRASE)).rejects.toThrow(
       BackupDecryptError,
     );
-    expect(await readAllTables(target)).toEqual(original);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
@@ -293,7 +330,9 @@ describe("openBackupDocument", () => {
     await expect(openBackupDocument(truncated, PASSPHRASE)).rejects.toThrow(
       BackupDecryptError,
     );
-    expect(await readAllTables(target)).toEqual(original);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
@@ -312,7 +351,9 @@ describe("openBackupDocument", () => {
     await seedTestDb(target, original);
 
     await expect(openBackupDocument(cut, PASSPHRASE)).rejects.toThrow();
-    expect(await readAllTables(target)).toEqual(original);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
@@ -335,7 +376,9 @@ describe("openBackupDocument", () => {
     await expect(openBackupDocument(future, PASSPHRASE)).rejects.toThrow(
       /newer version of nanoboard/,
     );
-    expect(await readAllTables(target)).toEqual(original);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
@@ -356,7 +399,9 @@ describe("plain v1 backups", () => {
 
     await applyBackupDocument(target, parseBackupDocument(text));
 
-    expect(await readAllTables(target)).toEqual(contents);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(contents),
+    );
 
     await source.close();
     await target.close();

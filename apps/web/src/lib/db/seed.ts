@@ -1,18 +1,23 @@
 import { createId } from "@paralleldrive/cuid2";
+import type { JSONContent } from "@tiptap/core";
 import type Dexie from "dexie";
 import type { Table } from "dexie";
+import { extractContentText } from "../pages/document";
+import { suggestProjectKey } from "../task-key";
 import {
   DEFAULT_COLUMNS,
   DEFAULT_PROJECT_ICON,
   columnSlug,
   startDate,
 } from "./schema";
-import { suggestProjectKey } from "../task-key";
 import type {
   Column,
   ColumnSlug,
   DueDateString,
   Label,
+  Page,
+  PageAsset,
+  PageContent,
   Project,
   Task,
   TaskLabel,
@@ -26,6 +31,9 @@ export interface SeedableDb {
   tasks: Table<Task, string>;
   labels: Table<Label, string>;
   taskLabels: Table<TaskLabel, [string, string]>;
+  pages: Table<Page, string>;
+  pageContents: Table<PageContent, string>;
+  pageAssets: Table<PageAsset, string>;
 }
 
 export interface SeedRows {
@@ -34,6 +42,228 @@ export interface SeedRows {
   tasks: Task[];
   labels: Label[];
   taskLabels: TaskLabel[];
+  pages: Page[];
+  pageContents: PageContent[];
+}
+
+function headingNode(level: 1 | 2 | 3, text: string): JSONContent {
+  return {
+    type: "heading",
+    attrs: { id: createId(), level },
+    content: [{ type: "text", text }],
+  };
+}
+
+function paragraphNode(text: string): JSONContent {
+  return {
+    type: "paragraph",
+    attrs: { id: createId() },
+    content: [{ type: "text", text }],
+  };
+}
+
+function tableCellNode(
+  type: "tableHeader" | "tableCell",
+  text: string,
+): JSONContent {
+  return {
+    type,
+    attrs: { colspan: 1, rowspan: 1, colwidth: null },
+    content: [paragraphNode(text)],
+  };
+}
+
+function buildWebsiteDemoPageContent(): JSONContent {
+  return {
+    type: "doc",
+    content: [
+      headingNode(1, "Launch Overview"),
+      paragraphNode(
+        "This document tracks the core milestones, release checklist, and technical guardrails for the Website relaunch.",
+      ),
+      {
+        type: "callout",
+        attrs: {
+          id: createId(),
+          logoType: "emoji",
+          emoji: "💡",
+          iconName: null,
+          iconColor: null,
+          backgroundColor: "light-blue",
+        },
+        content: [
+          paragraphNode(
+            "Target launch window is next Friday. Freeze marketing copy 48 hours before cutover so QA can verify every landing page.",
+          ),
+        ],
+      },
+      headingNode(2, "Launch Checklist"),
+      {
+        type: "taskList",
+        attrs: { id: createId() },
+        content: [
+          {
+            type: "taskItem",
+            attrs: { checked: true },
+            content: [paragraphNode("Configure staging deploy preview")],
+          },
+          {
+            type: "taskItem",
+            attrs: { checked: true },
+            content: [paragraphNode("Finalize typography and color tokens")],
+          },
+          {
+            type: "taskItem",
+            attrs: { checked: false },
+            content: [paragraphNode("Complete pricing table responsiveness")],
+          },
+          {
+            type: "taskItem",
+            attrs: { checked: false },
+            content: [
+              paragraphNode("Verify redirects for migrated blog posts"),
+            ],
+          },
+        ],
+      },
+      headingNode(2, "Performance Budgets"),
+      headingNode(3, "Page Targets"),
+      {
+        type: "table",
+        attrs: { id: createId() },
+        content: [
+          {
+            type: "tableRow",
+            content: [
+              tableCellNode("tableHeader", "Route"),
+              tableCellNode("tableHeader", "Target LCP"),
+              tableCellNode("tableHeader", "Status"),
+            ],
+          },
+          {
+            type: "tableRow",
+            content: [
+              tableCellNode("tableCell", "Homepage"),
+              tableCellNode("tableCell", "< 1.4s"),
+              tableCellNode("tableCell", "Ready"),
+            ],
+          },
+          {
+            type: "tableRow",
+            content: [
+              tableCellNode("tableCell", "Pricing"),
+              tableCellNode("tableCell", "< 1.6s"),
+              tableCellNode("tableCell", "In progress"),
+            ],
+          },
+        ],
+      },
+      headingNode(3, "Redirect Helper"),
+      {
+        type: "codeBlock",
+        attrs: { id: createId(), language: "typescript" },
+        content: [
+          {
+            type: "text",
+            text: `export interface RedirectRule {\n  from: string;\n  to: string;\n  permanent: boolean;\n}\n\nexport function resolveRedirect(\n  pathname: string,\n  rules: readonly RedirectRule[],\n): RedirectRule | undefined {\n  return rules.find((rule) => rule.from === pathname);\n}`,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function buildMobileDemoPageContent(): JSONContent {
+  return {
+    type: "doc",
+    content: [
+      headingNode(1, "Release 1.3 Engineering Guide"),
+      paragraphNode(
+        "Key architectural notes, device verification tasks, and rollout steps for the upcoming iOS and Android build.",
+      ),
+      {
+        type: "callout",
+        attrs: {
+          id: createId(),
+          logoType: "emoji",
+          emoji: "📱",
+          iconName: null,
+          iconColor: null,
+          backgroundColor: "purple",
+        },
+        content: [
+          paragraphNode(
+            "Verify Android 14 cold-start behavior on a physical device before promoting the release candidate out of beta.",
+          ),
+        ],
+      },
+      headingNode(2, "Pre-Release Checklist"),
+      {
+        type: "taskList",
+        attrs: { id: createId() },
+        content: [
+          {
+            type: "taskItem",
+            attrs: { checked: true },
+            content: [paragraphNode("Ship 1.2 hotfix build to TestFlight")],
+          },
+          {
+            type: "taskItem",
+            attrs: { checked: false },
+            content: [paragraphNode("Audit offline queue retry backoff")],
+          },
+          {
+            type: "taskItem",
+            attrs: { checked: false },
+            content: [paragraphNode("Smoke-test push notification deep links")],
+          },
+        ],
+      },
+      headingNode(2, "Platform Matrix"),
+      headingNode(3, "Minimum Supported OS"),
+      {
+        type: "table",
+        attrs: { id: createId() },
+        content: [
+          {
+            type: "tableRow",
+            content: [
+              tableCellNode("tableHeader", "Platform"),
+              tableCellNode("tableHeader", "Minimum OS"),
+              tableCellNode("tableHeader", "Channel"),
+            ],
+          },
+          {
+            type: "tableRow",
+            content: [
+              tableCellNode("tableCell", "iOS"),
+              tableCellNode("tableCell", "iOS 16"),
+              tableCellNode("tableCell", "TestFlight"),
+            ],
+          },
+          {
+            type: "tableRow",
+            content: [
+              tableCellNode("tableCell", "Android"),
+              tableCellNode("tableCell", "Android 13"),
+              tableCellNode("tableCell", "Internal Track"),
+            ],
+          },
+        ],
+      },
+      headingNode(3, "Retry Backoff"),
+      {
+        type: "codeBlock",
+        attrs: { id: createId(), language: "typescript" },
+        content: [
+          {
+            type: "text",
+            text: `export function nextRetryDelayMs(attempt: number): number {\n  const clamped = Math.max(0, Math.min(attempt, 6));\n  return Math.min(30_000, 500 * 2 ** clamped);\n}`,
+          },
+        ],
+      },
+    ],
+  };
 }
 
 function isoDaysFromNow(days: number): DueDateString {
@@ -266,7 +496,58 @@ export function buildSeedRows(now: number = Date.now()): SeedRows {
     },
   );
 
-  return { projects, columns, tasks, labels, taskLabels };
+  const websitePageId = createId();
+  const websitePageJson = buildWebsiteDemoPageContent();
+  const mobilePageId = createId();
+  const mobilePageJson = buildMobileDemoPageContent();
+
+  const pages: Page[] = [
+    {
+      id: websitePageId,
+      projectId: websiteId,
+      title: "Launch Plan & Architecture",
+      logo: { type: "emoji", value: "🚀" },
+      isFavorite: true,
+      isLocked: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: mobilePageId,
+      projectId: mobileId,
+      title: "Offline Storage & Release Guide",
+      logo: { type: "emoji", value: "📱" },
+      isFavorite: false,
+      isLocked: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const pageContents: PageContent[] = [
+    {
+      pageId: websitePageId,
+      projectId: websiteId,
+      contentJson: websitePageJson,
+      contentText: extractContentText(websitePageJson),
+    },
+    {
+      pageId: mobilePageId,
+      projectId: mobileId,
+      contentJson: mobilePageJson,
+      contentText: extractContentText(mobilePageJson),
+    },
+  ];
+
+  return {
+    projects,
+    columns,
+    tasks,
+    labels,
+    taskLabels,
+    pages,
+    pageContents,
+  };
 }
 
 async function addSeedRows(db: SeedableDb, rows: SeedRows): Promise<void> {
@@ -275,6 +556,8 @@ async function addSeedRows(db: SeedableDb, rows: SeedRows): Promise<void> {
   await db.tasks.bulkAdd(rows.tasks);
   await db.labels.bulkAdd(rows.labels);
   await db.taskLabels.bulkAdd(rows.taskLabels);
+  await db.pages.bulkAdd(rows.pages);
+  await db.pageContents.bulkAdd(rows.pageContents);
 }
 
 /** Runs inside the `populate` transaction on database creation. */
@@ -291,16 +574,24 @@ export async function seedDatabase(db: SeedableDb): Promise<void> {
 export async function resetToSeed(db: Dexie & SeedableDb): Promise<void> {
   await db.transaction(
     "rw",
-    db.projects,
-    db.columns,
-    db.tasks,
-    db.labels,
-    db.taskLabels,
+    [
+      db.projects,
+      db.columns,
+      db.tasks,
+      db.labels,
+      db.taskLabels,
+      db.pages,
+      db.pageContents,
+      db.pageAssets,
+    ],
     async () => {
       await db.taskLabels.clear();
       await db.tasks.clear();
       await db.labels.clear();
       await db.columns.clear();
+      await db.pageAssets.clear();
+      await db.pageContents.clear();
+      await db.pages.clear();
       await db.projects.clear();
       await addSeedRows(db, buildSeedRows());
     },

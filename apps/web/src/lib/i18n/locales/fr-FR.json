@@ -927,7 +927,7 @@
       "restoreDescription": "Remplacez tout dans l'application par le contenu d'un fichier de sauvegarde.",
       "export": {
         "button": "Exporter la sauvegarde",
-        "description": "Téléchargez tout — projets, tâches, tableaux blancs et post-it — en un seul fichier JSON.",
+        "description": "Téléchargez tout — projets, tâches, pages, tableaux blancs et post-it — en un seul fichier JSON.",
         "exportFailed": "Impossible d'exporter la sauvegarde.",
         "exported": "Sauvegarde non chiffrée exportée.",
         "summary": {
@@ -937,6 +937,10 @@
           "labelAssignments_other": "{{count}} attributions d'étiquettes",
           "labels_one": "{{count}} étiquette",
           "labels_other": "{{count}} étiquettes",
+          "pageAssets_one": "{{count}} ressource de page",
+          "pageAssets_other": "{{count}} ressources de page",
+          "pages_one": "{{count}} page",
+          "pages_other": "{{count}} pages",
           "projects_one": "{{count}} projet",
           "projects_other": "{{count}} projets",
           "stickies_one": "{{count}} post-it",
@@ -993,6 +997,9 @@
         "tables": {
           "columns": "Colonnes",
           "labels": "Étiquettes",
+          "pageAssets": "Ressources de pages",
+          "pageContents": "Contenus de pages",
+          "pages": "Pages",
           "projects": "Projets",
           "stickies": "Post-it",
           "taskLabels": "Attributions d'étiquettes",

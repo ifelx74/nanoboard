@@ -278,16 +278,22 @@ export interface TestDbContents {
   stickies: Sticky[];
   whiteboards: Whiteboard[];
   whiteboardPreviews: WhiteboardPreview[];
-  pages?: Page[];
-  pageContents?: PageContent[];
-  pageAssets?: PageAsset[];
+  pages: Page[];
+  pageContents: PageContent[];
+  pageAssets: PageAsset[];
 }
+
+/** Binary PNG signature + non-ASCII bytes to verify binary Blob round-trips. */
+export const TEST_PAGE_ASSET_BYTES = new Uint8Array([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff,
+]);
 
 /**
  * A small, internally consistent workspace touching every table: one project
  * with three columns, two tasks (one plain, one with dates/priority), two
  * labels with one assignment, one manual link, one sticky, one whiteboard
- * scene complete with a data-URL file, and that project's preview row.
+ * scene complete with a data-URL file, that project's preview row, and one
+ * page with its content and binary image asset.
  * Row timestamps default to TEST_NOW; pass `now` to vary them (e.g. for tests
  * that order by updatedAt).
  */
@@ -357,11 +363,54 @@ export function buildTestContents(now: number = TEST_NOW): TestDbContents {
     whiteboardPreviews: [
       makeWhiteboardPreview({ projectId: "project-1", updatedAt: now }),
     ],
+    pages: [
+      makePage({
+        id: "page-1",
+        projectId: "project-1",
+        title: "Architecture notes",
+        logo: { type: "emoji", value: "📘" },
+        isFavorite: true,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    ],
+    pageContents: [
+      makePageContent({
+        pageId: "page-1",
+        projectId: "project-1",
+        contentJson: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { id: "heading-1", level: 1 },
+              content: [{ type: "text", text: "Overview" }],
+            },
+            {
+              type: "paragraph",
+              attrs: { id: "para-1" },
+              content: [{ type: "text", text: "Local-first architecture." }],
+            },
+          ],
+        },
+        contentText: "Overview\nLocal-first architecture.",
+      }),
+    ],
+    pageAssets: [
+      makePageAsset({
+        id: "page-asset-1",
+        pageId: "page-1",
+        projectId: "project-1",
+        name: "diagram.png",
+        blob: new Blob([TEST_PAGE_ASSET_BYTES], { type: "image/png" }),
+        createdAt: now,
+      }),
+    ],
   };
 }
 
 /**
- * Replace the contents of all nine tables with `contents` in a single
+ * Replace the contents of all twelve tables with `contents` in a single
  * transaction. Wiping first means a seeded database holds exactly the rows
  * given, regardless of prior writes.
  */
@@ -408,9 +457,9 @@ export async function seedTestDb(
       await db.stickies.bulkAdd(contents.stickies);
       await db.whiteboards.bulkAdd(contents.whiteboards);
       await db.whiteboardPreviews.bulkAdd(contents.whiteboardPreviews);
-      await db.pages.bulkAdd(contents.pages ?? []);
-      await db.pageContents.bulkAdd(contents.pageContents ?? []);
-      await db.pageAssets.bulkAdd(contents.pageAssets ?? []);
+      await db.pages.bulkAdd(contents.pages);
+      await db.pageContents.bulkAdd(contents.pageContents);
+      await db.pageAssets.bulkAdd(contents.pageAssets);
     },
   );
 }

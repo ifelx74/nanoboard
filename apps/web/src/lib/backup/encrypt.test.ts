@@ -24,6 +24,9 @@ const EMPTY_CONTENTS: TestDbContents = {
   stickies: [],
   whiteboards: [],
   whiteboardPreviews: [],
+  pages: [],
+  pageContents: [],
+  pageAssets: [],
 };
 
 describe("sealBackupDocument", () => {
@@ -63,7 +66,7 @@ describe("sealBackupDocument", () => {
     await db.close();
   });
 
-  it("round-trips all nine tables exactly as stored", async () => {
+  it("round-trips all twelve tables exactly as serialized in the backup document", async () => {
     const db = createTestDb();
     const contents = buildTestContents();
     await seedTestDb(db, contents);
@@ -74,7 +77,7 @@ describe("sealBackupDocument", () => {
     const opened = await openEnvelope(text, PASSPHRASE);
     // The payload is the tables object alone — nothing else of the v1
     // document rides inside the sealed data.
-    expect(opened).toEqual(contents);
+    expect(opened).toEqual(document.tables);
 
     await db.close();
   });
@@ -121,6 +124,9 @@ describe("serializeBackupDocument (unencrypted opt-out)", () => {
         stickies: [],
         whiteboards: [],
         whiteboardPreviews: [],
+        pages: [],
+        pageContents: [],
+        pageAssets: [],
       },
     };
 
@@ -128,7 +134,7 @@ describe("serializeBackupDocument (unencrypted opt-out)", () => {
     // this literal is the contract, written out — not derived from the
     // implementation's serializer.
     expect(serializeBackupDocument(fixture)).toBe(
-      '{"format":"nanoboard-backup","version":1,"appVersion":"1.2.3","exportedAt":"2026-11-14T12:00:00.000Z","tables":{"projects":[{"id":"p1","name":"Test project","slug":"test-project","icon":"folder","position":1024,"lastTaskNumber":7,"createdAt":1700000000000,"updatedAt":1700000001000}],"columns":[],"tasks":[],"labels":[],"taskLabels":[],"taskResources":[],"stickies":[],"whiteboards":[],"whiteboardPreviews":[]}}',
+      '{"format":"nanoboard-backup","version":1,"appVersion":"1.2.3","exportedAt":"2026-11-14T12:00:00.000Z","tables":{"projects":[{"id":"p1","name":"Test project","slug":"test-project","icon":"folder","position":1024,"lastTaskNumber":7,"createdAt":1700000000000,"updatedAt":1700000001000}],"columns":[],"tasks":[],"labels":[],"taskLabels":[],"taskResources":[],"stickies":[],"whiteboards":[],"whiteboardPreviews":[],"pages":[],"pageContents":[],"pageAssets":[]}}',
     );
   });
 });

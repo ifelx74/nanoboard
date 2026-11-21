@@ -1,3 +1,4 @@
+import { isValidBase64DataUrl } from "@/lib/data-url";
 import { STICKY_COLORS, TASK_PRIORITIES } from "@/lib/db/schema";
 import type { BackupDocument, BackupTableName, BackupTables } from "./types";
 import { BACKUP_MAX_RESTORABLE_VERSION } from "./types";
@@ -7,6 +8,8 @@ type Check = (value: unknown) => boolean;
 const isString: Check = (value) => typeof value === "string";
 const isNumber: Check = (value) =>
   typeof value === "number" && Number.isFinite(value);
+const isNonNegativeNumber: Check = (value) =>
+  isNumber(value) && (value as number) >= 0;
 const isBoolean: Check = (value) => typeof value === "boolean";
 const isObject: Check = (value) =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -16,6 +19,24 @@ const isStringArray =
   (values: readonly string[]): Check =>
   (value) =>
     typeof value === "string" && values.includes(value);
+
+const isPageLogo: Check = (value) => {
+  if (value === null) return true;
+  if (!isObject(value)) return false;
+  const record = value as Record<string, unknown>;
+  if (record.type === "emoji") {
+    return isString(record.value) && (record.value as string).length > 0;
+  }
+  if (record.type === "icon") {
+    return (
+      isString(record.name) &&
+      (record.name as string).length > 0 &&
+      isString(record.color) &&
+      (record.color as string).length > 0
+    );
+  }
+  return false;
+};
 
 interface FieldSpec {
   field: string;
@@ -122,6 +143,33 @@ const TABLE_FIELD_SPECS: Record<BackupTableName, FieldSpec[]> = {
     spec("projectId", isString),
     spec("dataUrl", isString),
     spec("updatedAt", isNumber),
+  ],
+  pages: [
+    spec("id", isString),
+    spec("projectId", isString),
+    spec("title", isString),
+    spec("logo", isPageLogo),
+    spec("isFavorite", isBoolean),
+    spec("isLocked", isBoolean),
+    spec("archivedAt", isNumber, true),
+    spec("createdAt", isNumber),
+    spec("updatedAt", isNumber),
+  ],
+  pageContents: [
+    spec("pageId", isString),
+    spec("projectId", isString),
+    spec("contentJson", isObject),
+    spec("contentText", isString),
+  ],
+  pageAssets: [
+    spec("id", isString),
+    spec("pageId", isString),
+    spec("projectId", isString),
+    spec("name", isString),
+    spec("mimeType", isString),
+    spec("size", isNonNegativeNumber),
+    spec("dataUrl", isValidBase64DataUrl),
+    spec("createdAt", isNumber),
   ],
 };
 

@@ -927,7 +927,7 @@
       "restoreDescription": "Replace everything in the app with the contents of a backup file.",
       "export": {
         "button": "Export backup",
-        "description": "Download everything — projects, tasks, whiteboards, and stickies — as one JSON file.",
+        "description": "Download everything — projects, tasks, pages, whiteboards, and stickies — as one JSON file.",
         "exportFailed": "Could not export backup.",
         "exported": "Unencrypted backup exported.",
         "summary": {
@@ -937,6 +937,10 @@
           "labelAssignments_other": "{{count}} label assignments",
           "labels_one": "{{count}} label",
           "labels_other": "{{count}} labels",
+          "pageAssets_one": "{{count}} page asset",
+          "pageAssets_other": "{{count}} page assets",
+          "pages_one": "{{count}} page",
+          "pages_other": "{{count}} pages",
           "projects_one": "{{count}} project",
           "projects_other": "{{count}} projects",
           "stickies_one": "{{count}} sticky",
@@ -993,6 +997,9 @@
         "tables": {
           "columns": "Columns",
           "labels": "Labels",
+          "pageAssets": "Page assets",
+          "pageContents": "Page contents",
+          "pages": "Pages",
           "projects": "Projects",
           "stickies": "Stickies",
           "taskLabels": "Label assignments",

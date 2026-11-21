@@ -73,6 +73,7 @@ describe("pageAssets data layer on fake-indexeddb", () => {
         makeProject({ id: "project-2", slug: "P2", name: "Other" }),
       ],
       pages: [makePage({ id: "page-1", projectId: "project-1" })],
+      pageAssets: [],
     });
 
     await expect(

@@ -694,30 +694,4 @@ export function sanitizeMarkdownFileName(
   return `${safeFallback}.md`;
 }
 
-const BASE64_CHUNK_SIZE = 0x8000;
-
-function bytesToBase64(bytes: Uint8Array): string {
-  if (bytes.length === 0) return "";
-  let binary = "";
-  for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK_SIZE) {
-    const chunk = bytes.subarray(offset, offset + BASE64_CHUNK_SIZE);
-    binary += String.fromCharCode(...chunk);
-  }
-  return globalThis.btoa(binary);
-}
-
-/**
- * Converts a binary `Blob` to a `data:<mime>;base64,...` URL using Web-standard
- * `Blob.arrayBuffer()` + `btoa()` so it works identically in browsers and plain
- * Node test environments.
- */
-export async function blobToDataUrl(
-  blob: Blob,
-  mimeTypeFallback?: string,
-): Promise<string> {
-  const mimeType =
-    blob.type.trim() || mimeTypeFallback?.trim() || "application/octet-stream";
-  const buffer = await blob.arrayBuffer();
-  const base64 = bytesToBase64(new Uint8Array(buffer));
-  return `data:${mimeType};base64,${base64}`;
-}
+export { blobToDataUrl } from "@/lib/data-url";
