@@ -207,7 +207,6 @@
     "title": "Timeline",
     "today": "Today",
     "task": "Task",
-    "taskBarTitle": "{{label}} · {{range}}",
     "taskBarLabel": "{{label}}, {{range}}",
     "undatedNote_one": "{{count}} task without dates is not shown on the timeline.",
     "undatedNote_other": "{{count}} tasks without dates are not shown on the timeline.",
