@@ -57,6 +57,15 @@
     "settings": "Settings",
     "sidebarToggle": "Toggle sidebar",
     "stickies": "Stickies",
+    "storageStatus": {
+      "approximateSize": "~{{size}}",
+      "backupAction": "Export a backup of your local data",
+      "justNow": "just now",
+      "lastBackup": "Backed up {{time}}",
+      "neverBackedUp": "Not backed up yet",
+      "title": "Local data",
+      "warningTitle": "Back up local data"
+    },
     "themeSwitch": {
       "toDark": "Switch to dark theme (currently light)",
       "toLight": "Switch to light theme (currently dark)"

@@ -63,6 +63,7 @@ import {
 } from "@/hooks/use-passphrase-protection";
 import { toast } from "@/lib/toast";
 import { cn, errorMessage } from "@/lib/utils";
+import { useBackupStatusStore } from "@/store/backup-status";
 import { downloadBackupDocument, downloadBackupText } from "./download";
 
 type Mode = "pick" | "unlock" | "summary";
@@ -293,6 +294,7 @@ export function RestoreBackupDialog({
         downloadBackupDocument(document);
         toast.success(t("data.restore.downloaded"));
       }
+      useBackupStatusStore.getState().recordBackup();
     } catch (cause) {
       toast.error(errorMessage(cause, t("data.restore.downloadFailed")));
     } finally {
@@ -310,6 +312,7 @@ export function RestoreBackupDialog({
     setRestoring(true);
     try {
       await applyBackupDocument(db, document);
+      useBackupStatusStore.getState().recordBackup();
       toast.success(t("data.restore.restored"));
       globalThis.window.location.reload();
     } catch (cause) {

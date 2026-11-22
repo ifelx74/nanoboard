@@ -11,6 +11,7 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { NavSecondary } from "./nav-secondary";
+import { SidebarStorageStatus } from "./sidebar-storage-status";
 import { BackgroundLogo } from "./common/logo";
 import { Button } from "./ui/button";
 import Github from "@/icons/brand/github";
@@ -29,6 +30,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects />
       </SidebarContent>
       <SidebarFooter className="p-3">
+        <SidebarStorageStatus />
         <NavSecondary />
         <div className="flex items-center justify-between">
           <Button

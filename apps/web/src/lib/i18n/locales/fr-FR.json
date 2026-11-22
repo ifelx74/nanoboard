@@ -57,6 +57,15 @@
     "settings": "Paramètres",
     "sidebarToggle": "Afficher/masquer la barre latérale",
     "stickies": "Post-it",
+    "storageStatus": {
+      "approximateSize": "~{{size}}",
+      "backupAction": "Exporter une sauvegarde de vos données locales",
+      "justNow": "à l'instant",
+      "lastBackup": "Sauvegardé {{time}}",
+      "neverBackedUp": "Aucune sauvegarde",
+      "title": "Données locales",
+      "warningTitle": "Sauvegarder vos données"
+    },
     "themeSwitch": {
       "toDark": "Passer au thème sombre (actuellement clair)",
       "toLight": "Passer au thème clair (actuellement sombre)"

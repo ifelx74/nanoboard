@@ -20,6 +20,7 @@ import type { BackupDocument } from "@/lib/backup/types";
 import { db } from "@/lib/db/db";
 import { toast } from "@/lib/toast";
 import { errorMessage } from "@/lib/utils";
+import { useBackupStatusStore } from "@/store/backup-status";
 import {
   cryptoAvailable,
   MIN_PASSPHRASE_LENGTH,
@@ -90,6 +91,7 @@ export function ExportBackupDialog({
           description: `${exportSummary(document, t)}.`,
         });
       }
+      useBackupStatusStore.getState().recordBackup();
       // Closing the dialog wipes the passphrase state.
       onOpenChange(false);
     } catch (cause) {
