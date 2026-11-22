@@ -44,6 +44,8 @@ function exportSummary(
     t("data.export.summary.taskLinks", { count: tables.taskResources.length }),
     t("data.export.summary.stickies", { count: tables.stickies.length }),
     t("data.export.summary.whiteboards", { count: tables.whiteboards.length }),
+    t("data.export.summary.pages", { count: tables.pages.length }),
+    t("data.export.summary.pageAssets", { count: tables.pageAssets.length }),
   ].join(", ");
 }
 

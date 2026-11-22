@@ -20,6 +20,8 @@ import { Route as AppProjectProjectIdCalendarRouteImport } from './routes/_app/p
 import { Route as AppProjectProjectIdListRouteImport } from './routes/_app/project/$projectId/list'
 import { Route as AppProjectProjectIdTimelineRouteImport } from './routes/_app/project/$projectId/timeline'
 import { Route as AppProjectProjectIdWhiteboardRouteImport } from './routes/_app/project/$projectId/whiteboard'
+import { Route as AppProjectProjectIdPagesIndexRouteImport } from './routes/_app/project/$projectId/pages/index'
+import { Route as AppProjectProjectIdPagesPageIdRouteImport } from './routes/_app/project/$projectId/pages/$pageId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -81,6 +83,18 @@ const AppProjectProjectIdWhiteboardRoute =
     path: '/project/$projectId/whiteboard',
     getParentRoute: () => AppRoute,
   } as any)
+const AppProjectProjectIdPagesIndexRoute =
+  AppProjectProjectIdPagesIndexRouteImport.update({
+    id: '/project/$projectId/pages/',
+    path: '/project/$projectId/pages/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppProjectProjectIdPagesPageIdRoute =
+  AppProjectProjectIdPagesPageIdRouteImport.update({
+    id: '/project/$projectId/pages/$pageId',
+    path: '/project/$projectId/pages/$pageId',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -93,6 +107,8 @@ export interface FileRoutesByFullPath {
   '/project/$projectId/timeline': typeof AppProjectProjectIdTimelineRoute
   '/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
   '/project/$projectId/': typeof AppProjectProjectIdIndexRoute
+  '/project/$projectId/pages/$pageId': typeof AppProjectProjectIdPagesPageIdRoute
+  '/project/$projectId/pages/': typeof AppProjectProjectIdPagesIndexRoute
 }
 export interface FileRoutesByTo {
   '/stickies': typeof AppStickiesRoute
@@ -105,6 +121,8 @@ export interface FileRoutesByTo {
   '/project/$projectId/timeline': typeof AppProjectProjectIdTimelineRoute
   '/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
   '/project/$projectId': typeof AppProjectProjectIdIndexRoute
+  '/project/$projectId/pages/$pageId': typeof AppProjectProjectIdPagesPageIdRoute
+  '/project/$projectId/pages': typeof AppProjectProjectIdPagesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -119,6 +137,8 @@ export interface FileRoutesById {
   '/_app/project/$projectId/timeline': typeof AppProjectProjectIdTimelineRoute
   '/_app/project/$projectId/whiteboard': typeof AppProjectProjectIdWhiteboardRoute
   '/_app/project/$projectId/': typeof AppProjectProjectIdIndexRoute
+  '/_app/project/$projectId/pages/$pageId': typeof AppProjectProjectIdPagesPageIdRoute
+  '/_app/project/$projectId/pages/': typeof AppProjectProjectIdPagesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,6 +153,8 @@ export interface FileRouteTypes {
     | '/project/$projectId/timeline'
     | '/project/$projectId/whiteboard'
     | '/project/$projectId/'
+    | '/project/$projectId/pages/$pageId'
+    | '/project/$projectId/pages/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/stickies'
@@ -145,6 +167,8 @@ export interface FileRouteTypes {
     | '/project/$projectId/timeline'
     | '/project/$projectId/whiteboard'
     | '/project/$projectId'
+    | '/project/$projectId/pages/$pageId'
+    | '/project/$projectId/pages'
   id:
     | '__root__'
     | '/_app'
@@ -158,6 +182,8 @@ export interface FileRouteTypes {
     | '/_app/project/$projectId/timeline'
     | '/_app/project/$projectId/whiteboard'
     | '/_app/project/$projectId/'
+    | '/_app/project/$projectId/pages/$pageId'
+    | '/_app/project/$projectId/pages/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -243,6 +269,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProjectProjectIdWhiteboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/project/$projectId/pages/': {
+      id: '/_app/project/$projectId/pages/'
+      path: '/project/$projectId/pages'
+      fullPath: '/project/$projectId/pages/'
+      preLoaderRoute: typeof AppProjectProjectIdPagesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/project/$projectId/pages/$pageId': {
+      id: '/_app/project/$projectId/pages/$pageId'
+      path: '/project/$projectId/pages/$pageId'
+      fullPath: '/project/$projectId/pages/$pageId'
+      preLoaderRoute: typeof AppProjectProjectIdPagesPageIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -257,6 +297,8 @@ interface AppRouteChildren {
   AppProjectProjectIdTimelineRoute: typeof AppProjectProjectIdTimelineRoute
   AppProjectProjectIdWhiteboardRoute: typeof AppProjectProjectIdWhiteboardRoute
   AppProjectProjectIdIndexRoute: typeof AppProjectProjectIdIndexRoute
+  AppProjectProjectIdPagesPageIdRoute: typeof AppProjectProjectIdPagesPageIdRoute
+  AppProjectProjectIdPagesIndexRoute: typeof AppProjectProjectIdPagesIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -270,6 +312,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppProjectProjectIdTimelineRoute: AppProjectProjectIdTimelineRoute,
   AppProjectProjectIdWhiteboardRoute: AppProjectProjectIdWhiteboardRoute,
   AppProjectProjectIdIndexRoute: AppProjectProjectIdIndexRoute,
+  AppProjectProjectIdPagesPageIdRoute: AppProjectProjectIdPagesPageIdRoute,
+  AppProjectProjectIdPagesIndexRoute: AppProjectProjectIdPagesIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

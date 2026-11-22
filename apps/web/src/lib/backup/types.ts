@@ -1,6 +1,9 @@
 import type {
   Column,
   Label,
+  Page,
+  PageAsset,
+  PageContent,
   Project,
   Sticky,
   Task,
@@ -40,11 +43,23 @@ export const BACKUP_TABLES = [
   "stickies",
   "whiteboards",
   "whiteboardPreviews",
+  "pages",
+  "pageContents",
+  "pageAssets",
 ] as const;
 
 export type BackupTableName = (typeof BACKUP_TABLES)[number];
 
-/** Raw rows of every table, exactly as stored. */
+/**
+ * JSON-serializable representation of a `PageAsset` row in backup files:
+ * replaces the binary `Blob` (which `JSON.stringify` drops) with a lossless
+ * `data:<mimeType>;base64,...` string.
+ */
+export interface BackupPageAsset extends Omit<PageAsset, "blob"> {
+  dataUrl: string;
+}
+
+/** Raw rows of every table, with `pageAssets` serialized as base64 data URLs. */
 export interface BackupTables {
   projects: Project[];
   columns: Column[];
@@ -55,6 +70,9 @@ export interface BackupTables {
   stickies: Sticky[];
   whiteboards: Whiteboard[];
   whiteboardPreviews: WhiteboardPreview[];
+  pages: Page[];
+  pageContents: PageContent[];
+  pageAssets: BackupPageAsset[];
 }
 
 /**

@@ -5,6 +5,7 @@ import {
   ChartGantt,
   ChevronsUpDown,
   ClipboardClock,
+  FileText,
   List,
   SplinePointer,
   SquareKanban,
@@ -32,7 +33,13 @@ import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export type ProjectView =
-  "board" | "calendar" | "list" | "whiteboard" | "archives" | "timeline";
+  | "board"
+  | "calendar"
+  | "list"
+  | "pages"
+  | "whiteboard"
+  | "archives"
+  | "timeline";
 export type ProjectLayoutView = "backlog" | "whiteboard";
 
 type ViewMeta = { key: ProjectView; title: string; icon: typeof List };
@@ -42,6 +49,10 @@ type ProjectLayoutProps = {
   activeView: ProjectView;
   children: ReactNode;
   archiveCount?: number;
+  /** Additional breadcrumb items rendered after the project view switcher. */
+  breadcrumbExtra?: ReactNode;
+  /** Right-side header controls rendered for non-backlog surfaces (e.g. Pages). */
+  headerActions?: ReactNode;
 };
 
 export function ProjectLayout({
@@ -49,6 +60,8 @@ export function ProjectLayout({
   activeView,
   children,
   archiveCount = 0,
+  breadcrumbExtra,
+  headerActions,
 }: ProjectLayoutProps) {
   const navigate = useNavigate();
   const { t } = useTranslation("project");
@@ -63,23 +76,31 @@ export function ProjectLayout({
   const isBacklogView = ["board", "calendar", "list", "timeline"].includes(
     activeView,
   );
+  const isPagesView = activeView === "pages";
   const isArchivesView = activeView === "archives";
+  const activeViewLabel = isBacklogView
+    ? t("toolbar.backlog")
+    : isPagesView
+      ? t("toolbar.pages")
+      : isArchivesView
+        ? t("toolbar.archives")
+        : t("toolbar.whiteboard");
 
   return (
     <>
       <Layout.Header>
-        <div className="flex w-full items-center justify-between">
-          <div className="flex w-full items-center gap-1">
-            <SidebarTriggerHeader triggerClassName="-ml-1 h-6 w-6" />
-            <Breadcrumb className="flex w-full items-center gap-1 text-xs">
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden sm:inline-flex">
-                  <span className="text-xs font-semibold text-card-foreground">
+        <div className="flex w-full items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            <SidebarTriggerHeader triggerClassName="-ml-1 h-6 w-6 shrink-0" />
+            <Breadcrumb className="flex min-w-0 items-center gap-1 text-xs">
+              <BreadcrumbList className="flex-nowrap">
+                <BreadcrumbItem className="hidden shrink-0 sm:inline-flex">
+                  <span className="max-w-44 truncate text-xs font-semibold text-card-foreground">
                     {project?.name ?? t("toolbar.fallbackProject")}
                   </span>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden sm:inline-flex" />
-                <BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden shrink-0 sm:inline-flex" />
+                <BreadcrumbItem className="shrink-0">
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={
@@ -88,11 +109,7 @@ export function ProjectLayout({
                           size="sm"
                           className="px-1.5 py-0.5 text-sm"
                         >
-                          {isBacklogView
-                            ? t("toolbar.backlog")
-                            : isArchivesView
-                              ? t("toolbar.archives")
-                              : t("toolbar.whiteboard")}
+                          {activeViewLabel}
                           {isArchivesView && archiveCount > 0 && (
                             <span
                               aria-label={t("toolbar.archivedTasks", {
@@ -125,6 +142,18 @@ export function ProjectLayout({
                         {t("toolbar.backlog")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        key={"pages"}
+                        onClick={() =>
+                          navigate({
+                            to: `/project/$projectId/pages`,
+                            params: { projectId },
+                          })
+                        }
+                      >
+                        <FileText />
+                        {t("toolbar.pages")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         key={"whiteboard"}
                         onClick={() =>
                           navigate({
@@ -151,11 +180,12 @@ export function ProjectLayout({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </BreadcrumbItem>
+                {breadcrumbExtra}
               </BreadcrumbList>
             </Breadcrumb>
           </div>
           {isBacklogView ? (
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               {views.map((view) => (
                 <Tooltip key={view.key}>
                   <TooltipTrigger
@@ -185,6 +215,10 @@ export function ProjectLayout({
                   </TooltipContent>
                 </Tooltip>
               ))}
+            </div>
+          ) : headerActions ? (
+            <div className="flex shrink-0 items-center gap-1">
+              {headerActions}
             </div>
           ) : isArchivesView ? (
             <div className="flex shrink-0 items-center" />

@@ -349,6 +349,9 @@ export function RestoreBackupDialog({
     stickies: t("data.restore.tables.stickies"),
     whiteboards: t("data.restore.tables.whiteboards"),
     whiteboardPreviews: t("data.restore.tables.whiteboardPreviews"),
+    pages: t("data.restore.tables.pages"),
+    pageContents: t("data.restore.tables.pageContents"),
+    pageAssets: t("data.restore.tables.pageAssets"),
   };
 
   return (

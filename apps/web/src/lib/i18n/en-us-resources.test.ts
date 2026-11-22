@@ -10,6 +10,7 @@ const EXPECTED_NAMESPACES = [
   "home",
   "list",
   "navigation",
+  "pages",
   "project",
   "seo",
   "settings",

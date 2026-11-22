@@ -369,8 +369,367 @@
       "calendar": "Calendar",
       "fallbackProject": "Project",
       "list": "List",
+      "pages": "Pages",
       "timeline": "Timeline",
       "whiteboard": "Whiteboard"
+    }
+  },
+  "pages": {
+    "untitled": "Untitled",
+    "list": {
+      "addPage": "Add page",
+      "emptyTitle": "No pages yet",
+      "emptyDescription": "Create a page to capture specs, meeting notes, and docs for this project.",
+      "archivedEmptyTitle": "No archived pages",
+      "archivedEmptyDescription": "Pages you archive will appear here in read-only mode.",
+      "noMatchesTitle": "No matching pages",
+      "noMatchesDescription": "Try adjusting your search query or filters.",
+      "createdOn": "Created on {{date}}",
+      "rowActions": "Page actions",
+      "tabs": {
+        "ariaLabel": "Page views",
+        "all": "All",
+        "archived": "Archived"
+      },
+      "search": {
+        "open": "Search pages",
+        "placeholder": "Search pages",
+        "clear": "Clear search"
+      },
+      "sort": {
+        "ariaLabel": "Sort pages",
+        "name": "Name",
+        "createdAt": "Date created",
+        "updatedAt": "Date modified",
+        "asc": "Ascending",
+        "desc": "Descending"
+      },
+      "filters": {
+        "button": "Filters",
+        "searchPlaceholder": "Filter options…",
+        "empty": "No matching filters",
+        "favorites": "Favorites",
+        "createdDate": "Created date",
+        "ranges": {
+          "today": "Today",
+          "last7Days": "Last 7 days",
+          "last14Days": "Last 14 days",
+          "last30Days": "Last 30 days"
+        },
+        "removeFilter": "Remove filter",
+        "clearAll": "Clear all"
+      },
+      "errors": {
+        "create": "Failed to create page"
+      }
+    },
+    "actions": {
+      "openInNewTab": "Open in new tab",
+      "copyLink": "Copy link",
+      "makeCopy": "Make a copy",
+      "copyTitle": "{{title}} (Copy)",
+      "lock": "Lock",
+      "unlock": "Unlock",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete",
+      "addFavorite": "Add to favorites",
+      "removeFavorite": "Remove from favorites",
+      "linkCopied": "Page link copied",
+      "duplicated": "Page duplicated",
+      "locked": "Page locked",
+      "unlocked": "Page unlocked",
+      "archived": "Page archived",
+      "restored": "Page restored",
+      "deleted": "Page deleted",
+      "errors": {
+        "copyLink": "Failed to copy link",
+        "duplicate": "Failed to duplicate page",
+        "lock": "Failed to update lock state",
+        "favorite": "Failed to update favorite state",
+        "archive": "Failed to archive page",
+        "restore": "Failed to restore page",
+        "delete": "Failed to delete page"
+      }
+    },
+    "deleteDialog": {
+      "title": "Delete page",
+      "description": "Permanently delete “{{title}}”? This cannot be undone and removes its content and images.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting…"
+    },
+    "detail": {
+      "archivedAt": "Archived at {{date}}",
+      "locked": "Locked",
+      "unlocked": "Unlocked",
+      "copied": "Copied!",
+      "options": "Page options",
+      "copyMarkdown": "Copy markdown",
+      "copyMarkdownSuccess": "Markdown copied to clipboard",
+      "copyMarkdownFailed": "Failed to copy markdown",
+      "export": "Export",
+      "display": {
+        "fullWidth": "Full width",
+        "stickyToolbar": "Sticky toolbar"
+      }
+    },
+    "switcher": {
+      "searchPlaceholder": "Search pages",
+      "empty": "No pages found",
+      "ariaLabel": "Switch page"
+    },
+    "notFound": {
+      "title": "Page not found",
+      "description": "This page doesn't exist or doesn't belong to this project.",
+      "backToPages": "Back to pages"
+    },
+    "editor": {
+      "titleAriaLabel": "Page title",
+      "bodyAriaLabel": "Page content",
+      "placeholder": "Write something…",
+      "headingPlaceholder": "Heading {{level}}",
+      "blocks": {
+        "text": "Text",
+        "h1": "Heading 1",
+        "h2": "Heading 2",
+        "h3": "Heading 3",
+        "h4": "Heading 4",
+        "h5": "Heading 5",
+        "h6": "Heading 6",
+        "bulletList": "Bulleted list",
+        "orderedList": "Numbered list",
+        "taskList": "To-do list",
+        "quote": "Quote",
+        "code": "Code",
+        "divider": "Divider"
+      },
+      "marks": {
+        "bold": "Bold",
+        "italic": "Italic",
+        "underline": "Underline",
+        "strikethrough": "Strikethrough",
+        "inlineCode": "Inline code"
+      },
+      "align": {
+        "left": "Align left",
+        "center": "Align center",
+        "right": "Align right"
+      },
+      "colors": {
+        "trigger": "Color",
+        "textColors": "Text colors",
+        "backgroundColors": "Background colors",
+        "default": "Default",
+        "defaultBackground": "Default background",
+        "resetText": "Reset text color",
+        "resetBackground": "Reset background color",
+        "gray": "Gray",
+        "peach": "Peach",
+        "pink": "Pink",
+        "orange": "Orange",
+        "green": "Green",
+        "lightBlue": "Light blue",
+        "darkBlue": "Dark blue",
+        "purple": "Purple"
+      },
+      "toolbar": {
+        "ariaLabel": "Formatting toolbar",
+        "typography": "Typography",
+        "insertTable": "Insert table",
+        "insertImage": "Insert image"
+      },
+      "bubble": {
+        "ariaLabel": "Selection formatting",
+        "nodeType": "Turn into",
+        "multiple": "Multiple"
+      },
+      "link": {
+        "trigger": "Link",
+        "urlLabel": "URL",
+        "urlPlaceholder": "Enter or paste a URL",
+        "textLabel": "Text",
+        "textPlaceholder": "Enter text to display",
+        "apply": "Apply",
+        "copy": "Copy link",
+        "edit": "Edit link",
+        "unlink": "Unlink",
+        "remove": "Remove link",
+        "invalidUrl": "Enter a valid http, https, or mailto URL"
+      },
+      "slash": {
+        "ariaLabel": "Insert block",
+        "colorsSection": "Colors",
+        "backgroundColorsSection": "Background colors",
+        "textDesc": "Just start typing with plain text.",
+        "h1Desc": "Big section heading.",
+        "h2Desc": "Medium section heading.",
+        "h3Desc": "Small section heading.",
+        "h4Desc": "Small section heading.",
+        "h5Desc": "Small section heading.",
+        "h6Desc": "Small section heading.",
+        "orderedListDesc": "Create a numbered list.",
+        "bulletListDesc": "Create a bulleted list.",
+        "taskListDesc": "Create a to-do list.",
+        "quoteDesc": "Capture a quote.",
+        "codeDesc": "Capture a code snippet.",
+        "dividerDesc": "Visually divide blocks.",
+        "textColorDesc": "Change text color.",
+        "backgroundColorDesc": "Change background color."
+      },
+      "blockMenu": {
+        "handleAriaLabel": "Drag to reorder or click for block actions",
+        "handleTooltip": "Drag to move · Click for options",
+        "ariaLabel": "Block actions",
+        "delete": "Delete",
+        "duplicate": "Duplicate"
+      },
+      "errors": {
+        "saveTitle": "Failed to save page title",
+        "saveContent": "Failed to save page content"
+      }
+    },
+    "codeBlock": {
+      "auto": "Auto",
+      "plainText": "Plain text",
+      "selectLanguage": "Select code language",
+      "searchLanguage": "Search language…",
+      "noLanguages": "No matching language",
+      "copy": "Copy code",
+      "copied": "Copied!",
+      "copyError": "Failed to copy code"
+    },
+    "table": {
+      "toolbarAriaLabel": "Table controls",
+      "slashTitle": "Table",
+      "slashDesc": "Insert a 3×3 table.",
+      "rowGroup": "Row",
+      "columnGroup": "Col",
+      "addRowBefore": "Add row above",
+      "addRowAfter": "Add row below",
+      "deleteRow": "Delete row",
+      "addColumnBefore": "Add column before",
+      "addColumnAfter": "Add column after",
+      "deleteColumn": "Delete column",
+      "headerRow": "Header",
+      "toggleHeaderRow": "Toggle header row",
+      "deleteTable": "Delete table"
+    },
+    "image": {
+      "slashTitle": "Image",
+      "slashDesc": "Upload or embed an image.",
+      "sourceTabsAriaLabel": "Image source",
+      "uploadTab": "Upload",
+      "embedUrlTab": "Embed link",
+      "removePlaceholder": "Remove image block",
+      "addPrompt": "Click to upload or drop an image",
+      "dropHere": "Drop image here",
+      "uploading": "Uploading image…",
+      "uploadHint": "JPEG, PNG, WebP, or GIF · Max 10 MB",
+      "urlInputLabel": "Image URL",
+      "urlPlaceholder": "https://example.com/image.png",
+      "embedButton": "Embed image",
+      "download": "Download image",
+      "alignment": "Image alignment",
+      "alignLeft": "Left",
+      "alignCenter": "Center",
+      "alignRight": "Right",
+      "fullscreen": "View fullscreen",
+      "lightboxTitle": "Image preview",
+      "closeLightbox": "Close image preview",
+      "resizeHandle": "Drag to resize image",
+      "missing": "Image unavailable",
+      "errors": {
+        "unsupportedType": "Unsupported image type. Use JPEG, PNG, WebP, or GIF.",
+        "fileTooLarge": "Image exceeds the 10 MB upload limit.",
+        "emptyFile": "Selected image file is empty.",
+        "uploadFailed": "Failed to save image.",
+        "invalidUrl": "Enter a valid http or https image URL.",
+        "downloadFailed": "Failed to download image."
+      }
+    },
+    "logoPicker": {
+      "addIcon": "Icon",
+      "changeLogo": "Change page icon",
+      "remove": "Remove",
+      "emojiTab": "Emoji",
+      "iconsTab": "Icons",
+      "searchEmojis": "Search emojis…",
+      "searchIcons": "Search icons…",
+      "emptyEmojis": "No emojis found",
+      "emptyIcons": "No icons found",
+      "customColorToggle": "Custom hex color",
+      "customColorLabel": "Hex color",
+      "saveError": "Failed to update page icon",
+      "categories": {
+        "smileys": "Smileys & Emotion",
+        "people": "People & Body",
+        "nature": "Animals & Nature",
+        "food": "Food & Drink",
+        "travel": "Travel & Places",
+        "activities": "Activities",
+        "objects": "Objects",
+        "symbols": "Symbols",
+        "flags": "Flags"
+      },
+      "inlineSuggestionAriaLabel": "Emoji suggestions",
+      "slashEmojiTitle": "Emoji",
+      "slashEmojiDescription": "Insert an inline emoji."
+    },
+    "callout": {
+      "slashTitle": "Callout",
+      "slashDescription": "Highlight important information.",
+      "changeIcon": "Change callout icon",
+      "colorButton": "Color",
+      "colorAriaLabel": "Callout background color",
+      "resetColor": "Reset background color"
+    },
+    "outline": {
+      "openPane": "Open outline panel",
+      "previewAriaLabel": "Page outline",
+      "emptyTitle": "No headings yet",
+      "emptyDescription": "Add H1–H3 headings to navigate this page from the outline."
+    },
+    "rightPane": {
+      "ariaLabel": "Page navigation panel",
+      "open": "Open page panel",
+      "close": "Close page panel",
+      "tabsAriaLabel": "Page panel sections",
+      "tabs": {
+        "outline": "Outline",
+        "info": "Info",
+        "assets": "Assets"
+      },
+      "info": {
+        "words": "Words",
+        "characters": "Characters",
+        "paragraphs": "Paragraphs",
+        "readTime": "Read time",
+        "readTimeSeconds": "{{count}}s",
+        "readTimeMinutes": "{{count}}m",
+        "updated": "Updated",
+        "created": "Created"
+      },
+      "assets": {
+        "emptyTitle": "No assets yet",
+        "emptyDescription": "Images added to this page will appear here.",
+        "untitledImage": "Untitled image",
+        "jumpToImage": "Scroll to {{name}}",
+        "download": "Download"
+      }
+    },
+    "export": {
+      "title": "Export page",
+      "description": "Download this page as a Markdown (.md) file.",
+      "includeContent": "Include content",
+      "scopeEverything": "Everything",
+      "scopeNoImages": "No images",
+      "fileNameLabel": "File",
+      "cancel": "Cancel",
+      "submit": "Export",
+      "exporting": "Exporting…",
+      "success": "Exported {{fileName}}",
+      "failed": "Failed to export page"
     }
   },
   "task": {
@@ -568,7 +927,7 @@
       "restoreDescription": "Replace everything in the app with the contents of a backup file.",
       "export": {
         "button": "Export backup",
-        "description": "Download everything — projects, tasks, whiteboards, and stickies — as one JSON file.",
+        "description": "Download everything — projects, tasks, pages, whiteboards, and stickies — as one JSON file.",
         "exportFailed": "Could not export backup.",
         "exported": "Unencrypted backup exported.",
         "summary": {
@@ -578,6 +937,10 @@
           "labelAssignments_other": "{{count}} label assignments",
           "labels_one": "{{count}} label",
           "labels_other": "{{count}} labels",
+          "pageAssets_one": "{{count}} page asset",
+          "pageAssets_other": "{{count}} page assets",
+          "pages_one": "{{count}} page",
+          "pages_other": "{{count}} pages",
           "projects_one": "{{count}} project",
           "projects_other": "{{count}} projects",
           "stickies_one": "{{count}} sticky",
@@ -634,6 +997,9 @@
         "tables": {
           "columns": "Columns",
           "labels": "Labels",
+          "pageAssets": "Page assets",
+          "pageContents": "Page contents",
+          "pages": "Pages",
           "projects": "Projects",
           "stickies": "Stickies",
           "taskLabels": "Label assignments",
@@ -707,6 +1073,9 @@
     "listDescription": "Task list for {{project}} — grouped by column, all local-first.",
     "listTitle": "List — {{project}} · Nanoboard",
     "notFoundTitle": "Page Not Found · Nanoboard",
+    "pageDetailTitle": "{{page}} — {{project}} · Nanoboard",
+    "pagesDescription": "Project pages and docs for {{project}} — rich notes, stored locally in your browser.",
+    "pagesTitle": "Pages — {{project}} · Nanoboard",
     "projectWhiteboardDescription": "Whiteboard for {{project}} — sketch freely, stored locally in your browser.",
     "projectWhiteboardTitle": "Whiteboard — {{project}} · Nanoboard",
     "stickiesDescription": "Capture and browse sticky notes — fast, private, 100% in your browser.",

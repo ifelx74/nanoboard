@@ -213,6 +213,9 @@ export async function deleteProject(
       database.taskLabels,
       database.whiteboards,
       database.whiteboardPreviews,
+      database.pages,
+      database.pageContents,
+      database.pageAssets,
     ],
     async () => {
       // One indexed join wipe instead of a per-task loop (perf).
@@ -231,6 +234,11 @@ export async function deleteProject(
       // transaction so the gallery's "has content" index never outlives the
       // project (a no-op for projects that never drew).
       await deleteWhiteboardPreview(database, id);
+      // Pages and their document payloads + binary image assets cascade
+      // atomically with the project so no orphaned rows survive.
+      await database.pageAssets.where("projectId").equals(id).delete();
+      await database.pageContents.where("projectId").equals(id).delete();
+      await database.pages.where("projectId").equals(id).delete();
       await database.projects.delete(id);
     },
   );

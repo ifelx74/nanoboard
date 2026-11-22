@@ -6,6 +6,7 @@ import {
   makeWhiteboardPreview,
   seedTestDb,
   TEST_NOW,
+  TEST_PAGE_ASSET_BYTES,
 } from "./test-db";
 
 describe("NanoboardDB on fake-indexeddb", () => {
@@ -27,11 +28,14 @@ describe("NanoboardDB on fake-indexeddb", () => {
     expect(await db.stickies.count()).toBe(0);
     expect(await db.whiteboards.count()).toBe(0);
     expect(await db.whiteboardPreviews.count()).toBe(0);
+    expect(await db.pages.count()).toBe(0);
+    expect(await db.pageContents.count()).toBe(0);
+    expect(await db.pageAssets.count()).toBe(0);
 
     await db.close();
   });
 
-  it("round-trips representative rows through all nine tables", async () => {
+  it("round-trips representative rows through all twelve tables", async () => {
     const db = createTestDb();
 
     await seedTestDb(db);
@@ -47,6 +51,9 @@ describe("NanoboardDB on fake-indexeddb", () => {
     expect(await db.stickies.count()).toBe(1);
     expect(await db.whiteboards.count()).toBe(1);
     expect(await db.whiteboardPreviews.count()).toBe(1);
+    expect(await db.pages.count()).toBe(1);
+    expect(await db.pageContents.count()).toBe(1);
+    expect(await db.pageAssets.count()).toBe(1);
 
     // Tasks: per-project numbering, dates, and the status mirror of the
     // parent column's slug.
@@ -90,6 +97,22 @@ describe("NanoboardDB on fake-indexeddb", () => {
     const preview = await db.whiteboardPreviews.get("project-1");
     expect(preview?.dataUrl).toMatch(/^data:image\/jpeg;base64,/);
     expect(preview?.updatedAt).toBe(TEST_NOW);
+
+    // Pages: metadata, 1-to-1 document payload, and binary image asset.
+    const page = await db.pages.get("page-1");
+    expect(page?.title).toBe("Architecture notes");
+    expect(page?.logo).toEqual({ type: "emoji", value: "📘" });
+    expect(page?.isFavorite).toBe(true);
+
+    const content = await db.pageContents.get("page-1");
+    expect(content?.contentText).toBe("Overview\nLocal-first architecture.");
+
+    const asset = await db.pageAssets.get("page-asset-1");
+    expect(asset?.name).toBe("diagram.png");
+    expect(asset?.mimeType).toBe("image/png");
+    expect(new Uint8Array(await asset!.blob.arrayBuffer())).toEqual(
+      TEST_PAGE_ASSET_BYTES,
+    );
 
     await db.close();
   });

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { dataUrlToBlob } from "../data-url";
 import {
   buildTestContents,
   createTestDb,
   seedTestDb,
   TEST_NOW,
+  TEST_PAGE_ASSET_BYTES,
   type TestDbContents,
 } from "../db/test-db";
 import { createBackupDocument } from "./create";
@@ -20,6 +22,9 @@ const EMPTY_CONTENTS: TestDbContents = {
   stickies: [],
   whiteboards: [],
   whiteboardPreviews: [],
+  pages: [],
+  pageContents: [],
+  pageAssets: [],
 };
 
 describe("createBackupDocument", () => {
@@ -43,6 +48,9 @@ describe("createBackupDocument", () => {
       [
         "columns",
         "labels",
+        "pageAssets",
+        "pageContents",
+        "pages",
         "projects",
         "stickies",
         "taskLabels",
@@ -68,7 +76,7 @@ describe("createBackupDocument", () => {
 
     expect(document.format).toBe("nanoboard-backup");
     expect(document.version).toBe(1);
-    expect(Object.keys(document.tables).sort()).toHaveLength(9);
+    expect(Object.keys(document.tables).sort()).toHaveLength(12);
     for (const rows of Object.values(document.tables)) {
       expect(rows).toEqual([]);
     }
@@ -76,7 +84,7 @@ describe("createBackupDocument", () => {
     await db.close();
   });
 
-  it("carries the raw rows of a populated workspace, exactly as stored", async () => {
+  it("carries the raw rows of a populated workspace, serializing pageAssets blobs to data URLs", async () => {
     const db = createTestDb();
     const contents = buildTestContents();
     await seedTestDb(db, contents);
@@ -114,13 +122,34 @@ describe("createBackupDocument", () => {
       /^data:image\/jpeg;base64,/,
     );
 
+    // Pages and pageContents ride along verbatim; pageAssets replace the
+    // binary Blob with a lossless base64 dataUrl.
+    expect(document.tables.pages).toEqual(contents.pages);
+    expect(document.tables.pageContents).toEqual(contents.pageContents);
+    expect(document.tables.pageAssets).toHaveLength(1);
+    const exportedAsset = document.tables.pageAssets[0]!;
+    expect(exportedAsset.id).toBe("page-asset-1");
+    expect(exportedAsset.pageId).toBe("page-1");
+    expect(exportedAsset.projectId).toBe("project-1");
+    expect(exportedAsset.name).toBe("diagram.png");
+    expect(exportedAsset.mimeType).toBe("image/png");
+    expect(exportedAsset.size).toBe(TEST_PAGE_ASSET_BYTES.length);
+    expect(exportedAsset.createdAt).toBe(TEST_NOW);
+    expect("blob" in exportedAsset).toBe(false);
+    expect(exportedAsset.dataUrl).toMatch(/^data:image\/png;base64,/);
+    const decoded = dataUrlToBlob(exportedAsset.dataUrl);
+    expect(new Uint8Array(await decoded.arrayBuffer())).toEqual(
+      TEST_PAGE_ASSET_BYTES,
+    );
+
     await db.close();
   });
 
-  it("carries archivedAt on archived task rows, exactly as stored", async () => {
+  it("carries archivedAt on archived task and page rows, exactly as stored", async () => {
     const db = createTestDb();
     const contents = buildTestContents();
     contents.tasks[0] = { ...contents.tasks[0], archivedAt: TEST_NOW + 5 };
+    contents.pages[0] = { ...contents.pages[0], archivedAt: TEST_NOW + 9 };
     await seedTestDb(db, contents);
 
     const document = await createBackupDocument(db);
@@ -129,6 +158,7 @@ describe("createBackupDocument", () => {
     // that carry it, absent on the ones that don't.
     expect(document.tables.tasks[0]?.archivedAt).toBe(TEST_NOW + 5);
     expect(document.tables.tasks[1]?.archivedAt).toBeUndefined();
+    expect(document.tables.pages[0]?.archivedAt).toBe(TEST_NOW + 9);
 
     await db.close();
   });

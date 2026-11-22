@@ -2,6 +2,9 @@ import Dexie, { type Table } from "dexie";
 import type {
   Column,
   Label,
+  Page,
+  PageAsset,
+  PageContent,
   Project,
   Sticky,
   Task,
@@ -22,6 +25,9 @@ export class NanoboardDB extends Dexie {
   stickies!: Table<Sticky, string>;
   whiteboards!: Table<Whiteboard, string>;
   whiteboardPreviews!: Table<WhiteboardPreview, string>;
+  pages!: Table<Page, string>;
+  pageContents!: Table<PageContent, string>;
+  pageAssets!: Table<PageAsset, string>;
 
   constructor(name = "nanoboard") {
     super(name);
@@ -119,6 +125,27 @@ export class NanoboardDB extends Dexie {
       stickies: "&id, position, createdAt, updatedAt",
       whiteboards: "&id, projectId, &[projectId]",
       whiteboardPreviews: "&projectId, updatedAt",
+    });
+    // v8: project-scoped Pages split across three purpose-built tables:
+    // lightweight metadata (`pages`), 1-to-1 TipTap JSON + derived plain text
+    // (`pageContents`), and binary image blobs (`pageAssets`). Keeping bodies
+    // and blobs out of `pages` ensures list queries and breadcrumb switchers
+    // stay fast and bounded in RAM. Empty on upgrade, so no migration hook is
+    // needed.
+    this.version(8).stores({
+      projects: "&id, slug, position",
+      columns: "&id, projectId, [projectId+position]",
+      tasks:
+        "&id, projectId, columnId, status, dueDate, [projectId+columnId+position], &[projectId+number]",
+      labels: "&id, projectId, &[projectId+name]",
+      taskLabels: "&[taskId+labelId], taskId, labelId",
+      taskResources: "&id, taskId",
+      stickies: "&id, position, createdAt, updatedAt",
+      whiteboards: "&id, projectId, &[projectId]",
+      whiteboardPreviews: "&projectId, updatedAt",
+      pages: "&id, projectId, [projectId+updatedAt]",
+      pageContents: "&pageId, projectId",
+      pageAssets: "&id, pageId, projectId",
     });
     // Fresh databases are seeded with the demo workspace so first-time
     // visitors can interact with the app right away (see seed.ts). Gating

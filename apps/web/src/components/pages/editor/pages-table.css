@@ -1,0 +1,89 @@
+@layer components {
+  /* Standard resizable TipTap table styles for Pages — imported strictly inside
+     the lazy Pages editor chunk so zero bytes enter initial CSS. Tables align
+     with `--editor-content-width` by default and break out horizontally across
+     `.tableWrapper` / `.editor-full-width-block` when resized or expanded. */
+
+  .nb-page-editor .tiptap .tableWrapper {
+    margin: 0.75rem 0;
+    padding-bottom: 0.25rem;
+  }
+
+  .nb-page-editor .tiptap .tableWrapper table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: min(100%, var(--editor-content-width));
+    margin: 0;
+    overflow: visible;
+  }
+
+  .nb-page-editor .tiptap .tableWrapper td,
+  .nb-page-editor .tiptap .tableWrapper th {
+    min-width: 1em;
+    border: 1px solid var(--color-border);
+    padding: 7px 10px;
+    vertical-align: top;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  .nb-page-editor .tiptap .tableWrapper td > *,
+  .nb-page-editor .tiptap .tableWrapper th > * {
+    margin-bottom: 0;
+  }
+
+  .nb-page-editor .tiptap .tableWrapper td > p,
+  .nb-page-editor .tiptap .tableWrapper th > p {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .nb-page-editor .tiptap .tableWrapper th {
+    font-weight: 600;
+    text-align: left;
+    background-color: color-mix(in srgb, var(--color-muted) 65%, transparent);
+  }
+
+  .nb-page-editor .tiptap .tableWrapper .selectedCell {
+    user-select: none;
+  }
+
+  .nb-page-editor .tiptap .tableWrapper .selectedCell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-800) 14%,
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  .nb-page-editor .tiptap .tableWrapper .column-resize-handle {
+    position: absolute;
+    right: -1px;
+    top: -1px;
+    width: 2px;
+    height: calc(100% + 2px);
+    z-index: 5;
+    background-color: var(--color-brand-800);
+    pointer-events: none;
+  }
+
+  .nb-page-editor .tiptap.resize-cursor {
+    cursor: col-resize;
+  }
+
+  .nb-page-editor
+    .tiptap:not(.dragging)
+    .tableWrapper.ProseMirror-selectednode
+    table {
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-800) 12%,
+      transparent
+    );
+  }
+}

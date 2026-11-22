@@ -15,6 +15,7 @@ export const NAMESPACES = [
   "stickies",
   "whiteboard",
   "timeline",
+  "pages",
   "project",
   "task",
   "activity",

@@ -9,10 +9,14 @@ import { serializeBackupDocument } from "./serialize";
 import {
   buildTestContents,
   createTestDb,
+  makePage,
+  makePageAsset,
+  makePageContent,
   makeTask,
   makeWhiteboardPreview,
   seedTestDb,
   TEST_NOW,
+  TEST_PAGE_ASSET_BYTES,
   type TestDbContents,
 } from "../db/test-db";
 
@@ -44,7 +48,45 @@ function buildOtherContents(): TestDbContents {
   contents.whiteboardPreviews.push(
     makeWhiteboardPreview({ projectId: "project-extra" }),
   );
+  // Pages, contents, and assets only the target has: restore must evict them.
+  contents.pages.push(
+    makePage({
+      id: "page-extra",
+      projectId: "project-extra",
+      title: "Extra page",
+      createdAt: TEST_NOW + 60_000,
+      updatedAt: TEST_NOW + 60_000,
+    }),
+  );
+  contents.pageContents.push(
+    makePageContent({
+      pageId: "page-extra",
+      projectId: "project-extra",
+      contentText: "Extra body",
+    }),
+  );
+  contents.pageAssets.push(
+    makePageAsset({
+      id: "page-asset-extra",
+      pageId: "page-extra",
+      projectId: "project-extra",
+      name: "extra.webp",
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: "image/webp" }),
+      createdAt: TEST_NOW + 60_000,
+    }),
+  );
   return contents;
+}
+
+async function normalizeAssets(assets: TestDbContents["pageAssets"]) {
+  return Promise.all(
+    assets.map(async ({ blob, ...rest }) => ({
+      ...rest,
+      blobType: blob.type,
+      blobSize: blob.size,
+      bytes: Array.from(new Uint8Array(await blob.arrayBuffer())),
+    })),
+  );
 }
 
 async function readAllTables(db: Parameters<typeof applyBackupDocument>[0]) {
@@ -58,6 +100,26 @@ async function readAllTables(db: Parameters<typeof applyBackupDocument>[0]) {
     stickies: await db.stickies.toArray(),
     whiteboards: await db.whiteboards.toArray(),
     whiteboardPreviews: await db.whiteboardPreviews.toArray(),
+    pages: await db.pages.toArray(),
+    pageContents: await db.pageContents.toArray(),
+    pageAssets: await normalizeAssets(await db.pageAssets.toArray()),
+  };
+}
+
+async function normalizeContents(contents: TestDbContents) {
+  return {
+    projects: contents.projects,
+    columns: contents.columns,
+    tasks: contents.tasks,
+    labels: contents.labels,
+    taskLabels: contents.taskLabels,
+    taskResources: contents.taskResources,
+    stickies: contents.stickies,
+    whiteboards: contents.whiteboards,
+    whiteboardPreviews: contents.whiteboardPreviews,
+    pages: contents.pages,
+    pageContents: contents.pageContents,
+    pageAssets: await normalizeAssets(contents.pageAssets),
   };
 }
 
@@ -121,6 +183,9 @@ describe("parseBackupDocument", () => {
     ]);
     expect(parsed.tables.tasks).toEqual([]);
     expect(parsed.tables.whiteboardPreviews).toEqual([]);
+    expect(parsed.tables.pages).toEqual([]);
+    expect(parsed.tables.pageContents).toEqual([]);
+    expect(parsed.tables.pageAssets).toEqual([]);
     expect(Object.keys(parsed.tables)).not.toContain("brandNewTable");
   });
 
@@ -129,6 +194,11 @@ describe("parseBackupDocument", () => {
       "a table that is not a list",
       { tasks: {} },
       /"tasks" table is not a list/,
+    ],
+    [
+      "a pages table that is not a list",
+      { pages: {} },
+      /"pages" table is not a list/,
     ],
     ["a tables map that is a list", [], /no data tables/],
   ])("rejects %s instead of reading it as empty", (_label, tables, message) => {
@@ -165,6 +235,9 @@ describe("backupTableCounts", () => {
       stickies: 1,
       whiteboards: 1,
       whiteboardPreviews: 1,
+      pages: 1,
+      pageContents: 1,
+      pageAssets: 1,
     });
 
     await db.close();
@@ -172,7 +245,7 @@ describe("backupTableCounts", () => {
 });
 
 describe("applyBackupDocument", () => {
-  it("round-trips: export from one database, restore into another, identical state", async () => {
+  it("round-trips: export from one database, restore into another, identical state including binary pageAssets", async () => {
     const source = createTestDb();
     const contents = buildTestContents();
     await seedTestDb(source, contents);
@@ -183,26 +256,24 @@ describe("applyBackupDocument", () => {
     await seedTestDb(target, buildOtherContents());
     await applyBackupDocument(target, parseBackupDocument(text));
 
-    expect(await readAllTables(target)).toEqual({
-      projects: contents.projects,
-      columns: contents.columns,
-      tasks: contents.tasks,
-      labels: contents.labels,
-      taskLabels: contents.taskLabels,
-      taskResources: contents.taskResources,
-      stickies: contents.stickies,
-      whiteboards: contents.whiteboards,
-      whiteboardPreviews: contents.whiteboardPreviews,
-    });
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(contents),
+    );
+    const restoredAsset = await target.pageAssets.get("page-asset-1");
+    expect(restoredAsset?.blob).toBeInstanceOf(Blob);
+    expect(new Uint8Array(await restoredAsset!.blob.arrayBuffer())).toEqual(
+      TEST_PAGE_ASSET_BYTES,
+    );
 
     await source.close();
     await target.close();
   });
 
-  it("round-trips archive state: backup → restore → backup preserves archivedAt exactly", async () => {
+  it("round-trips archive state: backup → restore → backup preserves archivedAt on tasks and pages", async () => {
     const source = createTestDb();
     const contents = buildTestContents();
     contents.tasks[0] = { ...contents.tasks[0], archivedAt: TEST_NOW + 7 };
+    contents.pages[0] = { ...contents.pages[0], archivedAt: TEST_NOW + 11 };
     await seedTestDb(source, contents);
     const first = await createBackupDocument(source);
     const text = serializeBackupDocument(first);
@@ -212,11 +283,13 @@ describe("applyBackupDocument", () => {
     await applyBackupDocument(target, parseBackupDocument(text));
     const second = await createBackupDocument(target);
 
-    // The re-exported document's task rows are byte-identical to the
-    // original export — archive stamps included, absence included.
+    // The re-exported document's rows are byte-identical to the original export.
     expect(second.tables.tasks).toEqual(first.tables.tasks);
     expect(second.tables.tasks[0]?.archivedAt).toBe(TEST_NOW + 7);
     expect(second.tables.tasks[1]?.archivedAt).toBeUndefined();
+    expect(second.tables.pages).toEqual(first.tables.pages);
+    expect(second.tables.pages[0]?.archivedAt).toBe(TEST_NOW + 11);
+    expect(second.tables.pageAssets).toEqual(first.tables.pageAssets);
 
     await source.close();
     await target.close();
@@ -245,7 +318,9 @@ describe("applyBackupDocument", () => {
     await seedTestDb(target, buildOtherContents());
     await applyBackupDocument(target, parseBackupDocument(legacyText));
 
-    expect(await readAllTables(target)).toEqual(contents);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(contents),
+    );
 
     await source.close();
     await target.close();
@@ -267,11 +342,88 @@ describe("applyBackupDocument", () => {
     );
 
     // The gate runs before the restore transaction: the database is untouched.
-    expect(await readAllTables(target)).toEqual(original);
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
   });
+
+  it("rejects a document with a malformed pageAssets dataUrl before touching the database", async () => {
+    const source = createTestDb();
+    await seedTestDb(source);
+    const document = await createBackupDocument(source);
+    document.tables.pageAssets[0] = {
+      ...document.tables.pageAssets[0]!,
+      dataUrl: "data:image/png;base64,NOT_VALID_BASE64!",
+    };
+
+    const target = createTestDb();
+    const original = buildOtherContents();
+    await seedTestDb(target, original);
+
+    await expect(applyBackupDocument(target, document)).rejects.toThrow(
+      /corrupted[\s\S]*"pageAssets", row 1[\s\S]*"dataUrl"/,
+    );
+
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
+
+    await source.close();
+    await target.close();
+  });
+
+  it.each([
+    [
+      "image/svg+xml payload with matching mimeType",
+      "image/svg+xml",
+      "data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+PC9zdmc+",
+    ],
+    [
+      "text/html payload with matching mimeType",
+      "text/html",
+      "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==",
+    ],
+    [
+      "image/svg+xml dataUrl disguised under image/png mimeType",
+      "image/png",
+      "data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+PC9zdmc+",
+    ],
+    [
+      "text/html dataUrl disguised under image/png mimeType",
+      "image/png",
+      "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==",
+    ],
+  ])(
+    "rejects unsafe %s in pageAssets before any database write",
+    async (_label, mimeType, dataUrl) => {
+      const source = createTestDb();
+      await seedTestDb(source);
+      const document = await createBackupDocument(source);
+      document.tables.pageAssets[0] = {
+        ...document.tables.pageAssets[0]!,
+        mimeType,
+        dataUrl,
+      };
+
+      const target = createTestDb();
+      const original = buildOtherContents();
+      await seedTestDb(target, original);
+
+      await expect(applyBackupDocument(target, document)).rejects.toThrow(
+        /corrupted[\s\S]*"pageAssets", row 1/,
+      );
+
+      expect(await readAllTables(target)).toEqual(
+        await normalizeContents(original),
+      );
+
+      await source.close();
+      await target.close();
+    },
+  );
 
   it("restores over a populated app, removing rows the backup doesn't contain", async () => {
     const source = createTestDb();
@@ -291,9 +443,15 @@ describe("applyBackupDocument", () => {
     expect(
       await target.whiteboardPreviews.get("project-extra"),
     ).toBeUndefined();
+    expect(await target.pages.get("page-extra")).toBeUndefined();
+    expect(await target.pageContents.get("page-extra")).toBeUndefined();
+    expect(await target.pageAssets.get("page-asset-extra")).toBeUndefined();
     expect(await target.projects.count()).toBe(1);
     expect(await target.tasks.count()).toBe(2);
     expect(await target.stickies.count()).toBe(1);
+    expect(await target.pages.count()).toBe(1);
+    expect(await target.pageContents.count()).toBe(1);
+    expect(await target.pageAssets.count()).toBe(1);
     // Previews are replaced wholesale like every other table: the target's
     // stale row (older timestamp) is gone, the backup's row is all that's left.
     expect(await target.whiteboardPreviews.toArray()).toEqual(
@@ -319,17 +477,9 @@ describe("applyBackupDocument", () => {
     await expect(applyBackupDocument(target, document)).rejects.toThrow();
 
     // Atomic: nothing was wiped, nothing was half-inserted.
-    expect(await readAllTables(target)).toEqual({
-      projects: original.projects,
-      columns: original.columns,
-      tasks: original.tasks,
-      labels: original.labels,
-      taskLabels: original.taskLabels,
-      taskResources: original.taskResources,
-      stickies: original.stickies,
-      whiteboards: original.whiteboards,
-      whiteboardPreviews: original.whiteboardPreviews,
-    });
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
@@ -354,17 +504,9 @@ describe("applyBackupDocument", () => {
 
     await expect(applyBackupDocument(target, document)).rejects.toThrow();
 
-    expect(await readAllTables(target)).toEqual({
-      projects: original.projects,
-      columns: original.columns,
-      tasks: original.tasks,
-      labels: original.labels,
-      taskLabels: original.taskLabels,
-      taskResources: original.taskResources,
-      stickies: original.stickies,
-      whiteboards: original.whiteboards,
-      whiteboardPreviews: original.whiteboardPreviews,
-    });
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
@@ -387,17 +529,9 @@ describe("applyBackupDocument", () => {
       /corrupted[\s\S]*"whiteboardPreviews", row 1[\s\S]*"dataUrl"/,
     );
 
-    expect(await readAllTables(target)).toEqual({
-      projects: original.projects,
-      columns: original.columns,
-      tasks: original.tasks,
-      labels: original.labels,
-      taskLabels: original.taskLabels,
-      taskResources: original.taskResources,
-      stickies: original.stickies,
-      whiteboards: original.whiteboards,
-      whiteboardPreviews: original.whiteboardPreviews,
-    });
+    expect(await readAllTables(target)).toEqual(
+      await normalizeContents(original),
+    );
 
     await source.close();
     await target.close();
@@ -422,10 +556,42 @@ describe("applyBackupDocument", () => {
       target.stickies,
       target.whiteboards,
       target.whiteboardPreviews,
+      target.pages,
+      target.pageContents,
+      target.pageAssets,
     ]) {
       expect(await table.count()).toBe(0);
     }
 
+    await target.close();
+  });
+
+  it("applies a legacy pre-Pages v1 backup without pages tables, leaving page tables empty", async () => {
+    // A backup produced before Pages existed: only the original 9 tables are
+    // present in the file.
+    const source = createTestDb();
+    await seedTestDb(source, buildTestContents());
+    const document = await createBackupDocument(source);
+    const legacyTables: Record<string, unknown> = { ...document.tables };
+    delete legacyTables.pages;
+    delete legacyTables.pageContents;
+    delete legacyTables.pageAssets;
+    const legacyText = JSON.stringify({ ...document, tables: legacyTables });
+
+    const target = createTestDb();
+    await seedTestDb(target, buildOtherContents());
+    const parsed = parseBackupDocument(legacyText);
+    await applyBackupDocument(target, parsed);
+
+    expect(await target.projects.toArray()).toEqual(parsed.tables.projects);
+    expect(await target.whiteboards.toArray()).toEqual(
+      parsed.tables.whiteboards,
+    );
+    expect(await target.pages.count()).toBe(0);
+    expect(await target.pageContents.count()).toBe(0);
+    expect(await target.pageAssets.count()).toBe(0);
+
+    await source.close();
     await target.close();
   });
 

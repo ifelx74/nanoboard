@@ -3,6 +3,8 @@ import { i18n, initI18n } from "./i18n";
 import {
   displayProjectName,
   pageMeta,
+  projectPageDetailMeta,
+  projectPageDetailRouteHead,
   projectPageMeta,
   projectRouteHead,
 } from "./seo";
@@ -94,6 +96,82 @@ describe("projectRouteHead", () => {
 
   it("falls back when the loader yields nothing", () => {
     const head = projectRouteHead("calendar");
+    expect(head({}).meta[0]).toEqual({ title: "Nanoboard" });
+  });
+
+  it("composes pages list metadata in en-US and fr-FR", async () => {
+    const enResult = projectPageMeta("pages", "Academic");
+    expect(enResult).toEqual({
+      meta: [
+        { title: "Pages — Academic · Nanoboard" },
+        {
+          name: "description",
+          content:
+            "Project pages and docs for Academic — rich notes, stored locally in your browser.",
+        },
+      ],
+    });
+
+    await i18n.changeLanguage("fr-FR");
+    const frResult = projectPageMeta("pages", "Academic");
+    expect(frResult).toEqual({
+      meta: [
+        { title: "Pages — Academic · Nanoboard" },
+        {
+          name: "description",
+          content:
+            "Pages et documents de Academic — notes structurées, stockées localement dans votre navigateur.",
+        },
+      ],
+    });
+    await i18n.changeLanguage("en-US");
+  });
+});
+
+describe("projectPageDetailMeta & projectPageDetailRouteHead", () => {
+  beforeAll(async () => {
+    await initI18n("en-US");
+  });
+
+  afterAll(async () => {
+    await i18n.changeLanguage("en-US");
+  });
+
+  it("includes the page title when present and truncates overlong titles", () => {
+    const titled = projectPageDetailMeta("Academic", "Architecture Spec");
+    expect(titled.meta[0]).toEqual({
+      title: "Architecture Spec — Academic · Nanoboard",
+    });
+
+    const overlong = projectPageDetailMeta("Academic", "a".repeat(80));
+    expect(overlong.meta[0]).toEqual({
+      title: `${"a".repeat(49)}… — Academic · Nanoboard`,
+    });
+  });
+
+  it("falls back to the Pages list title when the page title is blank or missing", () => {
+    expect(projectPageDetailMeta("Academic", "").meta[0]).toEqual({
+      title: "Pages — Academic · Nanoboard",
+    });
+    expect(projectPageDetailMeta("Academic", "   ").meta[0]).toEqual({
+      title: "Pages — Academic · Nanoboard",
+    });
+    expect(projectPageDetailMeta("Academic", undefined).meta[0]).toEqual({
+      title: "Pages — Academic · Nanoboard",
+    });
+  });
+
+  it("falls back to Nanoboard when the project is missing and reads loaderData in route head", () => {
+    const head = projectPageDetailRouteHead();
+    expect(
+      head({
+        loaderData: {
+          project: { name: "Academic" },
+          page: { title: "Roadmap" },
+        },
+      }).meta[0],
+    ).toEqual({ title: "Roadmap — Academic · Nanoboard" });
+
     expect(head({}).meta[0]).toEqual({ title: "Nanoboard" });
   });
 });

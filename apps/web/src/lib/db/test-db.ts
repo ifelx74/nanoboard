@@ -27,6 +27,9 @@ import {
   type Column,
   type DueDateString,
   type Label,
+  type Page,
+  type PageAsset,
+  type PageContent,
   type Project,
   type Sticky,
   type Task,
@@ -35,6 +38,7 @@ import {
   type Whiteboard,
   type WhiteboardPreview,
 } from "./schema";
+import { createEmptyPageContent } from "../pages/document";
 
 // Dexie snapshots the browser globals into `Dexie.dependencies` when the
 // dexie module is evaluated, which may happen *before* this module installs
@@ -222,6 +226,47 @@ export function makeWhiteboardPreview(
   };
 }
 
+export function makePage(overrides: Partial<Page> & { id: string }): Page {
+  return {
+    projectId: "project-1",
+    title: "Test page",
+    logo: null,
+    isFavorite: false,
+    isLocked: false,
+    createdAt: TEST_NOW,
+    updatedAt: TEST_NOW,
+    ...overrides,
+  };
+}
+
+export function makePageContent(
+  overrides: Partial<PageContent> & { pageId: string },
+): PageContent {
+  return {
+    projectId: "project-1",
+    contentJson: createEmptyPageContent(),
+    contentText: "",
+    ...overrides,
+  };
+}
+
+export function makePageAsset(
+  overrides: Partial<PageAsset> & { id: string },
+): PageAsset {
+  const blob =
+    overrides.blob ?? new Blob(["fake-image-bytes"], { type: "image/png" });
+  return {
+    pageId: "page-1",
+    projectId: "project-1",
+    name: "diagram.png",
+    mimeType: blob.type || "image/png",
+    size: blob.size,
+    blob,
+    createdAt: TEST_NOW,
+    ...overrides,
+  };
+}
+
 /** Representative rows of every table, with a consistent reference graph. */
 export interface TestDbContents {
   projects: Project[];
@@ -233,13 +278,22 @@ export interface TestDbContents {
   stickies: Sticky[];
   whiteboards: Whiteboard[];
   whiteboardPreviews: WhiteboardPreview[];
+  pages: Page[];
+  pageContents: PageContent[];
+  pageAssets: PageAsset[];
 }
+
+/** Binary PNG signature + non-ASCII bytes to verify binary Blob round-trips. */
+export const TEST_PAGE_ASSET_BYTES = new Uint8Array([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff,
+]);
 
 /**
  * A small, internally consistent workspace touching every table: one project
  * with three columns, two tasks (one plain, one with dates/priority), two
  * labels with one assignment, one manual link, one sticky, one whiteboard
- * scene complete with a data-URL file, and that project's preview row.
+ * scene complete with a data-URL file, that project's preview row, and one
+ * page with its content and binary image asset.
  * Row timestamps default to TEST_NOW; pass `now` to vary them (e.g. for tests
  * that order by updatedAt).
  */
@@ -309,11 +363,54 @@ export function buildTestContents(now: number = TEST_NOW): TestDbContents {
     whiteboardPreviews: [
       makeWhiteboardPreview({ projectId: "project-1", updatedAt: now }),
     ],
+    pages: [
+      makePage({
+        id: "page-1",
+        projectId: "project-1",
+        title: "Architecture notes",
+        logo: { type: "emoji", value: "📘" },
+        isFavorite: true,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    ],
+    pageContents: [
+      makePageContent({
+        pageId: "page-1",
+        projectId: "project-1",
+        contentJson: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { id: "heading-1", level: 1 },
+              content: [{ type: "text", text: "Overview" }],
+            },
+            {
+              type: "paragraph",
+              attrs: { id: "para-1" },
+              content: [{ type: "text", text: "Local-first architecture." }],
+            },
+          ],
+        },
+        contentText: "Overview\nLocal-first architecture.",
+      }),
+    ],
+    pageAssets: [
+      makePageAsset({
+        id: "page-asset-1",
+        pageId: "page-1",
+        projectId: "project-1",
+        name: "diagram.png",
+        blob: new Blob([TEST_PAGE_ASSET_BYTES], { type: "image/png" }),
+        createdAt: now,
+      }),
+    ],
   };
 }
 
 /**
- * Replace the contents of all nine tables with `contents` in a single
+ * Replace the contents of all twelve tables with `contents` in a single
  * transaction. Wiping first means a seeded database holds exactly the rows
  * given, regardless of prior writes.
  */
@@ -333,6 +430,9 @@ export async function seedTestDb(
       db.stickies,
       db.whiteboards,
       db.whiteboardPreviews,
+      db.pages,
+      db.pageContents,
+      db.pageAssets,
     ],
     async () => {
       await db.projects.clear();
@@ -344,6 +444,9 @@ export async function seedTestDb(
       await db.stickies.clear();
       await db.whiteboards.clear();
       await db.whiteboardPreviews.clear();
+      await db.pages.clear();
+      await db.pageContents.clear();
+      await db.pageAssets.clear();
 
       await db.projects.bulkAdd(contents.projects);
       await db.columns.bulkAdd(contents.columns);
@@ -354,6 +457,9 @@ export async function seedTestDb(
       await db.stickies.bulkAdd(contents.stickies);
       await db.whiteboards.bulkAdd(contents.whiteboards);
       await db.whiteboardPreviews.bulkAdd(contents.whiteboardPreviews);
+      await db.pages.bulkAdd(contents.pages);
+      await db.pageContents.bulkAdd(contents.pageContents);
+      await db.pageAssets.bulkAdd(contents.pageAssets);
     },
   );
 }
