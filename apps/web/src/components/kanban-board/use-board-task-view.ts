@@ -9,21 +9,18 @@ import {
   type BoardFilters,
   type BoardFilterSubject,
 } from "./board-filter-model";
+import {
+  readBoardFiltersStorage,
+  syncBoardFiltersStorage,
+} from "./board-filter-storage";
 import { useBoardSearch } from "./use-board-search";
 
-function storageKey(projectId: string): string {
-  return `nanoboard:board-filters:${projectId}`;
-}
-
 function readStored(projectId: string): BoardFilters {
-  if (typeof window === "undefined") return EMPTY_BOARD_FILTERS;
-  try {
-    const raw = window.localStorage.getItem(storageKey(projectId));
-    if (!raw) return EMPTY_BOARD_FILTERS;
-    return normalizeBoardFilters(JSON.parse(raw) as unknown);
-  } catch {
-    return EMPTY_BOARD_FILTERS;
-  }
+  return readBoardFiltersStorage(
+    projectId,
+    normalizeBoardFilters,
+    EMPTY_BOARD_FILTERS,
+  );
 }
 
 function withoutNegation(
@@ -55,20 +52,10 @@ export function useBoardTaskView(projectId: string) {
   }
 
   useEffect(() => {
-    try {
-      const key = storageKey(projectId);
-      const raw = window.localStorage.getItem(key);
-      if (raw) {
-        // Persist only real changes: the stored value already reads back
-        // to this state (legacy shapes included), so rewriting it would be
-        // a durable migration the spec rules out.
-        const stored = normalizeBoardFilters(JSON.parse(raw) as unknown);
-        if (JSON.stringify(stored) === JSON.stringify(filters)) return;
-      }
-      window.localStorage.setItem(key, JSON.stringify(filters));
-    } catch {
-      // Storage may be unavailable or full; keep filtering in memory.
-    }
+    syncBoardFiltersStorage(projectId, filters, {
+      isEmpty: countActiveBoardFilters(filters) === 0,
+      normalize: normalizeBoardFilters,
+    });
   }, [filters, projectId]);
 
   const toggleFilter = (subject: BoardFilterSubject, value: string) =>
