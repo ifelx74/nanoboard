@@ -15,7 +15,7 @@ describe("getPageMeta", () => {
     contents.pages.push(page);
     await seedTestDb(db, contents);
 
-    const loaded = await getPageMeta("page-meta-1", db);
+    const loaded = await getPageMeta(db, "page-meta-1");
     expect(loaded).toEqual(page);
 
     await db.close();
@@ -25,7 +25,7 @@ describe("getPageMeta", () => {
     const db = createTestDb();
     await seedTestDb(db);
 
-    const loaded = await getPageMeta("page-does-not-exist", db);
+    const loaded = await getPageMeta(db, "page-does-not-exist");
     expect(loaded).toBeUndefined();
 
     await db.close();
