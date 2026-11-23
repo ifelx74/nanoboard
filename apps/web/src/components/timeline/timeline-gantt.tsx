@@ -10,17 +10,8 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { db } from "@/lib/db/db";
-import {
-  shiftTaskDates,
-  updateTaskDueDate,
-  updateTaskStartDate,
-} from "@/lib/db/tasks";
-import {
-  startDate,
-  type ColumnSlug,
-  type DueDateString,
-  type TaskPriority,
-} from "@/lib/db/schema";
+import { rescheduleTask } from "@/lib/db/tasks";
+import type { ColumnSlug, TaskPriority } from "@/lib/db/schema";
 import { toast } from "@/lib/toast";
 import { getColumnIcon } from "@/lib/column";
 import { getPriorityIcon } from "@/lib/priority";
@@ -51,7 +42,6 @@ import {
   DAY_WIDTH,
   ROW_HEIGHT,
   SIDEBAR_WIDTH,
-  applyDragDelta,
   clampDragDayDelta,
   type TimelineDragMode,
   type TimelineModel,
@@ -207,18 +197,7 @@ export default function TimelineGantt({
     if (drag.deltaDays === 0) return;
     const { task, mode, deltaDays } = drag;
     try {
-      if (mode === "move") {
-        await shiftTaskDates(db, task.id, deltaDays);
-        return;
-      }
-      const dates = applyDragDelta(task, mode, deltaDays);
-      if (mode === "resize-start" && dates.startDate !== undefined) {
-        await updateTaskStartDate(task.id, startDate(dates.startDate));
-        return;
-      }
-      if (mode === "resize-end" && dates.dueDate !== undefined) {
-        await updateTaskDueDate(task.id, dates.dueDate as DueDateString);
-      }
+      await rescheduleTask(db, task.id, mode, deltaDays);
     } catch {
       restoreGestureGeometry(drag);
       toast.error(t("dragRescheduleFailed"));
