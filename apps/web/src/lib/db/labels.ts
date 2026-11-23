@@ -1,6 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
 import { LABEL_COLORS } from "../label-color";
-import { db } from "./db";
 import type { NanoboardDB } from "./db";
 import { isTaskArchived } from "./archive";
 import type { Label } from "./schema";
@@ -26,8 +25,8 @@ function assertValidLabelColor(color: string): void {
   }
 }
 
-async function requireLabel(id: string): Promise<Label> {
-  const label = await db.labels.get(id);
+async function requireLabel(database: NanoboardDB, id: string): Promise<Label> {
+  const label = await database.labels.get(id);
   if (!label) {
     throw new Error("Label not found.");
   }
@@ -39,11 +38,12 @@ async function requireLabel(id: string): Promise<Label> {
  * uniqueness is checked explicitly inside the write transaction.
  */
 async function assertUniqueLabelName(
+  database: NanoboardDB,
   projectId: string,
   name: string,
   exceptId?: string,
 ): Promise<void> {
-  const siblings = await db.labels
+  const siblings = await database.labels
     .where("projectId")
     .equals(projectId)
     .toArray();
@@ -57,14 +57,23 @@ async function assertUniqueLabelName(
   }
 }
 
-export function getProjectLabels(projectId: string): Promise<Label[]> {
-  return db.labels.where("projectId").equals(projectId).toArray();
+export function getProjectLabels(
+  database: NanoboardDB,
+  projectId: string,
+): Promise<Label[]> {
+  return database.labels.where("projectId").equals(projectId).toArray();
 }
 
-export async function getTaskLabels(taskId: string): Promise<Label[]> {
-  const joins = await db.taskLabels.where("taskId").equals(taskId).toArray();
+export async function getTaskLabels(
+  database: NanoboardDB,
+  taskId: string,
+): Promise<Label[]> {
+  const joins = await database.taskLabels
+    .where("taskId")
+    .equals(taskId)
+    .toArray();
   return resolveLabels(
-    db,
+    database,
     joins.map((join) => join.labelId),
   );
 }
@@ -134,6 +143,7 @@ async function resolveLabelMap(
 }
 
 export async function createLabel(
+  database: NanoboardDB,
   projectId: string,
   name: string,
   color: string,
@@ -143,57 +153,75 @@ export async function createLabel(
   const now = Date.now();
   const id = createId();
 
-  await db.transaction("rw", db.labels, db.projects, async () => {
-    const project = await db.projects.get(projectId);
-    if (!project) {
-      throw new Error("Project not found.");
-    }
-    await assertUniqueLabelName(projectId, trimmed);
-    await db.labels.add({
-      id,
-      projectId,
-      name: trimmed,
-      color,
-      createdAt: now,
-      updatedAt: now,
-    });
-  });
+  await database.transaction(
+    "rw",
+    database.labels,
+    database.projects,
+    async () => {
+      const project = await database.projects.get(projectId);
+      if (!project) {
+        throw new Error("Project not found.");
+      }
+      await assertUniqueLabelName(database, projectId, trimmed);
+      await database.labels.add({
+        id,
+        projectId,
+        name: trimmed,
+        color,
+        createdAt: now,
+        updatedAt: now,
+      });
+    },
+  );
 
   return id;
 }
 
-export async function renameLabel(id: string, name: string): Promise<void> {
+export async function renameLabel(
+  database: NanoboardDB,
+  id: string,
+  name: string,
+): Promise<void> {
   const trimmed = assertValidLabelName(name);
-  await db.transaction("rw", db.labels, async () => {
-    const existing = await db.labels.get(id);
+  await database.transaction("rw", database.labels, async () => {
+    const existing = await database.labels.get(id);
     if (!existing) {
       throw new Error("Label not found.");
     }
     if (existing.name === trimmed) return;
-    await assertUniqueLabelName(existing.projectId, trimmed, id);
-    await db.labels.update(id, { name: trimmed, updatedAt: Date.now() });
+    await assertUniqueLabelName(database, existing.projectId, trimmed, id);
+    await database.labels.update(id, { name: trimmed, updatedAt: Date.now() });
   });
 }
 
 export async function updateLabelColor(
+  database: NanoboardDB,
   id: string,
   color: string,
 ): Promise<void> {
   assertValidLabelColor(color);
-  await requireLabel(id);
-  await db.labels.update(id, { color, updatedAt: Date.now() });
+  await requireLabel(database, id);
+  await database.labels.update(id, { color, updatedAt: Date.now() });
 }
 
 /**
  * Deletes the palette entry plus its assignments in one transaction.
  * Throws on missing label.
  */
-export async function deleteLabel(id: string): Promise<void> {
-  await requireLabel(id);
-  await db.transaction("rw", db.labels, db.taskLabels, async () => {
-    await db.taskLabels.where("labelId").equals(id).delete();
-    await db.labels.delete(id);
-  });
+export async function deleteLabel(
+  database: NanoboardDB,
+  id: string,
+): Promise<void> {
+  await database.transaction(
+    "rw",
+    database.labels,
+    database.taskLabels,
+    async () => {
+      await requireLabel(database, id);
+      await database.taskLabels.where("labelId").equals(id).delete();
+      await database.labels.delete(id);
+    },
+  );
 }
 
 /**
@@ -201,29 +229,37 @@ export async function deleteLabel(id: string): Promise<void> {
  * re-attaching an existing pair is a store-level no-op via the compound key.
  */
 export async function attachLabel(
+  database: NanoboardDB,
   taskId: string,
   labelId: string,
 ): Promise<void> {
-  await db.transaction("rw", db.tasks, db.labels, db.taskLabels, async () => {
-    const task = await db.tasks.get(taskId);
-    if (!task) {
-      throw new Error("Task not found.");
-    }
-    const label = await db.labels.get(labelId);
-    if (!label) {
-      throw new Error("Label not found.");
-    }
-    if (label.projectId !== task.projectId) {
-      throw new Error("Label and task must belong to the same project.");
-    }
-    await db.taskLabels.put({ taskId, labelId });
-  });
+  await database.transaction(
+    "rw",
+    database.tasks,
+    database.labels,
+    database.taskLabels,
+    async () => {
+      const task = await database.tasks.get(taskId);
+      if (!task) {
+        throw new Error("Task not found.");
+      }
+      const label = await database.labels.get(labelId);
+      if (!label) {
+        throw new Error("Label not found.");
+      }
+      if (label.projectId !== task.projectId) {
+        throw new Error("Label and task must belong to the same project.");
+      }
+      await database.taskLabels.put({ taskId, labelId });
+    },
+  );
 }
 
 /** Detaching a missing pair is a no-op, never an error. */
 export async function detachLabel(
+  database: NanoboardDB,
   taskId: string,
   labelId: string,
 ): Promise<void> {
-  await db.taskLabels.delete([taskId, labelId]);
+  await database.taskLabels.delete([taskId, labelId]);
 }

@@ -8,7 +8,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { updateTaskStartDate } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { updateTaskStartDate } from "@/lib/db/tasks";
 import type { StartDateString, Task } from "@/lib/db/schema";
 import { startDate as startDateString } from "@/lib/db/schema";
 import { parseDayString, toDayString } from "@/lib/due-date-status";
@@ -41,7 +42,7 @@ export default function TaskStartDatePopover({
 
   async function handleDateChange(date: Date | undefined) {
     try {
-      await updateTaskStartDate(task.id, date ? toISODate(date) : null);
+      await updateTaskStartDate(db, task.id, date ? toISODate(date) : null);
       setOpen(false);
     } catch (error) {
       toast.error(

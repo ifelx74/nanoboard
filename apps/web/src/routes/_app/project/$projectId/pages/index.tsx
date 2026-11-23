@@ -25,7 +25,7 @@ import {
   listProjectPageContentTexts,
   listProjectPages,
 } from "@/lib/db/pages";
-import { getProject } from "@/lib/db/queries";
+import { getProject } from "@/lib/db/projects";
 import type { Page } from "@/lib/db/schema";
 import { getActiveLocale } from "@/lib/format";
 import { i18n } from "@/lib/i18n";
@@ -45,7 +45,8 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/pages/")({
   component: RouteComponent,
-  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  loader: ({ params }) =>
+    getProject(db, params.projectId).catch(() => undefined),
   head: projectRouteHead("pages"),
   // Keep validateSearch inline so the route tree never pulls `list-model.ts`
   // into the initial app-shell bundle.

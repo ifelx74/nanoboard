@@ -29,12 +29,10 @@ import {
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  getProjectColumns,
-  getProjectLabels,
-  importProjectTasks,
-} from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
+import { getProjectLabels } from "@/lib/db/labels";
+import { getProjectColumns } from "@/lib/db/tasks";
+import { importProjectTasks } from "@/lib/db/transfer";
 import type { ImportColumn } from "@/lib/task-transfer/types";
 import type {
   ImportPlan,
@@ -128,7 +126,7 @@ export function ImportTasksDialog({
     const items = parseTaskImportFile(content);
     const [projectColumns, projectLabels] = await Promise.all([
       getProjectColumns(db, projectId),
-      getProjectLabels(projectId),
+      getProjectLabels(db, projectId),
     ]);
     const nextPlan = planTaskImport(items, projectColumns, projectLabels);
     setColumns(projectColumns);

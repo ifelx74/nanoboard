@@ -10,7 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { getProject, updateProject } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { getProject, updateProject } from "@/lib/db/projects";
 import type { Project } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
@@ -30,7 +31,10 @@ export default function EditProjectDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const project = useLiveQuery(() => getProject(projectId), [projectId, open]);
+  const project = useLiveQuery(
+    () => getProject(db, projectId),
+    [projectId, open],
+  );
   const { t } = useTranslation("project");
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -80,7 +84,7 @@ function EditProjectForm({
     if (saving || !dirty || !name.trim() || !slug.trim()) return;
     setSaving(true);
     try {
-      await updateProject(project.id, {
+      await updateProject(db, project.id, {
         name: name.trim(),
         slug: slug.trim(),
         icon,

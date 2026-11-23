@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { updateTaskPriority } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { updateTaskPriority } from "@/lib/db/tasks";
 import { TASK_PRIORITIES, type Task, type TaskPriority } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { getPriorityIcon } from "@/lib/priority";
@@ -26,7 +27,7 @@ export default function TaskPriorityPopover({
 
   async function handlePriorityChange(priority: string): Promise<boolean> {
     try {
-      await updateTaskPriority(task.id, priority as TaskPriority);
+      await updateTaskPriority(db, task.id, priority as TaskPriority);
       return true;
     } catch (error) {
       const fallback = i18n.t("task:priority.error");

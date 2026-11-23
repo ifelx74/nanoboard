@@ -10,7 +10,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { deleteLabel } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { deleteLabel } from "@/lib/db/labels";
 import type { Label } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
@@ -33,7 +34,7 @@ export default function TaskLabelDeleteDialog({
     if (pending || !label) return;
     setPending(true);
     try {
-      await deleteLabel(label.id);
+      await deleteLabel(db, label.id);
       onOpenChange(false);
       onDeleted();
     } catch (error) {

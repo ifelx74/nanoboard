@@ -1,6 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
 import Dexie from "dexie";
-import { db } from "./db";
 import type { NanoboardDB } from "./db";
 import { isTaskArchived } from "./archive";
 import type {
@@ -13,8 +12,11 @@ import type {
 } from "./schema";
 import { TASK_PRIORITIES } from "./schema";
 
-export function getTask(id: string): Promise<Task | undefined> {
-  return db.tasks.get(id);
+export function getTask(
+  database: NanoboardDB,
+  id: string,
+): Promise<Task | undefined> {
+  return database.tasks.get(id);
 }
 
 export function getProjectColumns(
@@ -174,8 +176,8 @@ function assertValidDateRange(
   }
 }
 
-async function requireTask(id: string): Promise<Task> {
-  const task = await db.tasks.get(id);
+async function requireTask(database: NanoboardDB, id: string): Promise<Task> {
+  const task = await database.tasks.get(id);
   if (!task) {
     throw new Error("Task not found.");
   }
@@ -183,10 +185,11 @@ async function requireTask(id: string): Promise<Task> {
 }
 
 async function nextColumnPosition(
+  database: NanoboardDB,
   projectId: string,
   columnId: string,
 ): Promise<number> {
-  const lastSibling = await db.tasks
+  const lastSibling = await database.tasks
     .where("[projectId+columnId+position]")
     .between(
       [projectId, columnId, Dexie.minKey],
@@ -218,7 +221,10 @@ export interface CreateTaskInput {
  * missing column/project; callers pre-guard the title so the throw is
  * unreachable defense-in-depth. Returns the new task id.
  */
-export async function createTask(input: CreateTaskInput): Promise<string> {
+export async function createTask(
+  database: NanoboardDB,
+  input: CreateTaskInput,
+): Promise<string> {
   const title = assertValidTitle(input.title);
   if (input.priority !== undefined) assertValidPriority(input.priority);
   if (input.startDate !== undefined && input.startDate !== null) {
@@ -234,26 +240,26 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
   const now = Date.now();
   const id = createId();
 
-  await db.transaction(
+  await database.transaction(
     "rw",
-    db.tasks,
-    db.projects,
-    db.columns,
-    db.taskLabels,
-    db.labels,
+    database.tasks,
+    database.projects,
+    database.columns,
+    database.taskLabels,
+    database.labels,
     async () => {
-      const column = await db.columns.get(input.columnId);
+      const column = await database.columns.get(input.columnId);
       if (!column || column.projectId !== input.projectId) {
         throw new Error("Destination column not found in this project.");
       }
-      const project = await db.projects.get(input.projectId);
+      const project = await database.projects.get(input.projectId);
       if (!project) {
         throw new Error("Project not found.");
       }
 
       const labelIds = [...new Set(input.labelIds ?? [])];
       if (labelIds.length > 0) {
-        const labels = await db.labels.bulkGet(labelIds);
+        const labels = await database.labels.bulkGet(labelIds);
         for (let i = 0; i < labelIds.length; i++) {
           const label = labels[i];
           if (!label) {
@@ -266,12 +272,13 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
       }
 
       const position = await nextColumnPosition(
+        database,
         input.projectId,
         input.columnId,
       );
       const number = project.lastTaskNumber + 1;
 
-      await db.tasks.add({
+      await database.tasks.add({
         id,
         projectId: input.projectId,
         columnId: input.columnId,
@@ -286,12 +293,12 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
         createdAt: now,
         updatedAt: now,
       });
-      await db.projects.update(input.projectId, {
+      await database.projects.update(input.projectId, {
         lastTaskNumber: number,
         updatedAt: now,
       });
       for (const labelId of labelIds) {
-        await db.taskLabels.put({ taskId: id, labelId });
+        await database.taskLabels.put({ taskId: id, labelId });
       }
     },
   );
@@ -300,64 +307,77 @@ export async function createTask(input: CreateTaskInput): Promise<string> {
 }
 
 export async function updateTaskTitle(
+  database: NanoboardDB,
   id: string,
   title: string,
 ): Promise<void> {
   const trimmed = assertValidTitle(title);
-  const existing = await requireTask(id);
+  const existing = await requireTask(database, id);
   if (existing.title === trimmed) return;
-  await db.tasks.update(id, { title: trimmed, updatedAt: Date.now() });
+  await database.tasks.update(id, { title: trimmed, updatedAt: Date.now() });
 }
 
 export async function updateTaskDescription(
+  database: NanoboardDB,
   id: string,
   description: string,
 ): Promise<void> {
-  await requireTask(id);
-  await db.tasks.update(id, { description, updatedAt: Date.now() });
+  await requireTask(database, id);
+  await database.tasks.update(id, { description, updatedAt: Date.now() });
 }
 
 export async function updateTaskPriority(
+  database: NanoboardDB,
   id: string,
   priority: TaskPriority,
 ): Promise<void> {
   assertValidPriority(priority);
-  await requireTask(id);
-  await db.tasks.update(id, { priority, updatedAt: Date.now() });
+  await requireTask(database, id);
+  await database.tasks.update(id, { priority, updatedAt: Date.now() });
+}
+
+const MS_PER_DAY = 86_400_000;
+
+function parseDayNumberUtc(value: string): number {
+  const [year, month, day] = value.split("-").map(Number);
+  return Math.floor(
+    Date.UTC(year ?? 1970, (month ?? 1) - 1, day ?? 1) / MS_PER_DAY,
+  );
 }
 
 /**
- * `yyyy-mm-dd` validity probe that never throws: the shifted values are
- * re-validated with the same asserts used for single-field writes. Reuses
- * local day math so a 4-digit-year overflow (e.g. 9999-12-31 + 1 day) rolls
- * into a string the asserts reject instead of a silent date roll-over.
+ * DST-safe UTC calendar day shift for `yyyy-mm-dd` strings. Shifted outputs
+ * are re-validated by `assertValidStartDate` / `assertValidDueDate` so year
+ * overflows reject loudly.
  */
 function shiftDayString(value: string, dayDelta: number): string {
   const [year, month, day] = value.split("-").map(Number);
   const shifted = new Date(
-    year ?? 1970,
-    (month ?? 1) - 1,
-    (day ?? 1) + dayDelta,
+    Date.UTC(year ?? 1970, (month ?? 1) - 1, (day ?? 1) + dayDelta),
   );
-  const y = String(shifted.getFullYear()).padStart(4, "0");
-  const m = String(shifted.getMonth() + 1).padStart(2, "0");
-  const d = String(shifted.getDate()).padStart(2, "0");
+  const y = String(shifted.getUTCFullYear()).padStart(4, "0");
+  const m = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(shifted.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
+export type TaskRescheduleMode = "move" | "resize-start" | "resize-end";
+
 /**
- * Timeline move write: shifts every existing date field on the task by
- * `dayDelta` days in a single transaction. A single-dated task shifts its
- * lone date; an undated task and a zero delta are no-ops (no write, no
- * `updatedAt` bump). Validates `yyyy-mm-dd` semantics of the stored and
- * shifted values and the `start <= due` invariant; any failure aborts the
- * transaction, so no partial write is ever persisted. `updatedAt` is bumped
- * once per write. Takes the db handle as its first parameter like the other
- * testable writers. Throws on a missing task or a non-integer delta.
+ * Unified transactional Timeline reschedule write: handles whole-bar moves and
+ * start/end edge resizes in a single transaction against the persisted row.
+ * - `move`: shifts every existing date by `dayDelta` (duration preserved).
+ * - `resize-start` / `resize-end`: moves the dragged edge clamped to at least a
+ *   1-day bar (`start <= due`); on a single-dated bar, dragging the absent edge
+ *   creates the missing endpoint anchored to the existing date.
+ * An undated task, zero delta, or clamped no-op writes nothing and leaves
+ * `updatedAt` untouched. Throws on a missing task, non-integer delta, or
+ * invalid/inverted stored dates.
  */
-export async function shiftTaskDates(
+export async function rescheduleTask(
   database: NanoboardDB,
   id: string,
+  mode: TaskRescheduleMode,
   dayDelta: number,
 ): Promise<void> {
   if (!Number.isInteger(dayDelta)) {
@@ -376,61 +396,96 @@ export async function shiftTaskDates(
     if (task.startDate === undefined && task.dueDate === undefined) {
       return;
     }
+    assertValidDateRange(task.startDate, task.dueDate);
 
-    const shifted: {
+    const patch: {
       startDate?: StartDateString;
       dueDate?: DueDateString;
     } = {};
-    if (task.startDate !== undefined) {
-      const value = shiftDayString(task.startDate, dayDelta);
-      assertValidStartDate(value as StartDateString);
-      shifted.startDate = value as StartDateString;
+
+    if (mode === "move") {
+      if (task.startDate !== undefined) {
+        const value = shiftDayString(task.startDate, dayDelta);
+        assertValidStartDate(value as StartDateString);
+        patch.startDate = value as StartDateString;
+      }
+      if (task.dueDate !== undefined) {
+        const value = shiftDayString(task.dueDate, dayDelta);
+        assertValidDueDate(value as DueDateString);
+        patch.dueDate = value as DueDateString;
+      }
+      assertValidDateRange(patch.startDate, patch.dueDate);
+    } else {
+      const spanDays =
+        task.startDate !== undefined && task.dueDate !== undefined
+          ? parseDayNumberUtc(task.dueDate) -
+            parseDayNumberUtc(task.startDate) +
+            1
+          : 1;
+      const maxShrink = spanDays - 1;
+      if (mode === "resize-start") {
+        const effectiveDelta = Math.min(dayDelta, maxShrink);
+        const anchor = task.startDate ?? task.dueDate!;
+        const value = shiftDayString(anchor, effectiveDelta);
+        if (value === task.startDate) return;
+        assertValidStartDate(value as StartDateString);
+        assertValidDateRange(value as StartDateString, task.dueDate);
+        patch.startDate = value as StartDateString;
+      } else {
+        const effectiveDelta = Math.max(dayDelta, -maxShrink);
+        const anchor = task.dueDate ?? task.startDate!;
+        const value = shiftDayString(anchor, effectiveDelta);
+        if (value === task.dueDate) return;
+        assertValidDueDate(value as DueDateString);
+        assertValidDateRange(task.startDate, value as DueDateString);
+        patch.dueDate = value as DueDateString;
+      }
     }
-    if (task.dueDate !== undefined) {
-      const value = shiftDayString(task.dueDate, dayDelta);
-      assertValidDueDate(value as DueDateString);
-      shifted.dueDate = value as DueDateString;
-    }
-    assertValidDateRange(shifted.startDate, shifted.dueDate);
 
     await database.tasks.update(id, {
-      ...shifted,
+      ...patch,
       updatedAt: Date.now(),
     });
   });
 }
 
 /**
- * A string sets the start date, `null` clears it. Rejects a start after the
- * task's current due date, mirroring range validation.
+ * A string sets the start date, `null` clears it. Runs transactionally and
+ * rejects a start after the task's current due date.
  */
 export async function updateTaskStartDate(
+  database: NanoboardDB,
   id: string,
   startDate: StartDateString | null,
 ): Promise<void> {
   if (startDate !== null) assertValidStartDate(startDate);
-  const existing = await requireTask(id);
-  assertValidDateRange(startDate ?? undefined, existing.dueDate);
-  await db.tasks.update(id, {
-    startDate: startDate ?? undefined,
-    updatedAt: Date.now(),
+  await database.transaction("rw", database.tasks, async () => {
+    const existing = await requireTask(database, id);
+    assertValidDateRange(startDate ?? undefined, existing.dueDate);
+    await database.tasks.update(id, {
+      startDate: startDate ?? undefined,
+      updatedAt: Date.now(),
+    });
   });
 }
 
 /**
- * A string sets the due date, `null` clears it. Rejects a due before the
- * task's current start date, mirroring range validation.
+ * A string sets the due date, `null` clears it. Runs transactionally and
+ * rejects a due before the task's current start date.
  */
 export async function updateTaskDueDate(
+  database: NanoboardDB,
   id: string,
   dueDate: DueDateString | null,
 ): Promise<void> {
   if (dueDate !== null) assertValidDueDate(dueDate);
-  const existing = await requireTask(id);
-  assertValidDateRange(existing.startDate, dueDate ?? undefined);
-  await db.tasks.update(id, {
-    dueDate: dueDate ?? undefined,
-    updatedAt: Date.now(),
+  await database.transaction("rw", database.tasks, async () => {
+    const existing = await requireTask(database, id);
+    assertValidDateRange(existing.startDate, dueDate ?? undefined);
+    await database.tasks.update(id, {
+      dueDate: dueDate ?? undefined,
+      updatedAt: Date.now(),
+    });
   });
 }
 
@@ -441,47 +496,60 @@ export async function updateTaskDueDate(
  * unknown slug.
  */
 export async function moveTaskToColumn(
+  database: NanoboardDB,
   id: string,
   slug: ColumnSlug,
 ): Promise<void> {
-  await db.transaction("rw", db.tasks, db.columns, async () => {
-    const task = await db.tasks.get(id);
-    if (!task) {
-      throw new Error("Task not found.");
-    }
-    const destination = await db.columns
-      .where("projectId")
-      .equals(task.projectId)
-      .filter((candidate) => candidate.slug === slug)
-      .first();
-    if (!destination) {
-      throw new Error(`Unknown column "${slug}" in this project.`);
-    }
-    const position = await nextColumnPosition(task.projectId, destination.id);
-    await db.tasks.update(id, {
-      columnId: destination.id,
-      status: destination.slug,
-      position,
-      updatedAt: Date.now(),
-    });
-  });
+  await database.transaction(
+    "rw",
+    database.tasks,
+    database.columns,
+    async () => {
+      const task = await database.tasks.get(id);
+      if (!task) {
+        throw new Error("Task not found.");
+      }
+      const destination = await database.columns
+        .where("projectId")
+        .equals(task.projectId)
+        .filter((candidate) => candidate.slug === slug)
+        .first();
+      if (!destination) {
+        throw new Error(`Unknown column "${slug}" in this project.`);
+      }
+      const position = await nextColumnPosition(
+        database,
+        task.projectId,
+        destination.id,
+      );
+      await database.tasks.update(id, {
+        columnId: destination.id,
+        status: destination.slug,
+        position,
+        updatedAt: Date.now(),
+      });
+    },
+  );
 }
 
 /**
  * Hard delete. Position gaps stay, the project counter never rewinds —
  * ticket numbers stay historically unique. Throws on missing task.
  */
-export async function deleteTask(id: string): Promise<void> {
-  await requireTask(id);
-  await db.transaction(
+export async function deleteTask(
+  database: NanoboardDB,
+  id: string,
+): Promise<void> {
+  await database.transaction(
     "rw",
-    db.tasks,
-    db.taskLabels,
-    db.taskResources,
+    database.tasks,
+    database.taskLabels,
+    database.taskResources,
     async () => {
-      await db.taskLabels.where("taskId").equals(id).delete();
-      await db.taskResources.where("taskId").equals(id).delete();
-      await db.tasks.delete(id);
+      await requireTask(database, id);
+      await database.taskLabels.where("taskId").equals(id).delete();
+      await database.taskResources.where("taskId").equals(id).delete();
+      await database.tasks.delete(id);
     },
   );
 }
@@ -500,6 +568,7 @@ export interface ReorderItem {
  * project membership are enforced; the write is one transaction.
  */
 export async function reorderTasks(
+  database: NanoboardDB,
   projectId: string,
   items: ReorderItem[],
 ): Promise<void> {
@@ -513,49 +582,56 @@ export async function reorderTasks(
     }
   }
 
-  const columns = await db.columns
-    .where("projectId")
-    .equals(projectId)
-    .toArray();
-  const columnBySlug = new Map(columns.map((column) => [column.slug, column]));
-  for (const item of items) {
-    if (item.status !== undefined && !columnBySlug.has(item.status)) {
-      throw new Error(`Unknown column "${item.status}" in this project.`);
-    }
-  }
-
-  const existing = await db.tasks.where("id").anyOf(ids).toArray();
-  if (existing.length !== ids.length) {
-    throw new Error("Tasks must belong to the requested project.");
-  }
-  for (const task of existing) {
-    if (task.projectId !== projectId) {
-      throw new Error("Tasks must belong to the requested project.");
-    }
-  }
-
   const now = Date.now();
-  await db.transaction("rw", db.tasks, async () => {
-    for (const item of items) {
-      if (item.status === undefined) {
-        await db.tasks.update(item.id, {
-          position: item.position,
-          updatedAt: now,
-        });
-      } else {
-        const column = columnBySlug.get(item.status);
-        if (!column) {
+  await database.transaction(
+    "rw",
+    database.tasks,
+    database.columns,
+    async () => {
+      const columns = await database.columns
+        .where("projectId")
+        .equals(projectId)
+        .toArray();
+      const columnBySlug = new Map(
+        columns.map((column) => [column.slug, column]),
+      );
+      for (const item of items) {
+        if (item.status !== undefined && !columnBySlug.has(item.status)) {
           throw new Error(`Unknown column "${item.status}" in this project.`);
         }
-        await db.tasks.update(item.id, {
-          position: item.position,
-          status: item.status,
-          columnId: column.id,
-          updatedAt: now,
-        });
       }
-    }
-  });
+
+      const existing = await database.tasks.where("id").anyOf(ids).toArray();
+      if (existing.length !== ids.length) {
+        throw new Error("Tasks must belong to the requested project.");
+      }
+      for (const task of existing) {
+        if (task.projectId !== projectId) {
+          throw new Error("Tasks must belong to the requested project.");
+        }
+      }
+
+      for (const item of items) {
+        if (item.status === undefined) {
+          await database.tasks.update(item.id, {
+            position: item.position,
+            updatedAt: now,
+          });
+        } else {
+          const column = columnBySlug.get(item.status);
+          if (!column) {
+            throw new Error(`Unknown column "${item.status}" in this project.`);
+          }
+          await database.tasks.update(item.id, {
+            position: item.position,
+            status: item.status,
+            columnId: column.id,
+            updatedAt: now,
+          });
+        }
+      }
+    },
+  );
 }
 
 /**
@@ -564,6 +640,7 @@ export async function reorderTasks(
  * timestamps. Throws on missing source.
  */
 export async function duplicateTask(
+  database: NanoboardDB,
   sourceId: string,
   title?: string,
 ): Promise<string> {
@@ -571,46 +648,53 @@ export async function duplicateTask(
   const now = Date.now();
   const id = createId();
 
-  await db.transaction("rw", db.tasks, db.projects, db.columns, async () => {
-    const source = await db.tasks.get(sourceId);
-    if (!source) {
-      throw new Error("Task not found.");
-    }
-    const column = await db.columns.get(source.columnId);
-    if (!column || column.projectId !== source.projectId) {
-      throw new Error("Source column not found in this project.");
-    }
-    const project = await db.projects.get(source.projectId);
-    if (!project) {
-      throw new Error("Project not found.");
-    }
+  await database.transaction(
+    "rw",
+    database.tasks,
+    database.projects,
+    database.columns,
+    async () => {
+      const source = await database.tasks.get(sourceId);
+      if (!source) {
+        throw new Error("Task not found.");
+      }
+      const column = await database.columns.get(source.columnId);
+      if (!column || column.projectId !== source.projectId) {
+        throw new Error("Source column not found in this project.");
+      }
+      const project = await database.projects.get(source.projectId);
+      if (!project) {
+        throw new Error("Project not found.");
+      }
 
-    const position = await nextColumnPosition(
-      source.projectId,
-      source.columnId,
-    );
-    const number = project.lastTaskNumber + 1;
+      const position = await nextColumnPosition(
+        database,
+        source.projectId,
+        source.columnId,
+      );
+      const number = project.lastTaskNumber + 1;
 
-    await db.tasks.add({
-      id,
-      projectId: source.projectId,
-      columnId: source.columnId,
-      status: source.status,
-      title: trimmed ?? source.title,
-      description: source.description,
-      position,
-      number,
-      priority: source.priority,
-      startDate: source.startDate,
-      dueDate: source.dueDate,
-      createdAt: now,
-      updatedAt: now,
-    });
-    await db.projects.update(source.projectId, {
-      lastTaskNumber: number,
-      updatedAt: now,
-    });
-  });
+      await database.tasks.add({
+        id,
+        projectId: source.projectId,
+        columnId: source.columnId,
+        status: source.status,
+        title: trimmed ?? source.title,
+        description: source.description,
+        position,
+        number,
+        priority: source.priority,
+        startDate: source.startDate,
+        dueDate: source.dueDate,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await database.projects.update(source.projectId, {
+        lastTaskNumber: number,
+        updatedAt: now,
+      });
+    },
+  );
 
   return id;
 }

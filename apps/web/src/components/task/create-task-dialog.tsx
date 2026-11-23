@@ -34,12 +34,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  createLabel,
-  createTask,
-  getProject,
-  getProjectLabels,
-} from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { createLabel, getProjectLabels } from "@/lib/db/labels";
+import { getProject } from "@/lib/db/projects";
+import { createTask } from "@/lib/db/tasks";
 import type { Column, DueDateString, TaskPriority } from "@/lib/db/schema";
 import { TASK_PRIORITIES, startDate as startDateString } from "@/lib/db/schema";
 import { getColumnIcon } from "@/lib/column";
@@ -99,8 +97,11 @@ export default function CreateTaskDialog({
     pink: t("labels.color.pink"),
     red: t("labels.color.red"),
   };
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
-  const palette = useLiveQuery(() => getProjectLabels(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(db, projectId), [projectId]);
+  const palette = useLiveQuery(
+    () => getProjectLabels(db, projectId),
+    [projectId],
+  );
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -197,7 +198,7 @@ export default function CreateTaskDialog({
     if (submitting || !title.trim()) return;
     setSubmitting(true);
     try {
-      await createTask({
+      await createTask(db, {
         projectId,
         columnId: column.id,
         title: title.trim(),
@@ -237,7 +238,7 @@ export default function CreateTaskDialog({
     setSelectedColor(color);
     if (!newLabelName.trim()) return;
     try {
-      const id = await createLabel(projectId, newLabelName.trim(), color);
+      const id = await createLabel(db, projectId, newLabelName.trim(), color);
       setLabelIds((current) => [...current, id]);
       setLabelsOpen(false);
       setTimeout(() => {

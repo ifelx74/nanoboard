@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { db } from "@/lib/db/db";
 import {
   QUICK_ADD_TITLE_MAX,
   QUICK_ADD_TITLE_MIN,
   updateTaskTitle,
-} from "@/lib/db/queries";
+} from "@/lib/db/tasks";
 import type { Task } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
@@ -24,7 +25,7 @@ export default function TaskTitle({
   taskRef.current = task;
 
   function persist(next: string) {
-    updateTaskTitle(taskRef.current.id, next).catch((error: unknown) => {
+    updateTaskTitle(db, taskRef.current.id, next).catch((error: unknown) => {
       const fallback = i18n.t("task:title.error");
       toast.error(error instanceof Error ? error.message : fallback);
     });

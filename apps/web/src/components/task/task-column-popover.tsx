@@ -1,4 +1,5 @@
-import { moveTaskToColumn } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { moveTaskToColumn } from "@/lib/db/tasks";
 import type { Column, Task } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
@@ -22,7 +23,7 @@ export default function TaskColumnPopover({
     const column = columns.find((candidate) => candidate.id === columnId);
     if (!column) return false;
     try {
-      await moveTaskToColumn(task.id, column.slug);
+      await moveTaskToColumn(db, task.id, column.slug);
       return true;
     } catch (error) {
       const fallback = i18n.t("task:column.error");

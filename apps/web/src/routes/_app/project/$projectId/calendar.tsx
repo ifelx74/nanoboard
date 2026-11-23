@@ -9,7 +9,8 @@ import type { CalendarTask } from "@/components/calendar/calendar-task-bar";
 import { buildMonthWeeks } from "@/components/calendar/month-grid-model";
 import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import TaskDrawer from "@/components/task/task-drawer";
-import { getProject, getProjectTasks } from "@/lib/db/queries";
+import { getProject } from "@/lib/db/projects";
+import { getProjectTasks } from "@/lib/db/tasks";
 import { projectRouteHead } from "@/lib/seo";
 import { db } from "@/lib/db/db";
 import { parseLocalDate } from "@/lib/due-date-status";
@@ -17,7 +18,8 @@ import { taskKey } from "@/lib/task-key";
 
 export const Route = createFileRoute("/_app/project/$projectId/calendar")({
   component: RouteComponent,
-  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  loader: ({ params }) =>
+    getProject(db, params.projectId).catch(() => undefined),
   head: projectRouteHead("calendar"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
@@ -52,7 +54,7 @@ function RouteComponent() {
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
   const tasks = useLiveQuery(() => getProjectTasks(db, projectId), [projectId]);
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(db, projectId), [projectId]);
   const slug = project?.slug ?? "";
   const maxLanes = useMaxLanes();
   const [visibleMonth, setVisibleMonth] = useState(() =>

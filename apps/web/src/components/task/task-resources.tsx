@@ -17,12 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { db } from "@/lib/db/db";
 import {
   createTaskResource,
   deleteTaskResource,
   getTaskResources,
   RESOURCE_TITLE_MAX,
-} from "@/lib/db/queries";
+} from "@/lib/db/resources";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import { linkHost } from "./link-host";
@@ -53,7 +54,7 @@ export default function TaskResources({
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const resources = useLiveQuery(() => getTaskResources(taskId), [taskId]);
+  const resources = useLiveQuery(() => getTaskResources(db, taskId), [taskId]);
 
   function resetForm() {
     setUrl("");
@@ -72,7 +73,7 @@ export default function TaskResources({
     if (adding || !url.trim()) return;
     setAdding(true);
     try {
-      await createTaskResource(taskId, {
+      await createTaskResource(db, taskId, {
         url,
         ...(title.trim() ? { title: title.trim() } : {}),
       });
@@ -93,7 +94,7 @@ export default function TaskResources({
     if (deleting) return;
     setDeleting(true);
     try {
-      await deleteTaskResource(taskId, id);
+      await deleteTaskResource(db, taskId, id);
     } catch (error) {
       toast.error(
         error instanceof Error

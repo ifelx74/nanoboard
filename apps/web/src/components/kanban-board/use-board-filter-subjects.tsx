@@ -5,7 +5,8 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWeekStartsOn } from "@/components/calendar/use-week-starts-on";
 import { getColumnIcon } from "@/lib/column";
-import { getProjectLabels } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { getProjectLabels } from "@/lib/db/labels";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon } from "@/lib/priority";
@@ -95,7 +96,10 @@ export function useBoardFilterSubjects(
     noDueDate: t("filter.noDueDate"),
   };
   const [weekStartsOn] = useWeekStartsOn();
-  const palette = useLiveQuery(() => getProjectLabels(projectId), [projectId]);
+  const palette = useLiveQuery(
+    () => getProjectLabels(db, projectId),
+    [projectId],
+  );
   const { filters, toggleFilter, setNegated, clearSubject } = view;
 
   const makeSubjectDef = (

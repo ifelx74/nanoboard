@@ -4,17 +4,15 @@ import { ProjectLayout } from "@/components/common/project-layout";
 import KanbanBoard from "@/components/kanban-board/kanban-board";
 import TaskDrawer from "@/components/task/task-drawer";
 import { db } from "@/lib/db/db";
-import {
-  getProject,
-  getProjectColumns,
-  getProjectTaskLabels,
-  getProjectTasks,
-} from "@/lib/db/queries";
+import { getProjectTaskLabels } from "@/lib/db/labels";
+import { getProject } from "@/lib/db/projects";
+import { getProjectColumns, getProjectTasks } from "@/lib/db/tasks";
 import { projectRouteHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/_app/project/$projectId/board")({
   component: RouteComponent,
-  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  loader: ({ params }) =>
+    getProject(db, params.projectId).catch(() => undefined),
   head: projectRouteHead("board"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
@@ -71,7 +69,7 @@ function RouteComponent() {
     [projectId],
   );
   const tasks = useLiveQuery(() => getProjectTasks(db, projectId), [projectId]);
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(db, projectId), [projectId]);
   const labelsByTask = useLiveQuery(
     () => getProjectTaskLabels(db, projectId),
     [projectId],

@@ -8,7 +8,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { updateTaskDueDate } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { updateTaskDueDate } from "@/lib/db/tasks";
 import type { DueDateString, Task } from "@/lib/db/schema";
 import { parseDayString, toDayString } from "@/lib/due-date-status";
 import { i18n } from "@/lib/i18n";
@@ -40,7 +41,7 @@ export default function TaskDueDatePopover({
 
   async function handleDateChange(date: Date | undefined) {
     try {
-      await updateTaskDueDate(task.id, date ? toISODate(date) : null);
+      await updateTaskDueDate(db, task.id, date ? toISODate(date) : null);
       setOpen(false);
     } catch (error) {
       toast.error(

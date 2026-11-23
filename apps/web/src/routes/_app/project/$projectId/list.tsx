@@ -15,12 +15,9 @@ import {
   getDueDateStatus,
   parseLocalDate,
 } from "@/lib/due-date-status";
-import {
-  getProject,
-  getProjectColumns,
-  getProjectTaskLabels,
-  getProjectTasks,
-} from "@/lib/db/queries";
+import { getProjectTaskLabels } from "@/lib/db/labels";
+import { getProject } from "@/lib/db/projects";
+import { getProjectColumns, getProjectTasks } from "@/lib/db/tasks";
 import { projectRouteHead } from "@/lib/seo";
 import { db } from "@/lib/db/db";
 import type { Column, Label, Task } from "@/lib/db/schema";
@@ -33,7 +30,8 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/project/$projectId/list")({
   component: RouteComponent,
-  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  loader: ({ params }) =>
+    getProject(db, params.projectId).catch(() => undefined),
   head: projectRouteHead("list"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
@@ -178,7 +176,7 @@ function RouteComponent() {
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
   const { t } = useTranslation("list");
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(db, projectId), [projectId]);
   const columns = useLiveQuery(
     () => getProjectColumns(db, projectId),
     [projectId],

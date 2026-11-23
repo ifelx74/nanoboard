@@ -7,9 +7,13 @@ import { SectionHeader } from "@/components/home/section-header";
 import { WeekStrip } from "@/components/home/week-strip";
 import { weekWindow } from "@/components/home/build-week";
 import { useLocalDay } from "@/hooks/use-local-day";
-import { getOpenTasks, getProjects, getProjectsStats } from "@/lib/db/queries";
 import { db } from "@/lib/db/db";
-import type { ProjectStats } from "@/lib/db/queries";
+import {
+  getProjects,
+  getProjectsStats,
+  type ProjectStats,
+} from "@/lib/db/projects";
+import { getOpenTasks } from "@/lib/db/tasks";
 import type { Project } from "@/lib/db/schema";
 import { getDayPart } from "@/lib/day-part";
 import { formatLongDate } from "@/lib/format";
@@ -80,7 +84,7 @@ function ProjectCard({
 
 function RouteComponent() {
   const { t } = useTranslation("home");
-  const projects = useLiveQuery(() => getProjects(), []);
+  const projects = useLiveQuery(() => getProjects(db), []);
   const statsByProject = useLiveQuery(() => getProjectsStats(db), []);
   const day = useLocalDay();
   const { from, to } = useMemo(() => weekWindow(new Date(day)), [day]);

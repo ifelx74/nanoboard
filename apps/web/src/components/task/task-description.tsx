@@ -1,7 +1,8 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { updateTaskDescription } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { updateTaskDescription } from "@/lib/db/tasks";
 import type { Task } from "@/lib/db/schema";
 import { createDescriptionExtensions } from "@/lib/editor/preset";
 import { formatMarkdown } from "@/lib/editor/markdown";
@@ -88,7 +89,7 @@ export default function TaskDescription({
         return;
       }
       setStatus("saving");
-      void updateTaskDescription(task.id, markdown).then(
+      void updateTaskDescription(db, task.id, markdown).then(
         () => {
           savedRef.current = markdown;
           setStatus("saved");

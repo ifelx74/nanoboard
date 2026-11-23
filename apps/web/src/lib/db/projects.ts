@@ -1,21 +1,28 @@
 import { createId } from "@paralleldrive/cuid2";
-import { db, type NanoboardDB } from "./db";
+import type { NanoboardDB } from "./db";
 import { isTaskArchived } from "./archive";
 import { forgetWhiteboard } from "./whiteboards";
 import { deleteWhiteboardPreview } from "./whiteboard-previews";
 import { isProjectIconKey } from "../project-icons";
 import type { ProjectIconKey } from "../project-icons";
+import {
+  clearProjectStorage,
+  type StorageLike,
+} from "../storage/project-storage";
 import type { ProjectKey } from "../task-key";
 import { PROJECT_SLUG_MAX, suggestProjectKey } from "../task-key";
 import type { DueDateString, Project } from "./schema";
 import { DEFAULT_COLUMNS, DEFAULT_PROJECT_ICON } from "./schema";
 
-export function getProject(projectId: string): Promise<Project | undefined> {
-  return db.projects.get(projectId);
+export function getProject(
+  database: NanoboardDB,
+  projectId: string,
+): Promise<Project | undefined> {
+  return database.projects.get(projectId);
 }
 
-export function getProjects(): Promise<Project[]> {
-  return db.projects.orderBy("position").toArray();
+export function getProjects(database: NanoboardDB): Promise<Project[]> {
+  return database.projects.orderBy("position").toArray();
 }
 
 export const PROJECT_NAME_MIN = 1;
@@ -58,8 +65,11 @@ function assertValidProjectIcon(icon: string): asserts icon is ProjectIconKey {
 }
 
 /** Single-scan slug census shared by the uniqueness checks below (perf). */
-async function takenSlugs(exceptId?: string): Promise<Set<string>> {
-  const projects = await db.projects.toArray();
+async function takenSlugs(
+  database: NanoboardDB,
+  exceptId?: string,
+): Promise<Set<string>> {
+  const projects = await database.projects.toArray();
   return new Set(
     projects
       .filter((project) => project.id !== exceptId)
@@ -68,19 +78,21 @@ async function takenSlugs(exceptId?: string): Promise<Set<string>> {
 }
 
 async function assertUniqueProjectSlug(
+  database: NanoboardDB,
   slug: string,
   exceptId?: string,
 ): Promise<void> {
-  if ((await takenSlugs(exceptId)).has(slug.toLowerCase())) {
+  if ((await takenSlugs(database, exceptId)).has(slug.toLowerCase())) {
     throw new Error(`A project with key "${slug}" already exists.`);
   }
 }
 
 async function resolveUniqueSlug(
+  database: NanoboardDB,
   base: string,
   exceptId?: string,
 ): Promise<ProjectKey> {
-  const taken = await takenSlugs(exceptId);
+  const taken = await takenSlugs(database, exceptId);
   if (!taken.has(base.toLowerCase())) return base as ProjectKey;
   // Digit suffix, no dash (keys stay bare alphanumerics); the stem yields
   // room so the stored key never exceeds the max the validator enforces.
@@ -100,6 +112,7 @@ export interface CreateProjectInput {
 }
 
 export async function createProject(
+  database: NanoboardDB,
   input: CreateProjectInput,
 ): Promise<string> {
   const name = assertValidProjectName(input.name);
@@ -115,40 +128,46 @@ export async function createProject(
       ? suggestProjectKey(name)
       : assertValidProjectSlug(input.slug);
 
-  await db.transaction("rw", [db.projects, db.columns], async () => {
-    if (!suggested) {
-      await assertUniqueProjectSlug(requested);
-    }
-    const slug = suggested ? await resolveUniqueSlug(requested) : requested;
-    const ordered = await db.projects.orderBy("position").toArray();
-    const position =
-      ordered.length === 0
-        ? 0
-        : (ordered[ordered.length - 1]?.position ?? -1) + 1;
+  await database.transaction(
+    "rw",
+    [database.projects, database.columns],
+    async () => {
+      if (!suggested) {
+        await assertUniqueProjectSlug(database, requested);
+      }
+      const slug = suggested
+        ? await resolveUniqueSlug(database, requested)
+        : requested;
+      const ordered = await database.projects.orderBy("position").toArray();
+      const position =
+        ordered.length === 0
+          ? 0
+          : (ordered[ordered.length - 1]?.position ?? -1) + 1;
 
-    await db.projects.add({
-      id,
-      name,
-      slug,
-      icon,
-      position,
-      lastTaskNumber: 0,
-      createdAt: now,
-      updatedAt: now,
-    });
-    for (const column of DEFAULT_COLUMNS) {
-      await db.columns.add({
-        id: createId(),
-        projectId: id,
-        name: column.name,
-        slug: column.slug,
-        position: column.position,
-        isFinal: column.isFinal,
+      await database.projects.add({
+        id,
+        name,
+        slug,
+        icon,
+        position,
+        lastTaskNumber: 0,
         createdAt: now,
         updatedAt: now,
       });
-    }
-  });
+      for (const column of DEFAULT_COLUMNS) {
+        await database.columns.add({
+          id: createId(),
+          projectId: id,
+          name: column.name,
+          slug: column.slug,
+          position: column.position,
+          isFinal: column.isFinal,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    },
+  );
 
   return id;
 }
@@ -162,10 +181,11 @@ export interface UpdateProjectInput {
 
 /** Field patch; slug conflicts exclude the project itself. */
 export async function updateProject(
+  database: NanoboardDB,
   id: string,
   patch: UpdateProjectInput,
 ): Promise<void> {
-  const existing = await db.projects.get(id);
+  const existing = await database.projects.get(id);
   if (!existing) {
     throw new Error("Project not found.");
   }
@@ -173,7 +193,7 @@ export async function updateProject(
   if (patch.name !== undefined) next.name = assertValidProjectName(patch.name);
   if (patch.slug !== undefined) {
     const slug = assertValidProjectSlug(patch.slug);
-    await assertUniqueProjectSlug(slug, id);
+    await assertUniqueProjectSlug(database, slug, id);
     next.slug = slug;
   }
   if (patch.icon !== undefined) {
@@ -183,26 +203,23 @@ export async function updateProject(
   if (patch.description !== undefined) {
     next.description = patch.description?.trim() || undefined;
   }
-  await db.projects.update(id, next);
+  await database.projects.update(id, next);
+}
+
+export interface DeleteProjectOptions {
+  /** Override `localStorage` for per-project UI state cleanup (tests pass a memory stub or `null`). */
+  storage?: StorageLike | null;
 }
 
 /**
- * Deletes the project and every row hanging off it in one transaction. The
- * database instance is passed explicitly (the data-layer convention for
- * functions under test — see test-db.ts), so eviction behavior is
- * assertable on an isolated database; production callers pass the singleton.
+ * Deletes the project and every row hanging off it in one transaction, then
+ * drops its cached whiteboard identity and per-project `localStorage` state.
  */
 export async function deleteProject(
   database: NanoboardDB,
   id: string,
+  options?: DeleteProjectOptions,
 ): Promise<void> {
-  const existing = await database.projects.get(id);
-  if (!existing) {
-    throw new Error("Project not found.");
-  }
-  const taskIds = (
-    await database.tasks.where("projectId").equals(id).toArray()
-  ).map((task) => task.id);
   await database.transaction(
     "rw",
     [
@@ -211,6 +228,7 @@ export async function deleteProject(
       database.tasks,
       database.labels,
       database.taskLabels,
+      database.taskResources,
       database.whiteboards,
       database.whiteboardPreviews,
       database.pages,
@@ -218,18 +236,26 @@ export async function deleteProject(
       database.pageAssets,
     ],
     async () => {
-      // One indexed join wipe instead of a per-task loop (perf).
-      await database.taskLabels.where("taskId").anyOf(taskIds).delete();
+      const existing = await database.projects.get(id);
+      if (!existing) {
+        throw new Error("Project not found.");
+      }
+      const taskIds = (
+        await database.tasks.where("projectId").equals(id).toArray()
+      ).map((task) => task.id);
+      // One indexed join & resource wipe instead of per-task loops (perf).
+      if (taskIds.length > 0) {
+        await database.taskLabels.where("taskId").anyOf(taskIds).delete();
+        await database.taskResources.where("taskId").anyOf(taskIds).delete();
+      }
       await database.tasks.where("projectId").equals(id).delete();
       // Joins can't dangle: every project-label join belonged to a project
       // task (same-project attach rule), all removed above.
       await database.labels.where("projectId").equals(id).delete();
       await database.columns.where("projectId").equals(id).delete();
       // The scene row is unique per project (`&[projectId]`), so this deletes
-      // at most one row; a project that never drew stores nothing. Also drop
-      // its cached row identity so a later save can't resurrect the row.
+      // at most one row; a project that never drew stores nothing.
       await database.whiteboards.where("projectId").equals(id).delete();
-      forgetWhiteboard(id);
       // The preview row rides the scene row's lifecycle: evicted in the same
       // transaction so the gallery's "has content" index never outlives the
       // project (a no-op for projects that never drew).
@@ -242,6 +268,10 @@ export async function deleteProject(
       await database.projects.delete(id);
     },
   );
+  // Drop cached row identity and ephemeral per-project browser state only
+  // after the deletion transaction commits cleanly.
+  forgetWhiteboard(database, id);
+  clearProjectStorage(id, options?.storage);
 }
 
 /**
@@ -249,11 +279,14 @@ export async function deleteProject(
  * sidebar drop handler calls exactly this). Unique ids covering every
  * project enforced; only changed rows rewrite.
  */
-export async function reorderProjects(ids: string[]): Promise<void> {
+export async function reorderProjects(
+  database: NanoboardDB,
+  ids: string[],
+): Promise<void> {
   if (new Set(ids).size !== ids.length) {
     throw new Error("Project IDs must be unique.");
   }
-  const all = await db.projects.toArray();
+  const all = await database.projects.toArray();
   const allIds = new Set(all.map((project) => project.id));
   if (ids.length !== all.length || !ids.every((id) => allIds.has(id))) {
     throw new Error("Reorder list must cover every project exactly once.");
@@ -262,12 +295,12 @@ export async function reorderProjects(ids: string[]): Promise<void> {
     all.map((project) => [project.id, project.position]),
   );
   const now = Date.now();
-  await db.transaction("rw", db.projects, async () => {
+  await database.transaction("rw", database.projects, async () => {
     for (let index = 0; index < ids.length; index += 1) {
       const projectId = ids[index];
       if (projectId === undefined) continue;
       if (positionById.get(projectId) !== index) {
-        await db.projects.update(projectId, {
+        await database.projects.update(projectId, {
           position: index,
           updatedAt: now,
         });

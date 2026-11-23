@@ -9,10 +9,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { clearBoardFiltersStorage } from "@/components/kanban-board/board-filter-storage";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db/db";
-import { deleteProject } from "@/lib/db/queries";
+import { deleteProject } from "@/lib/db/projects";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 
@@ -37,7 +36,6 @@ export default function ProjectDeleteDialog({
     setPending(true);
     try {
       await deleteProject(db, projectId);
-      clearBoardFiltersStorage(projectId);
       onOpenChange(false);
       onDeleted();
     } catch (error) {

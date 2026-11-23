@@ -10,8 +10,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { archiveCompletedTasks } from "@/lib/db/queries";
-import { archiveCompletedTasksInColumn } from "@/lib/db/queries";
+import {
+  archiveCompletedTasks,
+  archiveCompletedTasksInColumn,
+} from "@/lib/db/archive";
 import { db } from "@/lib/db/db";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
