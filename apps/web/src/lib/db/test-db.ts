@@ -20,6 +20,7 @@ import Dexie from "dexie";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { BinaryFiles } from "@excalidraw/excalidraw/types";
 import { NanoboardDB } from "./db";
+import type { StorageLike } from "../storage/project-storage";
 import {
   DEFAULT_PROJECT_ICON,
   columnSlug,
@@ -462,4 +463,29 @@ export async function seedTestDb(
       await db.pageAssets.bulkAdd(contents.pageAssets);
     },
   );
+}
+
+/** In-memory `StorageLike` stub for plain-Node tests. */
+export function createMemoryStorage(
+  initial: Record<string, string> = {},
+): StorageLike & { entries: Map<string, string> } {
+  const entries = new Map<string, string>(Object.entries(initial));
+  return {
+    entries,
+    get length() {
+      return entries.size;
+    },
+    getItem(key: string) {
+      return entries.get(key) ?? null;
+    },
+    setItem(key: string, value: string) {
+      entries.set(key, value);
+    },
+    removeItem(key: string) {
+      entries.delete(key);
+    },
+    key(index: number) {
+      return Array.from(entries.keys())[index] ?? null;
+    },
+  };
 }
