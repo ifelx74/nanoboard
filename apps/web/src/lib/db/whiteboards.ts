@@ -17,7 +17,21 @@ import type { Whiteboard } from "./schema";
  * deleted. Bounded by the projects visited this session, so it never needs
  * eviction of its own.
  */
-const rowIdentity = new Map<string, { id: string; createdAt: number }>();
+interface RowIdentity {
+  id: string;
+  createdAt: number;
+}
+
+const rowIdentityByDb = new WeakMap<NanoboardDB, Map<string, RowIdentity>>();
+
+function identityCacheFor(database: NanoboardDB): Map<string, RowIdentity> {
+  let cache = rowIdentityByDb.get(database);
+  if (!cache) {
+    cache = new Map();
+    rowIdentityByDb.set(database, cache);
+  }
+  return cache;
+}
 
 export async function getWhiteboard(
   db: NanoboardDB,
@@ -26,14 +40,22 @@ export async function getWhiteboard(
   // The `&[projectId]` unique index guarantees at most one row per project.
   const row = await db.whiteboards.where("projectId").equals(projectId).first();
   if (row) {
-    rowIdentity.set(projectId, { id: row.id, createdAt: row.createdAt });
+    identityCacheFor(db).set(projectId, {
+      id: row.id,
+      createdAt: row.createdAt,
+    });
   }
   return row;
 }
 
-/** Forgets a project's cached row identity; call when its rows are deleted. */
-export function forgetWhiteboard(projectId: string): void {
-  rowIdentity.delete(projectId);
+/** Forgets a project's cached row identity in this database; call when its rows are deleted. */
+export function forgetWhiteboard(db: NanoboardDB, projectId: string): void {
+  rowIdentityByDb.get(db)?.delete(projectId);
+}
+
+/** Drops every cached whiteboard identity for this database (used on restore & reset). */
+export function clearWhiteboardCache(db: NanoboardDB): void {
+  rowIdentityByDb.delete(db);
 }
 
 /**
@@ -49,9 +71,10 @@ export async function saveWhiteboardScene(
   scene: Pick<Whiteboard, "elements" | "appState" | "files">,
 ): Promise<void> {
   const now = Date.now();
+  const cache = identityCacheFor(db);
 
   // Hot path: identity known from a previous read or create — one clone.
-  const identity = rowIdentity.get(projectId);
+  const identity = cache.get(projectId);
   if (identity) {
     await db.whiteboards.put({
       id: identity.id,
@@ -72,7 +95,7 @@ export async function saveWhiteboardScene(
       .equals(projectId)
       .first();
     if (existing) {
-      rowIdentity.set(projectId, {
+      cache.set(projectId, {
         id: existing.id,
         createdAt: existing.createdAt,
       });
@@ -86,7 +109,7 @@ export async function saveWhiteboardScene(
       createdAt: now,
       updatedAt: now,
     };
-    rowIdentity.set(projectId, { id: row.id, createdAt: row.createdAt });
+    cache.set(projectId, { id: row.id, createdAt: row.createdAt });
     await db.whiteboards.add(row);
   });
 }

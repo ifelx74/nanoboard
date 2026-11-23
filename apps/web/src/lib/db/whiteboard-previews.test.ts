@@ -12,7 +12,7 @@ import {
   TEST_NOW,
   TEST_PREVIEW_DATA_URL,
 } from "./test-db";
-import { forgetWhiteboard, saveWhiteboardScene } from "./whiteboards";
+import { saveWhiteboardScene } from "./whiteboards";
 import {
   deleteWhiteboardPreview,
   getWhiteboardPreview,
@@ -132,8 +132,6 @@ describe("project deletion eviction on fake-indexeddb", () => {
 describe("the save flush's two stores on fake-indexeddb", () => {
   afterEach(() => {
     vi.restoreAllMocks();
-    forgetWhiteboard("project-flush");
-    forgetWhiteboard("project-failure");
   });
 
   it("an emptied-canvas flush persists the scene row but removes the preview", async () => {

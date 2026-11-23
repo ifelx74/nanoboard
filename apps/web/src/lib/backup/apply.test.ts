@@ -5,9 +5,12 @@ import {
   backupTableCounts,
   parseBackupDocument,
 } from "./apply";
+import { boardFiltersStorageKey } from "../storage/project-storage";
+import { getWhiteboard, saveWhiteboardScene } from "../db/whiteboards";
 import { serializeBackupDocument } from "./serialize";
 import {
   buildTestContents,
+  createMemoryStorage,
   createTestDb,
   makePage,
   makePageAsset,
@@ -617,6 +620,56 @@ describe("applyBackupDocument", () => {
       parsed.tables.whiteboards,
     );
     expect(await target.whiteboardPreviews.count()).toBe(0);
+
+    await source.close();
+    await target.close();
+  });
+
+  it("sweeps per-project board filters and clears whiteboard row-identity cache on apply", async () => {
+    const source = createTestDb();
+    await seedTestDb(source, buildTestContents());
+    const document = await createBackupDocument(source);
+
+    const target = createTestDb();
+    await seedTestDb(target, buildOtherContents());
+    // Prime whiteboard cache on target with a different row id for project-1.
+    await target.whiteboards.clear();
+    await target.whiteboards.add({
+      id: "stale-wb-id",
+      projectId: "project-1",
+      elements: [],
+      appState: {},
+      files: {},
+      createdAt: TEST_NOW,
+      updatedAt: TEST_NOW,
+    });
+    expect((await getWhiteboard(target, "project-1"))?.id).toBe("stale-wb-id");
+
+    const storage = createMemoryStorage({
+      [boardFiltersStorageKey("project-extra")]: JSON.stringify({
+        labels: ["x"],
+      }),
+      "nanoboard-theme": "dark",
+    });
+
+    await applyBackupDocument(target, document, { storage });
+
+    // Per-project filters swept; global prefs survive.
+    expect(storage.entries.has(boardFiltersStorageKey("project-extra"))).toBe(
+      false,
+    );
+    expect(storage.entries.get("nanoboard-theme")).toBe("dark");
+
+    // Saving a whiteboard scene after restore must NOT resurrect `stale-wb-id`.
+    await saveWhiteboardScene(target, "project-1", {
+      elements: [],
+      appState: {},
+      files: {},
+    });
+    expect(
+      (await target.whiteboards.where("projectId").equals("project-1").first())
+        ?.id,
+    ).toBe("whiteboard-1");
 
     await source.close();
     await target.close();
