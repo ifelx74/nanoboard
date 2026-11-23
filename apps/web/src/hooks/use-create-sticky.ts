@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { db } from "@/lib/db/db";
 import type { Sticky } from "@/lib/db/schema";
 import { createSticky, EmptyStickyExistsError } from "@/lib/db/stickies";
 import { i18n } from "@/lib/i18n";
@@ -24,7 +25,7 @@ export function useCreateSticky() {
     if (isCreating) return { ok: false, reason: "in-flight" };
     setIsCreating(true);
     try {
-      const sticky = await createSticky();
+      const sticky = await createSticky(db);
       const message = i18n.t("stickies:create.created");
       toast.success(message);
       return { ok: true, sticky };

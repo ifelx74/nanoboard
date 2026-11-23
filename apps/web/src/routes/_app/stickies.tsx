@@ -5,6 +5,7 @@ import Layout from "@/components/common/layout";
 import { StickyHeader } from "@/components/stickies/header";
 import { StickiesLayout } from "@/components/stickies/stickies-layout";
 import { useCreateSticky } from "@/hooks/use-create-sticky";
+import { db } from "@/lib/db/db";
 import { getStickies } from "@/lib/db/stickies";
 import { i18n } from "@/lib/i18n";
 import { pageMeta } from "@/lib/seo";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/_app/stickies")({
 });
 
 function RouteComponent() {
-  const stickies = useLiveQuery(() => getStickies(), []);
+  const stickies = useLiveQuery(() => getStickies(db), []);
   const [searchQuery, setSearchQuery] = useState("");
   const { isCreating, addSticky } = useCreateSticky();
 

@@ -17,6 +17,7 @@ import {
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { useCreateSticky } from "@/hooks/use-create-sticky";
 import Stickies from "@/icons/stickies";
+import { db } from "@/lib/db/db";
 import { getStickies } from "@/lib/db/stickies";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,7 @@ const AllStickiesModal = lazy(() =>
 export function StickyActionBar() {
   const { t } = useTranslation("stickies");
   const location = useLocation();
-  const stickies = useLiveQuery(() => getStickies(), []);
+  const stickies = useLiveQuery(() => getStickies(db), []);
   const { addSticky } = useCreateSticky();
 
   const [isExpanded, setIsExpanded] = useState(false);
