@@ -7,18 +7,16 @@ import TimelineGantt, {
 } from "@/components/timeline/timeline-gantt";
 import { buildTimeline } from "@/components/timeline/timeline-model";
 import TaskDrawer from "@/components/task/task-drawer";
-import {
-  getProject,
-  getProjectColumns,
-  getProjectTasks,
-} from "@/lib/db/queries";
+import { getProject } from "@/lib/db/projects";
+import { getProjectColumns, getProjectTasks } from "@/lib/db/tasks";
 import { projectRouteHead } from "@/lib/seo";
 import { db } from "@/lib/db/db";
 import { taskKey } from "@/lib/task-key";
 
 export const Route = createFileRoute("/_app/project/$projectId/timeline")({
   component: RouteComponent,
-  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  loader: ({ params }) =>
+    getProject(db, params.projectId).catch(() => undefined),
   head: projectRouteHead("timeline"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
@@ -34,7 +32,7 @@ function RouteComponent() {
     () => getProjectColumns(db, projectId),
     [projectId],
   );
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(db, projectId), [projectId]);
   const slug = project?.slug ?? "";
 
   const timelineTasks: TimelineGanttTask[] = useMemo(() => {

@@ -18,6 +18,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { useMemo, useState } from "react";
+import { db } from "@/lib/db/db";
 import type { Sticky } from "@/lib/db/schema";
 import { reorderStickies, stickySearchIndex } from "@/lib/db/stickies";
 import { EmptySearchState, EmptyStickiesState } from "./empty-states";
@@ -101,7 +102,7 @@ export function StickiesLayout({
     if (!over || active.id === over.id) return;
 
     try {
-      await reorderStickies(active.id.toString(), over.id.toString());
+      await reorderStickies(db, active.id.toString(), over.id.toString());
     } catch (error) {
       console.error("Failed to reorder stickies:", error);
     }

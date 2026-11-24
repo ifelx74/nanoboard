@@ -17,7 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { createProject } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { createProject } from "@/lib/db/projects";
 import { i18n } from "@/lib/i18n";
 import { suggestProjectKey } from "@/lib/task-key";
 import { toast } from "@/lib/toast";
@@ -60,7 +61,7 @@ export default function CreateProjectDialog({
     if (submitting || !name.trim() || !slug.trim()) return;
     setSubmitting(true);
     try {
-      const id = await createProject({
+      const id = await createProject(db, {
         name: name.trim(),
         // Untouched suggestions dedupe server-side-style (WR2); an explicit
         // taken key conflicts instead.

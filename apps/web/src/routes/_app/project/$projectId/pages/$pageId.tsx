@@ -38,7 +38,7 @@ import {
   isPageArchived,
   listProjectPages,
 } from "@/lib/db/pages";
-import { getProject } from "@/lib/db/queries";
+import { getProject } from "@/lib/db/projects";
 import { projectPageDetailRouteHead } from "@/lib/seo";
 
 // The TipTap v3 document editor and its extensions/CSS are heavy; lazy-loading
@@ -60,8 +60,8 @@ export const Route = createFileRoute("/_app/project/$projectId/pages/$pageId")({
   // app-shell bundle.
   loader: async ({ params }) => {
     const [project, page] = await Promise.all([
-      getProject(params.projectId).catch(() => undefined),
-      getPageMeta(params.pageId).catch(() => undefined),
+      getProject(db, params.projectId).catch(() => undefined),
+      getPageMeta(db, params.pageId).catch(() => undefined),
     ]);
     const scopedPage =
       page && page.projectId === params.projectId ? page : undefined;

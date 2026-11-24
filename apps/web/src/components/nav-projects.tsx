@@ -34,8 +34,11 @@ import CreateProjectDialog from "@/components/project/create-project-dialog";
 import EditProjectDialog from "@/components/project/edit-project-dialog";
 import ProjectDeleteDialog from "@/components/project/project-delete-dialog";
 import { ProjectProgress } from "@/components/project/project-progress";
-import { getProjects, getProjectsStats } from "@/lib/db/queries";
-import type { ProjectStats } from "@/lib/db/queries";
+import {
+  getProjects,
+  getProjectsStats,
+  type ProjectStats,
+} from "@/lib/db/projects";
 import { db } from "@/lib/db/db";
 import type { Project } from "@/lib/db/schema";
 import { getProjectIcon } from "@/lib/project-icons";
@@ -217,7 +220,7 @@ export function NavProjects() {
   const navigate = useNavigate();
   const { t } = useTranslation("navigation");
   const { projectId: activeProjectId } = useParams({ strict: false });
-  const projects = useLiveQuery(() => getProjects(), []);
+  const projects = useLiveQuery(() => getProjects(db), []);
   const statsByProject = useLiveQuery(() => getProjectsStats(db), []);
   const [groupOpen, setGroupOpen] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);

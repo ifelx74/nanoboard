@@ -18,7 +18,6 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { clearAllBoardFiltersStorage } from "@/components/kanban-board/board-filter-storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -313,7 +312,6 @@ export function RestoreBackupDialog({
     setRestoring(true);
     try {
       await applyBackupDocument(db, document);
-      clearAllBoardFiltersStorage();
       useBackupStatusStore.getState().recordBackup();
       toast.success(t("data.restore.restored"));
       globalThis.window.location.reload();

@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { db } from "./db";
+import type { NanoboardDB } from "./db";
 import type { TaskResource } from "./schema";
 
 export const RESOURCE_TITLE_MAX = 200;
@@ -35,14 +35,19 @@ function normalizeResourceTitle(raw: string | undefined): string | null {
 }
 
 export async function getTaskResources(
+  database: NanoboardDB,
   taskId: string,
 ): Promise<TaskResource[]> {
-  const rows = await db.taskResources.where("taskId").equals(taskId).toArray();
+  const rows = await database.taskResources
+    .where("taskId")
+    .equals(taskId)
+    .toArray();
   rows.sort((a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1));
   return rows;
 }
 
 export async function createTaskResource(
+  database: NanoboardDB,
   taskId: string,
   input: { url: string; title?: string },
 ): Promise<string> {
@@ -51,32 +56,38 @@ export async function createTaskResource(
   const now = Date.now();
   const id = createId();
 
-  await db.transaction("rw", db.tasks, db.taskResources, async () => {
-    const task = await db.tasks.get(taskId);
-    if (!task) {
-      throw new Error("Task not found.");
-    }
-    await db.taskResources.add({
-      id,
-      taskId,
-      resourceType: MANUAL_RESOURCE_TYPE,
-      externalId: url,
-      url,
-      title,
-      createdAt: now,
-      updatedAt: now,
-    });
-  });
+  await database.transaction(
+    "rw",
+    database.tasks,
+    database.taskResources,
+    async () => {
+      const task = await database.tasks.get(taskId);
+      if (!task) {
+        throw new Error("Task not found.");
+      }
+      await database.taskResources.add({
+        id,
+        taskId,
+        resourceType: MANUAL_RESOURCE_TYPE,
+        externalId: url,
+        url,
+        title,
+        createdAt: now,
+        updatedAt: now,
+      });
+    },
+  );
 
   return id;
 }
 
 export async function deleteTaskResource(
+  database: NanoboardDB,
   taskId: string,
   id: string,
 ): Promise<void> {
-  await db.transaction("rw", db.taskResources, async () => {
-    const existing = await db.taskResources.get(id);
+  await database.transaction("rw", database.taskResources, async () => {
+    const existing = await database.taskResources.get(id);
     if (
       !existing ||
       existing.taskId !== taskId ||
@@ -84,6 +95,6 @@ export async function deleteTaskResource(
     ) {
       throw new Error("Resource not found.");
     }
-    await db.taskResources.delete(id);
+    await database.taskResources.delete(id);
   });
 }

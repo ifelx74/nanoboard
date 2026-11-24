@@ -2,15 +2,22 @@ import type { JSONContent } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
 import { isPageColorKey } from "../pages/colors";
 import { extractContentText, extractHeadings } from "../pages/document";
+import { boardFiltersStorageKey } from "../storage/project-storage";
 import { suggestProjectKey } from "../task-key";
 import { DEFAULT_COLUMNS } from "./schema";
 import { buildSeedRows, resetToSeed } from "./seed";
 import {
+  createMemoryStorage,
   createTestDb,
   makePage,
   makePageAsset,
   makePageContent,
+  makeSticky,
+  makeTaskResource,
+  makeWhiteboard,
+  makeWhiteboardPreview,
 } from "./test-db";
+import { getWhiteboard, saveWhiteboardScene } from "./whiteboards";
 
 function findNodes(
   node: JSONContent | undefined,
@@ -218,6 +225,45 @@ describe("demo seed rows", () => {
     expect(await db.pages.get("user-page")).toBeUndefined();
     expect(await db.pageContents.get("user-page")).toBeUndefined();
     expect(await db.pageAssets.get("user-asset")).toBeUndefined();
+
+    await db.close();
+  });
+
+  it("resetToSeed wipes taskResources, stickies, whiteboards, previews, whiteboard cache, and per-project storage", async () => {
+    const db = createTestDb();
+    await db.taskResources.add(makeTaskResource({ id: "res-stale" }));
+    await db.stickies.add(makeSticky({ id: "sticky-stale" }));
+    await db.whiteboards.add(makeWhiteboard({ id: "wb-stale" }));
+    await db.whiteboardPreviews.add(
+      makeWhiteboardPreview({ projectId: "project-1" }),
+    );
+    expect((await getWhiteboard(db, "project-1"))?.id).toBe("wb-stale");
+
+    const storage = createMemoryStorage({
+      [boardFiltersStorageKey("project-1")]: JSON.stringify({ labels: ["a"] }),
+      "nanoboard-theme": "dark",
+    });
+
+    await resetToSeed(db, { storage });
+
+    expect(await db.taskResources.count()).toBe(0);
+    expect(await db.stickies.count()).toBe(0);
+    expect(await db.whiteboards.count()).toBe(0);
+    expect(await db.whiteboardPreviews.count()).toBe(0);
+    expect(storage.entries.has(boardFiltersStorageKey("project-1"))).toBe(
+      false,
+    );
+    expect(storage.entries.get("nanoboard-theme")).toBe("dark");
+
+    // Saving a scene after reset must mint a fresh row rather than resurrecting `wb-stale`.
+    await saveWhiteboardScene(db, "project-1", {
+      elements: [],
+      appState: {},
+      files: {},
+    });
+    expect(
+      (await db.whiteboards.where("projectId").equals("project-1").first())?.id,
+    ).not.toBe("wb-stale");
 
     await db.close();
   });

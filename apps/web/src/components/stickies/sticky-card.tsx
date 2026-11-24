@@ -13,6 +13,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { db } from "@/lib/db/db";
 import type { Sticky, StickyColorKey } from "@/lib/db/schema";
 import { deleteSticky, isStickyEmpty, updateSticky } from "@/lib/db/stickies";
 import { sanitizeHtml } from "@/lib/sanitize";
@@ -69,7 +70,7 @@ export const StickyCard = memo(function StickyCard({
 
   const handleColorChange = async (color: StickyColorKey) => {
     try {
-      await updateSticky(sticky.id, { backgroundColor: color });
+      await updateSticky(db, sticky.id, { backgroundColor: color });
     } catch (error) {
       console.error("Failed to update sticky color:", error);
     }
@@ -77,7 +78,7 @@ export const StickyCard = memo(function StickyCard({
 
   const handleDeleteConfirm = async () => {
     try {
-      await deleteSticky(sticky.id);
+      await deleteSticky(db, sticky.id);
       const message = i18n.t("stickies:card.removed");
       toast.success(message);
       onClose?.();
@@ -185,7 +186,7 @@ function StickyEditor({ sticky, onEditorReady, onEditEnd }: StickyEditorProps) {
   const saveContent = useCallback(
     async (html: string) => {
       try {
-        await updateSticky(sticky.id, { contentHtml: html });
+        await updateSticky(db, sticky.id, { contentHtml: html });
       } catch (error) {
         console.error("Failed to update sticky:", error);
       }

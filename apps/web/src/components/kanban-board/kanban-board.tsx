@@ -14,10 +14,10 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { reorderTasks } from "@/lib/db/queries";
 import { useLiveQuery } from "dexie-react-hooks";
-import { countArchivableTasksByFinalColumn } from "@/lib/db/queries";
+import { countArchivableTasksByFinalColumn } from "@/lib/db/archive";
 import { db } from "@/lib/db/db";
+import { reorderTasks } from "@/lib/db/tasks";
 import type { Column, Label, Task } from "@/lib/db/schema";
 import ArchiveCompletedTasksDialog from "@/components/task/archive-completed-tasks-dialog";
 import { i18n } from "@/lib/i18n";
@@ -302,7 +302,7 @@ export default function KanbanBoard({
     setPreview(computed.grouping);
     setWriting(true);
     try {
-      await reorderTasks(projectId, computed.dirty);
+      await reorderTasks(db, projectId, computed.dirty);
     } catch {
       setPreview(null);
       const message = i18n.t("board:moveTaskFailed");

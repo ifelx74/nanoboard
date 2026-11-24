@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { LABEL_COLORS, resolveLabelColor } from "@/lib/label-color";
 import type { LabelColorValue } from "@/lib/label-color";
+import { db } from "@/lib/db/db";
 import {
   attachLabel,
   createLabel,
@@ -17,7 +18,7 @@ import {
   getProjectLabels,
   getTaskLabels,
   renameLabel,
-} from "@/lib/db/queries";
+} from "@/lib/db/labels";
 import type { Label, Task } from "@/lib/db/schema";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
@@ -61,9 +62,9 @@ export default function TaskLabelsPopover({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const taskLabels = useLiveQuery(() => getTaskLabels(task.id), [task.id]);
+  const taskLabels = useLiveQuery(() => getTaskLabels(db, task.id), [task.id]);
   const projectLabels = useLiveQuery(
-    () => getProjectLabels(task.projectId),
+    () => getProjectLabels(db, task.projectId),
     [task.projectId],
   );
 
@@ -114,9 +115,9 @@ export default function TaskLabelsPopover({
   async function handleToggle(label: Label) {
     try {
       if (taskLabelIds.has(label.id)) {
-        await detachLabel(task.id, label.id);
+        await detachLabel(db, task.id, label.id);
       } else {
-        await attachLabel(task.id, label.id);
+        await attachLabel(db, task.id, label.id);
       }
     } catch (error) {
       notifyError(error, i18n.t("task:labels.errors.update"));
@@ -132,8 +133,8 @@ export default function TaskLabelsPopover({
     setSelectedColor(color);
     if (!newLabelName.trim()) return;
     try {
-      const id = await createLabel(task.projectId, newLabelName, color);
-      await attachLabel(task.id, id);
+      const id = await createLabel(db, task.projectId, newLabelName, color);
+      await attachLabel(db, task.id, id);
       setOpen(false);
       setTimeout(resetPopover, 200);
     } catch (error) {
@@ -152,7 +153,7 @@ export default function TaskLabelsPopover({
       return;
     }
     try {
-      await renameLabel(label.id, editValue.trim());
+      await renameLabel(db, label.id, editValue.trim());
       setEditingId(null);
     } catch (error) {
       notifyError(error, i18n.t("task:labels.errors.rename"));

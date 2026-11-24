@@ -1,5 +1,10 @@
 import { dataUrlToBlob } from "@/lib/data-url";
 import type { NanoboardDB } from "@/lib/db/db";
+import { clearWhiteboardCache } from "@/lib/db/whiteboards";
+import {
+  clearAllProjectStorage,
+  type StorageLike,
+} from "@/lib/storage/project-storage";
 import type {
   Column,
   Label,
@@ -159,9 +164,15 @@ export async function readWorkspaceCounts(
  * parsed a file first: the all-or-nothing guarantee must hold for every call
  * site, not just the one that goes through `parseBackupDocument`.
  */
+export interface ApplyBackupOptions {
+  /** Override `localStorage` for per-project UI state sweep (tests pass a memory stub or `null`). */
+  storage?: StorageLike | null;
+}
+
 export async function applyBackupDocument(
   db: NanoboardDB,
   document: BackupDocument,
+  options?: ApplyBackupOptions,
 ): Promise<void> {
   assertValidBackupDocument(document);
 
@@ -198,4 +209,8 @@ export async function applyBackupDocument(
       }
     },
   );
+  // Drop stale per-database whiteboard identities and per-project browser
+  // filter keys only after the replace-all transaction commits cleanly.
+  clearWhiteboardCache(db);
+  clearAllProjectStorage(options?.storage);
 }

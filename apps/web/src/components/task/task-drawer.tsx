@@ -25,15 +25,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  duplicateTask,
-  getProject,
-  getProjectColumns,
-  getTask,
-  getTaskLabels,
-  isTaskArchived,
-  restoreTask,
-} from "@/lib/db/queries";
+import { isTaskArchived, restoreTask } from "@/lib/db/archive";
+import { getTaskLabels } from "@/lib/db/labels";
+import { getProject } from "@/lib/db/projects";
+import { duplicateTask, getProjectColumns, getTask } from "@/lib/db/tasks";
 import { getColumnIcon } from "@/lib/column";
 import { getDueDateStatus, parseLocalDate } from "@/lib/due-date-status";
 import { db } from "@/lib/db/db";
@@ -196,9 +191,9 @@ export default function TaskDrawer({
     return () => clearTimeout(timer);
   }, [taskId]);
 
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(db, projectId), [projectId]);
   const task = useLiveQuery(
-    () => (currentTaskId ? getTask(currentTaskId) : undefined),
+    () => (currentTaskId ? getTask(db, currentTaskId) : undefined),
     [currentTaskId],
   );
   const columns = useLiveQuery(
@@ -206,7 +201,7 @@ export default function TaskDrawer({
     [projectId],
   );
   const taskLabels = useLiveQuery(
-    () => (currentTaskId ? getTaskLabels(currentTaskId) : undefined),
+    () => (currentTaskId ? getTaskLabels(db, currentTaskId) : undefined),
     [currentTaskId],
   );
 
@@ -220,7 +215,7 @@ export default function TaskDrawer({
     if (!task || duplicating || archived) return;
     setDuplicating(true);
     try {
-      const id = await duplicateTask(task.id);
+      const id = await duplicateTask(db, task.id);
       onSelectTask(id);
     } catch (error) {
       toast.error(

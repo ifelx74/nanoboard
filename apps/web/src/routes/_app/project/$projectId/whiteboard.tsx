@@ -2,7 +2,8 @@ import { ProjectLayout } from "@/components/common/project-layout";
 import { WhiteboardSkeleton } from "@/components/whiteboard/skeleton";
 import { lazy, Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { getProject } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { getProject } from "@/lib/db/projects";
 import { projectRouteHead } from "@/lib/seo";
 
 // The Excalidraw editor is heavy; lazy-loading keeps it out of every other
@@ -13,7 +14,8 @@ const WhiteboardCanvas = lazy(
 
 export const Route = createFileRoute("/_app/project/$projectId/whiteboard")({
   component: RouteComponent,
-  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  loader: ({ params }) =>
+    getProject(db, params.projectId).catch(() => undefined),
   head: projectRouteHead("whiteboard"),
 });
 

@@ -7,6 +7,7 @@ import {
   startOfDay,
   subDays,
 } from "date-fns";
+import type { TaskRescheduleMode } from "@/lib/db/tasks";
 
 /** Fixed logical scale: every day column is this many pixels wide. */
 export const DAY_WIDTH = 40;
@@ -67,13 +68,7 @@ export type TimelineModel<TTask extends TimelineTaskInput> = {
   undatedCount: number;
 };
 
-export type TimelineDragMode = "move" | "resize-start" | "resize-end";
-
-/** The date fields a drag changes; absent fields keep their prior state. */
-export type TimelineDragResult = {
-  startDate?: string;
-  dueDate?: string;
-};
+export type TimelineDragMode = TaskRescheduleMode;
 
 /** Maps `-0` to `0` so day-quantised deltas never render as negative zero. */
 function normalizeNegativeZero(value: number): number {
@@ -96,52 +91,6 @@ export function clampDragDayDelta(
     return normalizeNegativeZero(Math.min(dayDelta, maxShrink));
   }
   return normalizeNegativeZero(Math.max(dayDelta, -maxShrink));
-}
-
-/**
- * Day-quantised date changes for a drag, given the task's current dates.
- * Move shifts every existing date by the delta (duration preserved; a
- * single-dated task shifts its lone date). Resize moves the dragged edge —
- * setting the missing endpoint on a single-dated bar — clamped so the range
- * never inverts and the bar stays at least one day. Returns only the fields
- * the drag changes; an undated task gets `{}`.
- */
-export function applyDragDelta(
-  task: Pick<TimelineTaskInput, "startDate" | "dueDate">,
-  mode: TimelineDragMode,
-  dayDelta: number,
-): TimelineDragResult {
-  const span = normalizeTaskSpan(task);
-  if (!span) return {};
-  const spanDays = differenceInCalendarDays(span.chartEnd, span.chartStart) + 1;
-  const delta = clampDragDayDelta(mode, spanDays, dayDelta);
-  const shift = (value: string): string =>
-    formatDay(addDays(parseDay(value), delta));
-
-  if (mode === "move") {
-    const result: TimelineDragResult = {};
-    if (task.startDate !== undefined) result.startDate = shift(task.startDate);
-    if (task.dueDate !== undefined) result.dueDate = shift(task.dueDate);
-    return result;
-  }
-
-  if (mode === "resize-start") {
-    // A due-only bar gains its missing start endpoint here.
-    const anchor = task.startDate ?? task.dueDate;
-    return { startDate: shift(anchor as string) };
-  }
-
-  // A start-only bar gains its missing due endpoint here.
-  const anchor = task.dueDate ?? task.startDate;
-  return { dueDate: shift(anchor as string) };
-}
-
-/** Formats a local date as a `yyyy-mm-dd` day string (no UTC shift). */
-function formatDay(date: Date): string {
-  const year = String(date.getFullYear()).padStart(4, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 /** Parses a `yyyy-mm-dd` day string as a local date (no UTC shift). */

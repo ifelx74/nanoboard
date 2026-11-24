@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import Layout from "@/components/common/layout";
 import { SidebarTriggerHeader } from "@/components/common/sidebar-trigger-header";
-import { getProject } from "@/lib/db/queries";
+import { db } from "@/lib/db/db";
+import { getProject } from "@/lib/db/projects";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -71,7 +72,7 @@ export function ProjectLayout({
     { key: "list", title: t("toolbar.list"), icon: List },
     { key: "timeline", title: t("toolbar.timeline"), icon: ChartGantt },
   ];
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(db, projectId), [projectId]);
   // is backlog view if activeView is board, calendar, list, or timeline
   const isBacklogView = ["board", "calendar", "list", "timeline"].includes(
     activeView,

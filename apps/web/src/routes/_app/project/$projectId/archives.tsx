@@ -19,9 +19,9 @@ import {
 import {
   countArchivableTasks,
   getArchivedProjectTasks,
-  getProject,
   restoreTask,
-} from "@/lib/db/queries";
+} from "@/lib/db/archive";
+import { getProject } from "@/lib/db/projects";
 import { projectRouteHead } from "@/lib/seo";
 import { db } from "@/lib/db/db";
 import type { Task } from "@/lib/db/schema";
@@ -32,7 +32,8 @@ import { taskKey } from "@/lib/task-key";
 
 export const Route = createFileRoute("/_app/project/$projectId/archives")({
   component: RouteComponent,
-  loader: ({ params }) => getProject(params.projectId).catch(() => undefined),
+  loader: ({ params }) =>
+    getProject(db, params.projectId).catch(() => undefined),
   head: projectRouteHead("archives"),
   validateSearch: (search: Record<string, unknown>): { task?: string } => ({
     task: typeof search.task === "string" ? search.task : undefined,
@@ -136,7 +137,7 @@ function RouteComponent() {
   const { projectId } = Route.useParams();
   const { task: selectedTaskId } = Route.useSearch();
   const navigate = useNavigate();
-  const project = useLiveQuery(() => getProject(projectId), [projectId]);
+  const project = useLiveQuery(() => getProject(db, projectId), [projectId]);
   const archivedTasks = useLiveQuery(
     () => getArchivedProjectTasks(db, projectId),
     [projectId],

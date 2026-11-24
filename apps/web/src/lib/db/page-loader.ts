@@ -1,4 +1,4 @@
-import { db, type NanoboardDB } from "./db";
+import type { NanoboardDB } from "./db";
 import type { Page } from "./schema";
 
 /**
@@ -8,8 +8,8 @@ import type { Page } from "./schema";
  * and delete logic) into the initial app-shell bundle.
  */
 export function getPageMeta(
+  database: NanoboardDB,
   pageId: string,
-  database: NanoboardDB = db,
 ): Promise<Page | undefined> {
   return database.pages.get(pageId);
 }

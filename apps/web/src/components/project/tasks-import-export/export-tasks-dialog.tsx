@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { db } from "@/lib/db/db";
-import { readProjectTransferSource } from "@/lib/db/queries";
+import { readProjectTransferSource } from "@/lib/db/transfer";
 import { buildTaskTransferDocument } from "@/lib/task-transfer/export";
 import { sealTaskTransferDocument } from "@/lib/task-transfer/encrypt";
 import { toast } from "@/lib/toast";

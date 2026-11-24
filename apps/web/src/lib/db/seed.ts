@@ -1,9 +1,14 @@
 import { createId } from "@paralleldrive/cuid2";
 import type { JSONContent } from "@tiptap/core";
-import type Dexie from "dexie";
 import type { Table } from "dexie";
 import { extractContentText } from "../pages/document";
+import {
+  clearAllProjectStorage,
+  type StorageLike,
+} from "../storage/project-storage";
 import { suggestProjectKey } from "../task-key";
+import type { NanoboardDB } from "./db";
+import { clearWhiteboardCache } from "./whiteboards";
 import {
   DEFAULT_COLUMNS,
   DEFAULT_PROJECT_ICON,
@@ -565,37 +570,55 @@ export async function seedDatabase(db: SeedableDb): Promise<void> {
   await addSeedRows(db, buildSeedRows());
 }
 
+export interface ResetToSeedOptions {
+  /** Override `localStorage` for per-project UI state sweep (tests pass a memory stub or `null`). */
+  storage?: StorageLike | null;
+}
+
 /**
- * Dev-only reset: clears all rows and restores demo content. Wired to
+ * Dev-only reset: clears every table and restores demo content. Wired to
  * `window.resetNanoboardToSeed` in main.tsx (dev builds only) — the populate
  * seeding fires once per database, so this is how an existing dev database
  * gets the demo content back.
  */
-export async function resetToSeed(db: Dexie & SeedableDb): Promise<void> {
-  await db.transaction(
+export async function resetToSeed(
+  database: NanoboardDB,
+  options?: ResetToSeedOptions,
+): Promise<void> {
+  await database.transaction(
     "rw",
     [
-      db.projects,
-      db.columns,
-      db.tasks,
-      db.labels,
-      db.taskLabels,
-      db.pages,
-      db.pageContents,
-      db.pageAssets,
+      database.projects,
+      database.columns,
+      database.tasks,
+      database.labels,
+      database.taskLabels,
+      database.taskResources,
+      database.stickies,
+      database.whiteboards,
+      database.whiteboardPreviews,
+      database.pages,
+      database.pageContents,
+      database.pageAssets,
     ],
     async () => {
-      await db.taskLabels.clear();
-      await db.tasks.clear();
-      await db.labels.clear();
-      await db.columns.clear();
-      await db.pageAssets.clear();
-      await db.pageContents.clear();
-      await db.pages.clear();
-      await db.projects.clear();
-      await addSeedRows(db, buildSeedRows());
+      await database.taskLabels.clear();
+      await database.taskResources.clear();
+      await database.tasks.clear();
+      await database.labels.clear();
+      await database.columns.clear();
+      await database.stickies.clear();
+      await database.whiteboards.clear();
+      await database.whiteboardPreviews.clear();
+      await database.pageAssets.clear();
+      await database.pageContents.clear();
+      await database.pages.clear();
+      await database.projects.clear();
+      await addSeedRows(database, buildSeedRows());
     },
   );
+  clearWhiteboardCache(database);
+  clearAllProjectStorage(options?.storage);
 }
 
 /**
